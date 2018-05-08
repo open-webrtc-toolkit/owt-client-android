@@ -108,13 +108,17 @@ public class SubscriptionCapabilities {
             //  'bitrate': bitrate,
             //  'keyFrameInterval': kfi}
             JSONObject parametersObj = getObj(videoObj, "parameters");
-            JSONObject reslutionObj = getObj(parametersObj, "resolution");
-            HashMap<String, Integer> resolutionItem = new HashMap<>();
-            resolutionItem.put("width", getInt(reslutionObj, "width", 0));
-            resolutionItem.put("height", getInt(reslutionObj, "height", 0));
-            resolutions.add(resolutionItem);
-            frameRates.add(getInt(parametersObj, "framerate", 0));
-            keyFrameIntervals.add(getInt(parametersObj, "keyFrameInterval", 0));
+            if (parametersObj != null) {
+                if (parametersObj.has("resolution")) {
+                    JSONObject reslutionObj = getObj(parametersObj, "resolution");
+                    HashMap<String, Integer> resolutionItem = new HashMap<>();
+                    resolutionItem.put("width", getInt(reslutionObj, "width", 0));
+                    resolutionItem.put("height", getInt(reslutionObj, "height", 0));
+                    resolutions.add(resolutionItem);
+                }
+                frameRates.add(getInt(parametersObj, "framerate", 0));
+                keyFrameIntervals.add(getInt(parametersObj, "keyFrameInterval", 0));
+            }
 
             // optionalObj:
             // {'format': [codecObj],
