@@ -646,10 +646,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     public void onRoomDisconnected() {
         DCHECK(callbackExecutor);
         changeRoomStatus(RoomStates.DISCONNECTED);
-        closeInternal();
         callbackExecutor.execute(new Runnable() {
             @Override
             public void run() {
+                closeInternal();
                 for (ConferenceClientObserver observer : observers) {
                     observer.onServerDisconnected();
                 }
