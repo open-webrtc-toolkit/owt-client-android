@@ -7,7 +7,7 @@ import android.os.Build;
 
 ///@cond
 public class IcsConst {
-    public static final String CLIENT_VERSION = "4.0";
+    public static final String CLIENT_VERSION = "4.0.1";
     public static final String userAgent = "{" +
             "'runtime':{'name':'webrtc','version':'63'}," +
             "'sdk':{'type':'Android','version':" + CLIENT_VERSION + "}," +
