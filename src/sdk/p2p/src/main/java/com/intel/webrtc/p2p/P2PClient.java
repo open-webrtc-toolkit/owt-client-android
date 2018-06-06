@@ -323,6 +323,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         if (!pcChannels.containsKey(peerId)) {
             return;
         }
+        sendSignalingMessage(peerId, CHAT_CLOSED, null, null);
         pcChannels.get(peerId).dispose();
         pcChannels.remove(peerId);
     }
