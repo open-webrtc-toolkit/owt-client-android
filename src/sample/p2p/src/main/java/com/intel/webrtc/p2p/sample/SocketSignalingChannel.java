@@ -116,7 +116,8 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
                 Pattern pattern = Pattern.compile("[0-9]*");
                 if (pattern.matcher(arg0[0].toString()).matches()) {
                     connectCallback.onFailure(
-                            new IcsError(IcsP2PError.get((Integer) arg0[0]).value, "Server error"));
+                            new IcsError(IcsP2PError.get(Integer.parseInt((String) arg0[0])).value,
+                                         "Server error"));
                 } else {
                     connectCallback.onFailure(new IcsError(arg0[0].toString()));
                 }
