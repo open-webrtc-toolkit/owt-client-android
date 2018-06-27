@@ -54,6 +54,7 @@ public class CallFragment extends Fragment implements View.OnClickListener {
     private CallFragmentListener mListener;
 
     private float dX, dY;
+    private boolean isPublishing = false;
     private View.OnTouchListener touchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
@@ -96,6 +97,7 @@ public class CallFragment extends Fragment implements View.OnClickListener {
                              Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_call, container, false);
         publishBtn = mView.findViewById(R.id.publish_btn);
+        publishBtn.setText(isPublishing ? R.string.unpublish : R.string.publish);
         publishBtn.setOnClickListener(this);
         backBtn = mView.findViewById(R.id.back_btn);
         backBtn.setOnClickListener(this);
@@ -137,11 +139,13 @@ public class CallFragment extends Fragment implements View.OnClickListener {
                 } else {
                     mListener.onUnpublishRequest(false);
                     publishBtn.setText(R.string.publish);
+                    isPublishing = false;
                     publishBtn.setEnabled(true);
                 }
                 break;
             case R.id.back_btn:
                 mListener.onUnpublishRequest(true);
+                isPublishing = false;
                 break;
         }
     }
@@ -150,6 +154,7 @@ public class CallFragment extends Fragment implements View.OnClickListener {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                isPublishing = succeed;
                 publishBtn.setText(succeed ? R.string.unpublish : R.string.publish);
                 publishBtn.setEnabled(true);
             }
