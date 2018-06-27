@@ -330,10 +330,11 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             @Override
             public void run() {
                 Log.d(TAG, "onRemoveStream");
-                DCHECK(remoteStreams.containsKey(mediaStream));
-                RemoteStream remoteStream = remoteStreams.get(mediaStream);
-                remoteStream.onEnded();
-                remoteStreams.remove(mediaStream);
+                if (remoteStreams.containsKey(mediaStream)) {
+                    RemoteStream remoteStream = remoteStreams.get(mediaStream);
+                    remoteStream.onEnded();
+                    remoteStreams.remove(mediaStream);
+                }
             }
         });
     }
