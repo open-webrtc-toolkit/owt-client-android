@@ -1,22 +1,13 @@
 # Intel Collaboration Suite for WebRTC Android Samples
 
-## Run samples with Android Studio IDE
+## Run samples with Android Studio
 
-    1.  Open Android Studio
-    2.  Import sample project by "Open an existing Android Studio project"
-    3.  Build and run samples
+In order to run sample project in the release package, dependency files need to be imported first.
 
-## Run samples with Gradle in the console
-
-    > cd /path/to/dist/samples/folder
-    > ./gradlew assembleRelease
-
-You will get the apk file in build/outputs/apk folder.
-**NOTE** sample/libs that samples depend on are using Linux format softlinks, please change them when building on Windows.
-
-## Conference Sample
-
-Conference sample sends HTTP post requests to basic example server to fetch the token, then connects to Conference Server. After connecting to the Conference Server, it will be able to publish streams captured from a camera or subscribe streams from remote sides. By default, the sample subscribes mixed stream from conference server.
+    1. Open Android Studio and open the sample project by 'Open File or Project'.
+    2. Import .aar dependencies by creating a new module 'Import .JAR/.AAR Package'.
+    3. Import libwebrtc.jar dependency by copying it into directory src/sample/utils/libs
+    4. Import .so dependencies by copying them into directory src/sample/utils/src/main/jniLibs.
 
 ### SSL/TLS
 

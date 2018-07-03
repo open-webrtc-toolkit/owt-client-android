@@ -17,9 +17,13 @@ android {
         }
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
-    compile 'woogeen:libjingle-so-debug:' + rootProject.ext.stackVersion
-    compile project(':src:sdk:base')
+    api 'woogeen:libjingle-so-debug:' + rootProject.ext.stackVersion
+    api project(':src:sdk:base')
 }

@@ -4,7 +4,6 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
 
-
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
@@ -16,36 +15,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
-    compile('io.socket:socket.io-client:0.8.3') {
+    testImplementation 'junit:junit:4.12'
+    compileOnly('io.socket:socket.io-client:0.8.3') {
         // excluding org.json which is provided by Android
         exclude group: 'org.json', module: 'json'
     }
-    compile project(':src:sdk:base')
-
-}
-
-android.libraryVariants.all { variant ->
-    def name = variant.buildType.name
-    def task = project.tasks.create "jar${name.capitalize()}", Jar
-    task.dependsOn variant.javaCompile
-    //Include Java classes
-    task.from variant.javaCompile.destinationDir
-    //Include dependent jars with some exceptions
-    task.from configurations.compile.findAll {
-        it.getName() != 'base-release.aar'\
-            && !it.getName().contains('libjingle')\
-            && !it.getName().startsWith('ok')\
-            && !it.getName().startsWith('socket.io')\
-            && !it.getName().startsWith('engine.io')\
-            && !it.getName().startsWith('junit')
-    }.collect {
-        it.isDirectory() ? it : zipTree(it)
-    }
-    artifacts.add('archives', task);
+    compileOnly project(':src:sdk:base')
 }
