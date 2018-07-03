@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity
     private static final int ICS_REQUEST_CODE = 100;
     static final int STATS_INTERVAL_MS = 5000;
 
+    private static boolean contextHasInitialized = false;
     private boolean fullScreen = false;
     private boolean settingsCurrent = false;
 
@@ -422,13 +423,16 @@ public class MainActivity extends AppCompatActivity
     private void initConferenceClient() {
         rootEglBase = EglBase.create();
 
-        ContextInitialization.create()
-                             .setApplicationContext(this)
-                             .setCodecHardwareAccelerationEnabled(true)
-                             .setVideoHardwareAccelerationOptions(
-                                     rootEglBase.getEglBaseContext(),
-                                     rootEglBase.getEglBaseContext())
-                             .initialize();
+        if (!contextHasInitialized) {
+            ContextInitialization.create()
+                                 .setApplicationContext(this)
+                                 .setCodecHardwareAccelerationEnabled(true)
+                                 .setVideoHardwareAccelerationOptions(
+                                         rootEglBase.getEglBaseContext(),
+                                         rootEglBase.getEglBaseContext())
+                                 .initialize();
+            contextHasInitialized = true;
+        }
 
         HttpUtils.setUpINSECURESSLContext();
         ConferenceClientConfiguration configuration
