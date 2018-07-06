@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.base;
 
+import android.annotation.SuppressLint;
+
 public final class MediaCodecs {
 
     public enum VideoCodec {
@@ -19,6 +21,7 @@ public final class MediaCodecs {
             name = codecName;
         }
 
+        @SuppressLint("DefaultLocale")
         public static VideoCodec get(String codecName) {
             // codec names returned from MCU are lower case but other clients using upper case.
             switch (codecName.toUpperCase()) {
@@ -67,6 +70,7 @@ public final class MediaCodecs {
             name = codecName;
         }
 
+        @SuppressLint("DefaultLocale")
         public static AudioCodec get(String codecName) {
             // codec names returned from MCU are lower case but other clients using upper case.
             switch (codecName.toUpperCase()) {

@@ -3,6 +3,7 @@
  */
 package com.intel.webrtc.base;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 
 import org.webrtc.EglBase;
@@ -11,10 +12,12 @@ import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
 
 final class PCFactoryProxy {
+    @SuppressLint("StaticFieldLeak")
     private static PeerConnectionFactory peerConnectionFactory;
     static int networkIgnoreMask = 0;
     //Enable Intel VP8 by default
     static String fieldTrials = "WebRTC-IntelVP8/Enabled/";
+    @SuppressLint("StaticFieldLeak")
     static Context context;
     static boolean hwAcc = true;
     static VideoEncoderFactory encoderFactory = null;
