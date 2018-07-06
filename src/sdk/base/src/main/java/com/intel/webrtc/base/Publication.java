@@ -6,9 +6,6 @@ package com.intel.webrtc.base;
 import org.webrtc.MediaStream;
 import org.webrtc.RTCStatsReport;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public abstract class Publication {
     ///@cond
     protected final String id;

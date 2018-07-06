@@ -64,6 +64,7 @@ import java.util.concurrent.Executors;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H264;
+import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H265;
 import static com.intel.webrtc.base.MediaCodecs.VideoCodec.VP8;
 import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
 import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
@@ -157,10 +158,12 @@ public class MainActivity extends AppCompatActivity
                              .initialize();
 
         VideoEncodingParameters h264 = new VideoEncodingParameters(H264);
+        VideoEncodingParameters h265 = new VideoEncodingParameters(H265);
         VideoEncodingParameters vp8 = new VideoEncodingParameters(VP8);
         P2PClientConfiguration configuration = P2PClientConfiguration.builder()
                                                                      .addVideoParameters(h264)
                                                                      .addVideoParameters(vp8)
+                                                                     .addVideoParameters(h265)
                                                                      .build();
 
         p2PClient = new P2PClient(configuration, new SocketSignalingChannel());

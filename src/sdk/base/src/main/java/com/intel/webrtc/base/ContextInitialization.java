@@ -8,7 +8,7 @@ import android.content.Context;
 import org.webrtc.EglBase;
 import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
-import org.webrtc.voiceengine.WebRtcAudioUtils;
+import org.webrtc.audio.AudioDeviceModule;
 
 import static com.intel.webrtc.base.CheckCondition.RCHECK;
 
@@ -29,7 +29,7 @@ public class ContextInitialization {
         LOOPBACK(1 << 4);
         //BLUETOOTH();
 
-        private int value;
+        private final int value;
 
         ///@cond
         NetworkType(int v) {
@@ -99,13 +99,13 @@ public class ContextInitialization {
     /**
      * Set the EGL context used by hardware video encoder and decoder.
      *
-     * @param localEglCtx  Must be the same as that used by VideoCapturerAndroid and any local video
-     *                     renderer.
+     * @param localEglCtx Must be the same as that used by VideoCapturerAndroid and any local video
+     * renderer.
      * @param remoteEglCtx Must be the same as that used by any remote video renderer.
      * @return ContextInitialization
      */
     public ContextInitialization setVideoHardwareAccelerationOptions(EglBase.Context localEglCtx,
-                                                                     EglBase.Context remoteEglCtx) {
+            EglBase.Context remoteEglCtx) {
         RCHECK(!initialized);
         PCFactoryProxy.localCtx = localEglCtx;
         PCFactoryProxy.remoteCtx = remoteEglCtx;
@@ -153,15 +153,14 @@ public class ContextInitialization {
     }
 
     /**
-     * Set the customized audio input.
+     * Set the customized audio device module.
      *
-     * @param generator AudioFrameGeneratorInterface to be set.
+     * @param adm AudioDeviceModule to be set.
      * @return ContextInitialization
      */
-    public ContextInitialization setAudioCustomizedInput(
-            IcsAudioRecord.AudioFrameGeneratorInterface generator) {
+    public ContextInitialization setCustomizedAudioDeviceModule(AudioDeviceModule adm) {
         RCHECK(!initialized);
-        WebRtcAudioUtils.setCustomizedAudioInput(generator);
+        PCFactoryProxy.adm = adm;
         return this;
     }
 

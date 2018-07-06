@@ -108,17 +108,14 @@ public final class Subscription implements MuteEventObserver {
             client.triggerCallback(callback, new IcsError("Wrong state"));
             return;
         }
-        Ack ack = new Ack() {
-            @Override
-            public void call(Object... args) {
-                if (args[0].equals("ok")) {
-                    onStatusUpdated(trackKind, false);
-                    if (callback != null) {
-                        callback.onSuccess(null);
-                    }
-                } else {
-                    client.triggerCallback(callback, new IcsError(args[1].toString()));
+        Ack ack = args -> {
+            if (args[0].equals("ok")) {
+                onStatusUpdated(trackKind, false);
+                if (callback != null) {
+                    callback.onSuccess(null);
                 }
+            } else {
+                client.triggerCallback(callback, new IcsError(args[1].toString()));
             }
         };
 
@@ -144,17 +141,14 @@ public final class Subscription implements MuteEventObserver {
             client.triggerCallback(callback, new IcsError(0, "Wrong state"));
             return;
         }
-        Ack ack = new Ack() {
-            @Override
-            public void call(Object... args) {
-                if (args[0].equals("ok")) {
-                    onStatusUpdated(trackKind, true);
-                    if (callback != null) {
-                        callback.onSuccess(null);
-                    }
-                } else {
-                    client.triggerCallback(callback, new IcsError(args[1].toString()));
+        Ack ack = args -> {
+            if (args[0].equals("ok")) {
+                onStatusUpdated(trackKind, true);
+                if (callback != null) {
+                    callback.onSuccess(null);
                 }
+            } else {
+                client.triggerCallback(callback, new IcsError(args[1].toString()));
             }
         };
 
@@ -199,16 +193,13 @@ public final class Subscription implements MuteEventObserver {
             client.triggerCallback(callback, new IcsError(e.getMessage()));
         }
 
-        client.sendSignalingMessage("subscription-control", msg, new Ack() {
-            @Override
-            public void call(Object... args) {
-                if (args[0].equals("ok")) {
-                    if (callback != null) {
-                        callback.onSuccess(null);
-                    }
-                } else {
-                    client.triggerCallback(callback, new IcsError(args[1].toString()));
+        client.sendSignalingMessage("subscription-control", msg, args -> {
+            if (args[0].equals("ok")) {
+                if (callback != null) {
+                    callback.onSuccess(null);
                 }
+            } else {
+                client.triggerCallback(callback, new IcsError(args[1].toString()));
             }
         });
     }

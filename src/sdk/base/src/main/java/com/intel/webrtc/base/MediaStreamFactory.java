@@ -21,7 +21,7 @@ final class MediaStreamFactory {
     private AudioSource sharedAudioSource;
     private int audioSourceRef = 0;
 
-    private HashMap<String, VideoSource> unsharedVideoSources = new HashMap<>();
+    private final HashMap<String, VideoSource> unsharedVideoSources = new HashMap<>();
 
     private MediaStreamFactory() {}
 

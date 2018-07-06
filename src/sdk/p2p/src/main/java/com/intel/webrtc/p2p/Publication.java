@@ -72,12 +72,9 @@ public final class Publication extends com.intel.webrtc.base.Publication {
     @Override
     public void getStats(final ActionCallback<RTCStatsReport> callback) {
         if (!pcChannel.disposed()) {
-            pcChannel.getConnectionStats(new RTCStatsCollectorCallback() {
-                @Override
-                public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
-                    if (callback != null) {
-                        callback.onSuccess(rtcStatsReport);
-                    }
+            pcChannel.getConnectionStats(rtcStatsReport -> {
+                if (callback != null) {
+                    callback.onSuccess(rtcStatsReport);
                 }
             });
         } else {

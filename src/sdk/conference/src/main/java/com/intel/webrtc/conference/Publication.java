@@ -91,16 +91,13 @@ public final class Publication extends com.intel.webrtc.base.Publication
             client.triggerCallback(callback, new IcsError("Wrong state"));
             return;
         }
-        Ack ack = new Ack() {
-            @Override
-            public void call(Object... args) {
-                if (args[0].equals("ok")) {
-                    if (callback != null) {
-                        callback.onSuccess(null);
-                    }
-                } else {
-                    client.triggerCallback(callback, new IcsError(args[1].toString()));
+        Ack ack = args -> {
+            if (args[0].equals("ok")) {
+                if (callback != null) {
+                    callback.onSuccess(null);
                 }
+            } else {
+                client.triggerCallback(callback, new IcsError(args[1].toString()));
             }
         };
 
@@ -126,16 +123,13 @@ public final class Publication extends com.intel.webrtc.base.Publication
             client.triggerCallback(callback, new IcsError("Wrong state"));
             return;
         }
-        Ack ack = new Ack() {
-            @Override
-            public void call(Object... args) {
-                if (args[0].equals("ok")) {
-                    if (callback != null) {
-                        callback.onSuccess(null);
-                    }
-                } else {
-                    client.triggerCallback(callback, new IcsError(args[1].toString()));
+        Ack ack = args -> {
+            if (args[0].equals("ok")) {
+                if (callback != null) {
+                    callback.onSuccess(null);
                 }
+            } else {
+                client.triggerCallback(callback, new IcsError(args[1].toString()));
             }
         };
 

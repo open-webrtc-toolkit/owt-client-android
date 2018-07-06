@@ -15,7 +15,7 @@ public final class MediaCodecs {
         ;
 
         ///@cond
-        String name;
+        final String name;
 
         VideoCodec(String codecName) {
             name = codecName;
@@ -47,7 +47,7 @@ public final class MediaCodecs {
         MAIN("main"),
         HIGH("high");
 
-        String profile;
+        final String profile;
 
         H264Profile(String profile) {
             this.profile = profile;
@@ -64,7 +64,7 @@ public final class MediaCodecs {
         ;
 
         ///@cond
-        String name;
+        final String name;
 
         AudioCodec(String codecName) {
             name = codecName;

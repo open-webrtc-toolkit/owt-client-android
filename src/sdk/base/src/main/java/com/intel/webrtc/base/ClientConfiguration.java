@@ -4,7 +4,6 @@
 package com.intel.webrtc.base;
 
 import org.webrtc.PeerConnection.RTCConfiguration;
-import org.webrtc.PeerConnection.IceServer;
 
 import java.util.LinkedList;
 
@@ -13,10 +12,12 @@ public abstract class ClientConfiguration {
     // default RTCConfiguration will contain an empty IceServer list.
     public final RTCConfiguration rtcConfiguration;
 
-    protected ClientConfiguration(RTCConfiguration rtcConfiguration) {
-        this.rtcConfiguration =
-                rtcConfiguration == null ? new RTCConfiguration(new LinkedList<IceServer>())
-                                         : rtcConfiguration;
+    protected ClientConfiguration(RTCConfiguration rtcConf) {
+        if (rtcConf == null) {
+            rtcConf = new RTCConfiguration(new LinkedList<>());
+            rtcConf.enableDtlsSrtp = true;
+        }
+        this.rtcConfiguration = rtcConf;
     }
 }
 ///@endcond

@@ -18,7 +18,7 @@ public abstract class MediaConstraints {
         AUDIO_AND_VIDEO("av");
 
         ///@cond
-        public String kind;
+        public final String kind;
         ///@endcond
 
         TrackKind(String kind) {

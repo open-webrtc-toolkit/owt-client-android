@@ -20,8 +20,8 @@ public final class PublishOptions {
      * Builder for building up a PublishOptions.
      */
     public static class Builder {
-        List<AudioEncodingParameters> audioEncodingParameters = new ArrayList<>();
-        List<VideoEncodingParameters> videoEncodingParameters = new ArrayList<>();
+        final List<AudioEncodingParameters> audioEncodingParameters = new ArrayList<>();
+        final List<VideoEncodingParameters> videoEncodingParameters = new ArrayList<>();
 
         Builder() {
         }

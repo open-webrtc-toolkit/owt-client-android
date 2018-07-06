@@ -21,7 +21,7 @@ public interface VideoCapturer extends org.webrtc.VideoCapturer {
 
     /**
      * Fps of the video capturer.
-     * @return
+     * @return fps
      */
     int getFps();
 

@@ -63,15 +63,15 @@ public abstract class PeerConnectionChannel
     public final String key;
     protected PeerConnection peerConnection;
     protected final PeerConnectionChannelObserver observer;
-    protected ExecutorService pcExecutor = Executors.newSingleThreadExecutor();
-    protected ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService pcExecutor = Executors.newSingleThreadExecutor();
+    protected final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
     protected PeerConnection.SignalingState signalingState;
     protected PeerConnection.IceConnectionState iceConnectionState;
     protected DataChannel localDataChannel;
 
     private MediaConstraints sdpConstraints;
     private SessionDescription localSdp;
-    private List<IceCandidate> queuedRemoteCandidates;
+    private final List<IceCandidate> queuedRemoteCandidates;
     private final Object remoteIceLock = new Object();
 
     protected List<VideoCodec> videoCodecs;
@@ -83,8 +83,8 @@ public abstract class PeerConnectionChannel
     private final Object disposeLock = new Object();
 
     protected PeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
-                                    boolean enableVideo, boolean enableAudio,
-                                    PeerConnectionChannelObserver observer) {
+            boolean enableVideo, boolean enableAudio,
+            PeerConnectionChannelObserver observer) {
         this.key = key;
         this.observer = observer;
 
@@ -95,12 +95,7 @@ public abstract class PeerConnectionChannel
                 new KeyValuePair("OfferToReceiveAudio", String.valueOf(enableAudio)));
         sdpConstraints.mandatory.add(
                 new KeyValuePair("OfferToReceiveVideo", String.valueOf(enableVideo)));
-
-        MediaConstraints mediaConstraints = new MediaConstraints();
-        mediaConstraints.optional.add(new KeyValuePair("DtlsSrtpKeyAgreement", "true"));
-
-        peerConnection = PCFactoryProxy.instance()
-                                       .createPeerConnection(configuration, mediaConstraints, this);
+        peerConnection = PCFactoryProxy.instance().createPeerConnection(configuration, this);
         RCHECK(peerConnection);
     }
 
@@ -117,29 +112,23 @@ public abstract class PeerConnectionChannel
 
     protected void createOffer() {
         DCHECK(pcExecutor);
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                Log.d(TAG, "create offer");
-                peerConnection.createOffer(PeerConnectionChannel.this, sdpConstraints);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            Log.d(TAG, "create offer");
+            peerConnection.createOffer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
 
     protected void createAnswer() {
         DCHECK(pcExecutor);
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                Log.d(TAG, "creating answer");
-                peerConnection.createAnswer(PeerConnectionChannel.this, sdpConstraints);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            Log.d(TAG, "creating answer");
+            peerConnection.createAnswer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
 
@@ -147,8 +136,8 @@ public abstract class PeerConnectionChannel
         String signalingType = data.getString("type");
         if (signalingType.equals("candidates")) {
             IceCandidate candidate = new IceCandidate(data.getString("sdpMid"),
-                                                      data.getInt("sdpMLineIndex"),
-                                                      data.getString("candidate"));
+                    data.getInt("sdpMLineIndex"),
+                    data.getString("candidate"));
             addOrQueueCandidate(candidate);
         } else if (signalingType.equals("offer") || signalingType.equals("answer")) {
             String sdpString = data.getString("sdp");
@@ -182,88 +171,70 @@ public abstract class PeerConnectionChannel
         synchronized (remoteIceLock) {
             Log.d(TAG, "drain candidates ");
             for (final IceCandidate candidate : queuedRemoteCandidates) {
-                pcExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (disposed()) {
-                            return;
-                        }
-                        Log.d(TAG, "add ice candidate");
-                        peerConnection.addIceCandidate(candidate);
-                        queuedRemoteCandidates.remove(candidate);
+                pcExecutor.execute(() -> {
+                    if (disposed()) {
+                        return;
                     }
+                    Log.d(TAG, "add ice candidate");
+                    peerConnection.addIceCandidate(candidate);
+                    queuedRemoteCandidates.remove(candidate);
                 });
             }
         }
     }
 
     private void setRemoteDescription(final SessionDescription remoteDescription) {
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteDescription);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteDescription);
         });
     }
 
     protected void addStream(final MediaStream mediaStream) {
         DCHECK(mediaStream);
         DCHECK(pcExecutor);
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                Log.d(TAG, "add stream.");
-                peerConnection.addStream(mediaStream);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            Log.d(TAG, "add stream.");
+            peerConnection.addStream(mediaStream);
         });
     }
 
     protected void removeStream(final MediaStream mediaStream) {
         DCHECK(pcExecutor);
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                Log.d(TAG, "remove stream");
-                peerConnection.removeStream(mediaStream);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            Log.d(TAG, "remove stream");
+            peerConnection.removeStream(mediaStream);
         });
     }
 
     protected void createDataChannel() {
         DCHECK(pcExecutor);
         DCHECK(localDataChannel == null);
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                DataChannel.Init init = new DataChannel.Init();
-                localDataChannel = peerConnection.createDataChannel("ICS", init);
-                localDataChannel.registerObserver(PeerConnectionChannel.this);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            DataChannel.Init init = new DataChannel.Init();
+            localDataChannel = peerConnection.createDataChannel("ICS", init);
+            localDataChannel.registerObserver(PeerConnectionChannel.this);
         });
     }
 
     public void getConnectionStats(final RTCStatsCollectorCallback callback) {
         DCHECK(pcExecutor);
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                peerConnection.getStats(callback);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            peerConnection.getStats(callback);
         });
     }
 
@@ -287,7 +258,7 @@ public abstract class PeerConnectionChannel
     }
 
     private SessionDescription preferCodec(SessionDescription originalSdp,
-                                           LinkedHashSet<String> preferredCodecs, boolean video) {
+            LinkedHashSet<String> preferredCodecs, boolean video) {
         String[] lines = originalSdp.description.split("\r\n");
         ArrayList<String> newLines = new ArrayList<>();
 
@@ -303,7 +274,7 @@ public abstract class PeerConnectionChannel
                 String payloadType = line.split(" ")[0].split(":")[1];
                 String codecName = line.split(" ")[1].split("/")[0];
                 boolean typeMismatched = video ? VideoCodec.get(codecName) == VideoCodec.INVALID
-                                               : AudioCodec.get(codecName) == AudioCodec.INVALID;
+                        : AudioCodec.get(codecName) == AudioCodec.INVALID;
                 boolean codecPreferred = preferredCodecs.contains(codecName);
                 boolean rtxPreferred = codecName.equals("rtx")
                         && containsValue(preferredPayloadTypes, lines[i + 1].split("apt=")[1]);
@@ -330,13 +301,13 @@ public abstract class PeerConnectionChannel
 
         if (!video && audioMLineIndex != -1) {
             newLines.set(audioMLineIndex, changeMLine(newLines.get(audioMLineIndex),
-                                                      preferredCodecs,
-                                                      preferredPayloadTypes));
+                    preferredCodecs,
+                    preferredPayloadTypes));
         }
         if (video && videoMLineIndex != -1) {
             newLines.set(videoMLineIndex, changeMLine(newLines.get(videoMLineIndex),
-                                                      preferredCodecs,
-                                                      preferredPayloadTypes));
+                    preferredCodecs,
+                    preferredPayloadTypes));
         }
         String newSdp = joinString(newLines, "\r\n", true);
 
@@ -355,7 +326,7 @@ public abstract class PeerConnectionChannel
     }
 
     private void putEntry(HashMap<String, ArrayList<String>> payloadTypes, String key,
-                          String value) {
+            String value) {
         if (payloadTypes.containsKey(key)) {
             payloadTypes.get(key).add(value);
         } else {
@@ -366,12 +337,11 @@ public abstract class PeerConnectionChannel
     }
 
     private String changeMLine(String mLine, LinkedHashSet<String> preferredCodecs,
-                               HashMap<String, ArrayList<String>> preferredPayloadTypes) {
+            HashMap<String, ArrayList<String>> preferredPayloadTypes) {
         List<String> oldMLineParts = Arrays.asList(mLine.split(" "));
         List<String> mLineHeader = oldMLineParts.subList(0, 3);
 
-        ArrayList<String> newMLineParts = new ArrayList<>();
-        newMLineParts.addAll(mLineHeader);
+        ArrayList<String> newMLineParts = new ArrayList<>(mLineHeader);
         for (String preferredCodec : preferredCodecs) {
             if (preferredPayloadTypes.containsKey(preferredCodec)) {
                 newMLineParts.addAll(preferredPayloadTypes.get(preferredCodec));
@@ -439,16 +409,13 @@ public abstract class PeerConnectionChannel
     }
 
     protected void dispose() {
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (disposeLock) {
-                    disposed = true;
-                    if (peerConnection != null) {
-                        peerConnection.dispose();
-                    }
-                    peerConnection = null;
+        pcExecutor.execute(() -> {
+            synchronized (disposeLock) {
+                disposed = true;
+                if (peerConnection != null) {
+                    peerConnection.dispose();
                 }
+                peerConnection = null;
             }
         });
     }
@@ -466,24 +433,18 @@ public abstract class PeerConnectionChannel
             localSdp = preferCodecs(localSdp, true);
         }
 
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed) {
-                    return;
-                }
-                observer.onLocalDescription(key, localSdp);
+        callbackExecutor.execute(() -> {
+            if (disposed) {
+                return;
             }
+            observer.onLocalDescription(key, localSdp);
         });
 
-        pcExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed) {
-                    return;
-                }
-                peerConnection.setLocalDescription(PeerConnectionChannel.this, localSdp);
+        pcExecutor.execute(() -> {
+            if (disposed) {
+                return;
             }
+            peerConnection.setLocalDescription(PeerConnectionChannel.this, localSdp);
         });
     }
 
@@ -530,12 +491,9 @@ public abstract class PeerConnectionChannel
         if (disposed) {
             return;
         }
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                localDataChannel = dataChannel;
-                localDataChannel.registerObserver(PeerConnectionChannel.this);
-            }
+        callbackExecutor.execute(() -> {
+            localDataChannel = dataChannel;
+            localDataChannel.registerObserver(PeerConnectionChannel.this);
         });
     }
 
@@ -556,18 +514,15 @@ public abstract class PeerConnectionChannel
         if (disposed) {
             return;
         }
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (localDataChannel.state() == DataChannel.State.OPEN) {
-                    for (int i = 0; i < queuedMessage.size(); i++) {
-                        ByteBuffer byteBuffer = ByteBuffer.wrap(
-                                queuedMessage.get(i).getBytes(Charset.forName("UTF-8")));
-                        DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, false);
-                        localDataChannel.send(buffer);
-                    }
-                    queuedMessage.clear();
+        callbackExecutor.execute(() -> {
+            if (localDataChannel.state() == DataChannel.State.OPEN) {
+                for (int i = 0; i < queuedMessage.size(); i++) {
+                    ByteBuffer byteBuffer = ByteBuffer.wrap(
+                            queuedMessage.get(i).getBytes(Charset.forName("UTF-8")));
+                    DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, false);
+                    localDataChannel.send(buffer);
                 }
+                queuedMessage.clear();
             }
         });
     }
@@ -577,15 +532,12 @@ public abstract class PeerConnectionChannel
         if (disposed) {
             return;
         }
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                ByteBuffer data = buffer.data;
-                final byte[] bytes = new byte[data.capacity()];
-                data.get(bytes);
-                String message = new String(bytes);
-                observer.onDataChannelMessage(key, message);
-            }
+        callbackExecutor.execute(() -> {
+            ByteBuffer data = buffer.data;
+            final byte[] bytes = new byte[data.capacity()];
+            data.get(bytes);
+            String message = new String(bytes);
+            observer.onDataChannelMessage(key, message);
         });
     }
 

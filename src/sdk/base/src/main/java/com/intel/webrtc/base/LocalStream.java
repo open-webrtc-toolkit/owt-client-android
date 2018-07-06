@@ -5,13 +5,7 @@ package com.intel.webrtc.base;
 
 import com.intel.webrtc.base.MediaConstraints.AudioTrackConstraints;
 
-import org.webrtc.VideoSink;
-import org.webrtc.voiceengine.WebRtcAudioManager;
-import org.webrtc.voiceengine.WebRtcAudioUtils;
-
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-import static com.intel.webrtc.base.Stream.StreamSourceInfo.AudioSourceInfo.FILE;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo.AudioSourceInfo.MIC;
 
 /**
@@ -41,17 +35,16 @@ public final class LocalStream extends Stream {
     /**
      * Create a LocalStream with a video track and an audio track.
      *
-     * @param videoCapturer         VideoCapturer that the video content is captured from.
+     * @param videoCapturer VideoCapturer that the video content is captured from.
      * @param audioMediaConstraints Audio options for the audio track.
      */
     public LocalStream(VideoCapturer videoCapturer,
-                       AudioTrackConstraints audioMediaConstraints) {
+            AudioTrackConstraints audioMediaConstraints) {
+        //TODO: update audio source info.
         streamSourceInfo = new StreamSourceInfo(
-                videoCapturer == null ? null : videoCapturer.getVideoSource(),
-                audioMediaConstraints == null ? null : WebRtcAudioUtils.getAudioGenerator() == null
-                                                       ? MIC : FILE);
+                videoCapturer == null ? null : videoCapturer.getVideoSource(), MIC);
         mediaStream = MediaStreamFactory.instance().createMediaStream(videoCapturer,
-                                                                      audioMediaConstraints);
+                audioMediaConstraints);
         resolutionWidth = videoCapturer == null ? 0 : videoCapturer.getWidth();
         resolutionHeight = videoCapturer == null ? 0 : videoCapturer.getHeight();
         frameRate = videoCapturer == null ? 0 : videoCapturer.getFps();
@@ -65,7 +58,7 @@ public final class LocalStream extends Stream {
     @Override
     public String id() {
         DCHECK(mediaStream);
-        return mediaStream.label();
+        return mediaStream.getId();
     }
 
     /**
@@ -76,7 +69,7 @@ public final class LocalStream extends Stream {
     public void dispose() {
         DCHECK(mediaStream);
         if (hasVideo()) {
-            MediaStreamFactory.instance().onVideoSourceRelease(mediaStream.label());
+            MediaStreamFactory.instance().onVideoSourceRelease(mediaStream.getId());
         }
         if (hasAudio()) {
             MediaStreamFactory.instance().onAudioSourceRelease();

@@ -3,14 +3,9 @@
  */
 package com.intel.webrtc.base;
 
-import org.webrtc.VideoRenderer;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
 
 /**
  * RemoteStream is a Stream that sent to the current client from remote client.

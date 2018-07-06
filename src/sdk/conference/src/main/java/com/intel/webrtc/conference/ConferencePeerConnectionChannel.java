@@ -6,7 +6,6 @@ package com.intel.webrtc.conference;
 import com.intel.webrtc.base.AudioCodecParameters;
 import com.intel.webrtc.base.AudioEncodingParameters;
 import com.intel.webrtc.base.LocalStream;
-import com.intel.webrtc.base.MediaConstraints;
 import com.intel.webrtc.base.PeerConnectionChannel;
 import com.intel.webrtc.base.Stream;
 import com.intel.webrtc.base.VideoCodecParameters;
@@ -24,7 +23,7 @@ import static com.intel.webrtc.base.CheckCondition.DCHECK;
 
 final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     private boolean remoteSdpSet = false;
-    private List<IceCandidate> queuedLocalCandidates;
+    private final List<IceCandidate> queuedLocalCandidates;
     Stream stream;
     MuteEventObserver muteEventObserver;
 
@@ -104,56 +103,36 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
 
     @Override
     public void onCreateFailure(final String error) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                observer.onError(key, error);
-            }
-        });
+        callbackExecutor.execute(() -> observer.onError(key, error));
     }
 
     @Override
     public void onSetFailure(final String error) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                observer.onError(key, error);
-            }
-        });
+        callbackExecutor.execute(() -> observer.onError(key, error));
     }
 
     @Override
     public void onSignalingChange(final PeerConnection.SignalingState signalingState) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                ConferencePeerConnectionChannel.this.signalingState = signalingState;
-            }
-        });
+        callbackExecutor.execute(
+                () -> ConferencePeerConnectionChannel.this.signalingState = signalingState);
     }
 
     @Override
     public void onIceConnectionChange(final PeerConnection.IceConnectionState iceConnectionState) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (iceConnectionState == PeerConnection.IceConnectionState.CLOSED) {
-                    observer.onError(key, "");
-                }
+        callbackExecutor.execute(() -> {
+            if (iceConnectionState == PeerConnection.IceConnectionState.CLOSED) {
+                observer.onError(key, "");
             }
         });
     }
 
     @Override
     public void onIceCandidate(final IceCandidate iceCandidate) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (remoteSdpSet) {
-                    observer.onIceCandidate(key, iceCandidate);
-                } else {
-                    queuedLocalCandidates.add(iceCandidate);
-                }
+        callbackExecutor.execute(() -> {
+            if (remoteSdpSet) {
+                observer.onIceCandidate(key, iceCandidate);
+            } else {
+                queuedLocalCandidates.add(iceCandidate);
             }
         });
     }
@@ -161,23 +140,15 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     @Override
     public void onAddStream(final MediaStream mediaStream) {
         DCHECK(stream);
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                ((RemoteStream) stream).setMediaStream(mediaStream);
-                observer.onAddStream(key, (com.intel.webrtc.base.RemoteStream) stream);
-            }
+        callbackExecutor.execute(() -> {
+            ((RemoteStream) stream).setMediaStream(mediaStream);
+            observer.onAddStream(key, (com.intel.webrtc.base.RemoteStream) stream);
         });
     }
 
     @Override
     public void onRemoveStream(MediaStream mediaStream) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                ((RemoteStream) stream).onEnded();
-            }
-        });
+        callbackExecutor.execute(() -> ((RemoteStream) stream).onEnded());
     }
 
     @Override

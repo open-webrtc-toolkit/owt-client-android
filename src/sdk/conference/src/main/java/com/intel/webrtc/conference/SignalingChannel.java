@@ -77,15 +77,12 @@ final class SignalingChannel {
     private final Listener connectErrorCallback = new Listener() {
         @Override
         public void call(final Object... args) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    String msg = extractMsg(0, args);
-                    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                        observer.onRoomConnectFailed("Socket.IO connected failed: " + msg);
-                        if (loggedIn) {
-                            triggerDisconnected();
-                        }
+            executor.execute(() -> {
+                String msg = extractMsg(0, args);
+                if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                    observer.onRoomConnectFailed("Socket.IO connected failed: " + msg);
+                    if (loggedIn) {
+                        triggerDisconnected();
                     }
                 }
             });
@@ -96,35 +93,24 @@ final class SignalingChannel {
     private final Listener reconnectingCallback = new Listener() {
         @Override
         public void call(Object... args) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    reconnectAttempts++;
-                    //trigger onReconnecting, ONLY when already logged in and first time to reconnect
-                    if (loggedIn && reconnectAttempts == 1) {
-                        observer.onReconnecting();
-                    }
+            executor.execute(() -> {
+                reconnectAttempts++;
+                //trigger onReconnecting, ONLY when already logged in and first time to reconnect
+                if (loggedIn && reconnectAttempts == 1) {
+                    observer.onReconnecting();
                 }
             });
         }
     };
 
-    private final Listener disconnectCallback = new Listener() {
-        @Override
-        public void call(Object... args) {
-            triggerDisconnected();
-        }
-    };
+    private final Listener disconnectCallback = args -> triggerDisconnected();
 
     private final Listener progressCallback = new Listener() {
         @Override
         public void call(final Object... args) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    JSONObject msg = (JSONObject) args[0];
-                    observer.onProgressMessage(msg);
-                }
+            executor.execute(() -> {
+                JSONObject msg = (JSONObject) args[0];
+                observer.onProgressMessage(msg);
             });
         }
     };
@@ -132,24 +118,21 @@ final class SignalingChannel {
     private final Listener participantCallback = new Listener() {
         @Override
         public void call(final Object... args) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    JSONObject msg = (JSONObject) args[0];
-                    try {
-                        switch (msg.getString("action")) {
-                            case "join":
-                                observer.onParticipantJoined(msg.getJSONObject("data"));
-                                break;
-                            case "leave":
-                                observer.onParticipantLeft(msg.getString("data"));
-                                break;
-                            default:
-                                DCHECK(false);
-                        }
-                    } catch (JSONException e) {
-                        DCHECK(false);
+            executor.execute(() -> {
+                JSONObject msg = (JSONObject) args[0];
+                try {
+                    switch (msg.getString("action")) {
+                        case "join":
+                            observer.onParticipantJoined(msg.getJSONObject("data"));
+                            break;
+                        case "leave":
+                            observer.onParticipantLeft(msg.getString("data"));
+                            break;
+                        default:
+                            DCHECK(false);
                     }
+                } catch (JSONException e) {
+                    DCHECK(false);
                 }
             });
         }
@@ -158,32 +141,29 @@ final class SignalingChannel {
     private final Listener streamCallback = new Listener() {
         @Override
         public void call(final Object... args) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        JSONObject msg = (JSONObject) args[0];
-                        String status = msg.getString("status");
-                        String streamId = msg.getString("id");
-                        switch (status) {
-                            case "add":
-                                JSONObject data = msg.getJSONObject("data");
-                                RemoteStream remoteStream = new RemoteStream(data);
-                                observer.onStreamAdded(remoteStream);
-                                break;
-                            case "remove":
-                                observer.onStreamRemoved(streamId);
-                                break;
-                            case "update":
-                                observer.onStreamUpdated(streamId, msg.getJSONObject("data"));
-                                break;
-                            default:
-                                DCHECK(false);
-                        }
-
-                    } catch (JSONException e) {
-                        DCHECK(e);
+            executor.execute(() -> {
+                try {
+                    JSONObject msg = (JSONObject) args[0];
+                    String status = msg.getString("status");
+                    String streamId = msg.getString("id");
+                    switch (status) {
+                        case "add":
+                            JSONObject data = msg.getJSONObject("data");
+                            RemoteStream remoteStream = new RemoteStream(data);
+                            observer.onStreamAdded(remoteStream);
+                            break;
+                        case "remove":
+                            observer.onStreamRemoved(streamId);
+                            break;
+                        case "update":
+                            observer.onStreamUpdated(streamId, msg.getJSONObject("data"));
+                            break;
+                        default:
+                            DCHECK(false);
                     }
+
+                } catch (JSONException e) {
+                    DCHECK(e);
                 }
             });
         }
@@ -192,25 +172,19 @@ final class SignalingChannel {
     private final Listener textCallback = new Listener() {
         @Override
         public void call(final Object... args) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    JSONObject data = (JSONObject) args[0];
-                    try {
-                        observer.onTextMessage(data.getString("from"), data.getString("message"));
-                    } catch (JSONException e) {
-                        DCHECK(false);
-                    }
+            executor.execute(() -> {
+                JSONObject data = (JSONObject) args[0];
+                try {
+                    observer.onTextMessage(data.getString("from"), data.getString("message"));
+                } catch (JSONException e) {
+                    DCHECK(false);
                 }
             });
         }
     };
 
-    private final Listener dropCallback = new Listener() {
-        @Override
-        public void call(Object... args) {
-            //TODO
-        }
+    private final Listener dropCallback = args -> {
+        //TODO
     };
 
     SignalingChannel(String token, SignalingChannelObserver observer) {
@@ -220,48 +194,45 @@ final class SignalingChannel {
 
     void connect(final ConferenceClientConfiguration configuration) {
         DCHECK(executor);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    DCHECK(token);
-                    JSONObject jsonToken = new JSONObject(
-                            new String(android.util.Base64.decode(token, Base64.DEFAULT)));
+        executor.execute(() -> {
+            try {
+                DCHECK(token);
+                JSONObject jsonToken = new JSONObject(
+                        new String(Base64.decode(token, Base64.DEFAULT)));
 
-                    boolean isSecure = jsonToken.getBoolean("secure");
-                    String host = jsonToken.getString("host");
-                    final String url = (isSecure ? "https" : "http") + "://" + host;
+                boolean isSecure = jsonToken.getBoolean("secure");
+                String host = jsonToken.getString("host");
+                final String url = (isSecure ? "https" : "http") + "://" + host;
 
-                    IO.Options opt = new IO.Options();
-                    opt.forceNew = true;
-                    opt.reconnection = true;
-                    opt.reconnectionAttempts = MAX_RECONNECT_ATTEMPTS;
-                    opt.secure = isSecure;
-                    if (configuration.sslContext != null) {
-                        opt.sslContext = configuration.sslContext;
-                    }
-                    if (configuration.hostnameVerifier != null) {
-                        opt.hostnameVerifier = configuration.hostnameVerifier;
-                    }
-
-                    socketClient = IO.socket(url, opt);
-
-                    socketClient.on(Socket.EVENT_CONNECT, connectedCallback)
-                                .on(Socket.EVENT_CONNECT_ERROR, connectErrorCallback)
-                                .on(Socket.EVENT_RECONNECTING, reconnectingCallback)
-                                .on(Socket.EVENT_DISCONNECT, disconnectCallback)
-                                .on("progress", progressCallback)
-                                .on("participant", participantCallback)
-                                .on("stream", streamCallback)
-                                .on("text", textCallback)
-                                .on("drop", dropCallback);
-                    socketClient.connect();
-
-                } catch (JSONException e) {
-                    observer.onRoomConnectFailed(e.getMessage());
-                } catch (URISyntaxException e) {
-                    observer.onRoomConnectFailed(e.getMessage());
+                IO.Options opt = new IO.Options();
+                opt.forceNew = true;
+                opt.reconnection = true;
+                opt.reconnectionAttempts = MAX_RECONNECT_ATTEMPTS;
+                opt.secure = isSecure;
+                if (configuration.sslContext != null) {
+                    opt.sslContext = configuration.sslContext;
                 }
+                if (configuration.hostnameVerifier != null) {
+                    opt.hostnameVerifier = configuration.hostnameVerifier;
+                }
+
+                socketClient = IO.socket(url, opt);
+
+                socketClient.on(Socket.EVENT_CONNECT, connectedCallback)
+                            .on(Socket.EVENT_CONNECT_ERROR, connectErrorCallback)
+                            .on(Socket.EVENT_RECONNECTING, reconnectingCallback)
+                            .on(Socket.EVENT_DISCONNECT, disconnectCallback)
+                            .on("progress", progressCallback)
+                            .on("participant", participantCallback)
+                            .on("stream", streamCallback)
+                            .on("text", textCallback)
+                            .on("drop", dropCallback);
+                socketClient.connect();
+
+            } catch (JSONException e) {
+                observer.onRoomConnectFailed(e.getMessage());
+            } catch (URISyntaxException e) {
+                observer.onRoomConnectFailed(e.getMessage());
             }
         });
     }
@@ -272,22 +243,14 @@ final class SignalingChannel {
         loginInfo.put("userAgent", new JSONObject(IcsConst.userAgent));
         loginInfo.put("protocol", IcsConst.PROTOCOL_VERSION);
 
-        socketClient.emit("login", loginInfo, new Ack() {
-            @Override
-            public void call(final Object... args) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (extractMsg(0, args).equals("ok")) {
-                            observer.onRoomConnected((JSONObject) args[1]);
-                        } else {
-                            observer.onRoomConnectFailed(extractMsg(1, args));
-                        }
-
-                    }
-                });
+        socketClient.emit("login", loginInfo, (Ack) args -> executor.execute(() -> {
+            if (extractMsg(0, args).equals("ok")) {
+                observer.onRoomConnected((JSONObject) args[1]);
+            } else {
+                observer.onRoomConnectFailed(extractMsg(1, args));
             }
-        });
+
+        }));
     }
 
     void disconnect() {

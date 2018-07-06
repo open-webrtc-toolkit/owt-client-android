@@ -104,7 +104,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         }
         currentMediaStream = GetMediaStream(localStream);
         RCHECK(currentMediaStream);
-        if (localStreams.containsKey(currentMediaStream.label())) {
+        if (localStreams.containsKey(currentMediaStream.getId())) {
             if (callback != null) {
                 callback.onFailure(
                         new IcsError(P2P_CLIENT_INVALID_STATE.value, "Duplicated stream."));
@@ -112,7 +112,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             return;
         }
 
-        localStreams.put(currentMediaStream.label(), localStream);
+        localStreams.put(currentMediaStream.getId(), localStream);
 
         CallbackInfo callbackInfo = new CallbackInfo(currentMediaStream, callback);
 
@@ -131,8 +131,8 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     }
 
     void unpublish(MediaStream mediaStream) {
-        DCHECK(localStreams.containsKey(mediaStream.label()));
-        localStreams.remove(mediaStream.label());
+        DCHECK(localStreams.containsKey(mediaStream.getId()));
+        localStreams.remove(mediaStream.getId());
         removeStream(mediaStream);
     }
 
@@ -257,122 +257,101 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     //All PeerConnection.Observer publishCallbacks should be pooled onto callbackExecutor.
     @Override
     public void onSignalingChange(final PeerConnection.SignalingState signalingState) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "onSignalingChange " + signalingState);
-                P2PPeerConnectionChannel.this.signalingState = signalingState;
-                if (signalingState == STABLE) {
-                    synchronized (negLock) {
-                        negotiating = false;
-                    }
-                    checkWaitingList();
+        callbackExecutor.execute(() -> {
+            Log.d(TAG, "onSignalingChange " + signalingState);
+            P2PPeerConnectionChannel.this.signalingState = signalingState;
+            if (signalingState == STABLE) {
+                synchronized (negLock) {
+                    negotiating = false;
                 }
+                checkWaitingList();
             }
         });
     }
 
     @Override
     public void onIceConnectionChange(final PeerConnection.IceConnectionState iceConnectionState) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "onIceConnectionChange " + iceConnectionState);
-                P2PPeerConnectionChannel.this.iceConnectionState = iceConnectionState;
-                if (iceConnectionState == CONNECTED || iceConnectionState == COMPLETED) {
-                    checkWaitingList();
+        callbackExecutor.execute(() -> {
+            Log.d(TAG, "onIceConnectionChange " + iceConnectionState);
+            P2PPeerConnectionChannel.this.iceConnectionState = iceConnectionState;
+            if (iceConnectionState == CONNECTED || iceConnectionState == COMPLETED) {
+                checkWaitingList();
+            }
+            if (iceConnectionState == PeerConnection.IceConnectionState.FAILED) {
+                for (RemoteStream remoteStream : remoteStreams.values()) {
+                    remoteStream.onEnded();
                 }
-                if (iceConnectionState == PeerConnection.IceConnectionState.FAILED) {
-                    for (RemoteStream remoteStream : remoteStreams.values()) {
-                        remoteStream.onEnded();
-                    }
-                    for (Publication publication : publications) {
-                        publication.onEnded();
-                    }
-                    remoteStreams.clear();
-                    publications.clear();
+                for (Publication publication : publications) {
+                    publication.onEnded();
                 }
+                remoteStreams.clear();
+                publications.clear();
             }
         });
     }
 
     @Override
     public void onIceCandidate(final IceCandidate iceCandidate) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "onIceCandidate");
-                observer.onIceCandidate(key, iceCandidate);
-            }
+        callbackExecutor.execute(() -> {
+            Log.d(TAG, "onIceCandidate");
+            observer.onIceCandidate(key, iceCandidate);
         });
     }
 
     @Override
     public void onAddStream(final MediaStream mediaStream) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "onAddStream");
-                RemoteStream remoteStream = new RemoteStream(key, mediaStream);
-                remoteStreams.put(mediaStream, remoteStream);
-                if (iceConnectionState == CONNECTED || iceConnectionState == COMPLETED) {
-                    observer.onAddStream(key, remoteStream);
-                } else {
-                    pendingAckRemoteStreams.add(remoteStream);
-                }
+        callbackExecutor.execute(() -> {
+            Log.d(TAG, "onAddStream");
+            RemoteStream remoteStream = new RemoteStream(key, mediaStream);
+            remoteStreams.put(mediaStream, remoteStream);
+            if (iceConnectionState == CONNECTED || iceConnectionState == COMPLETED) {
+                observer.onAddStream(key, remoteStream);
+            } else {
+                pendingAckRemoteStreams.add(remoteStream);
             }
         });
     }
 
     @Override
     public void onRemoveStream(final MediaStream mediaStream) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "onRemoveStream");
-                if (remoteStreams.containsKey(mediaStream)) {
-                    RemoteStream remoteStream = remoteStreams.get(mediaStream);
-                    remoteStream.onEnded();
-                    remoteStreams.remove(mediaStream);
-                }
+        callbackExecutor.execute(() -> {
+            Log.d(TAG, "onRemoveStream");
+            if (remoteStreams.containsKey(mediaStream)) {
+                RemoteStream remoteStream = remoteStreams.get(mediaStream);
+                remoteStream.onEnded();
+                remoteStreams.remove(mediaStream);
             }
         });
     }
 
     @Override
     public void onRenegotiationNeeded() {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                Log.d(TAG, "onRenegotiationNeeded");
-                processNegotiationRequest();
+        callbackExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
+            Log.d(TAG, "onRenegotiationNeeded");
+            processNegotiationRequest();
         });
     }
 
     @Override
     public void onSetSuccess() {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (disposed()) {
-                    return;
-                }
-                Log.d(TAG, "onSetSuccess ");
-                if (signalingState == PeerConnection.SignalingState.HAVE_REMOTE_OFFER
-                        || peerConnection.getLocalDescription() == null) {
-                    isCaller = false;
-                    createAnswer();
-                } else {
-                    drainRemoteCandidates();
+        callbackExecutor.execute(() -> {
+            if (disposed()) {
+                return;
+            }
+            Log.d(TAG, "onSetSuccess ");
+            if (signalingState == PeerConnection.SignalingState.HAVE_REMOTE_OFFER
+                    || peerConnection.getLocalDescription() == null) {
+                isCaller = false;
+                createAnswer();
+            } else {
+                drainRemoteCandidates();
 
-                    if (currentMediaStream != null) {
-                        setMaxBitrate(currentMediaStream);
-                        currentMediaStream = null;
-                    }
+                if (currentMediaStream != null) {
+                    setMaxBitrate(currentMediaStream);
+                    currentMediaStream = null;
                 }
             }
         });
@@ -380,33 +359,27 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
 
     @Override
     public void onCreateFailure(final String error) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (CallbackInfo callbackInfo : publishCallbacks.values()) {
-                    if (callbackInfo.callback != null) {
-                        callbackInfo.callback.onFailure(new IcsError(P2P_WEBRTC_SDP.value, error));
-                    }
+        callbackExecutor.execute(() -> {
+            for (CallbackInfo callbackInfo : publishCallbacks.values()) {
+                if (callbackInfo.callback != null) {
+                    callbackInfo.callback.onFailure(new IcsError(P2P_WEBRTC_SDP.value, error));
                 }
-                publishCallbacks.clear();
-                observer.onError(key, error);
             }
+            publishCallbacks.clear();
+            observer.onError(key, error);
         });
     }
 
     @Override
     public void onSetFailure(final String error) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (CallbackInfo callbackInfo : publishCallbacks.values()) {
-                    if (callbackInfo.callback != null) {
-                        callbackInfo.callback.onFailure(new IcsError(P2P_WEBRTC_SDP.value, error));
-                    }
+        callbackExecutor.execute(() -> {
+            for (CallbackInfo callbackInfo : publishCallbacks.values()) {
+                if (callbackInfo.callback != null) {
+                    callbackInfo.callback.onFailure(new IcsError(P2P_WEBRTC_SDP.value, error));
                 }
-                publishCallbacks.clear();
-                observer.onError(key, error);
             }
+            publishCallbacks.clear();
+            observer.onError(key, error);
         });
     }
 }

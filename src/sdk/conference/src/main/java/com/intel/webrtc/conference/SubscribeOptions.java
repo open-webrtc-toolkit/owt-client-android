@@ -29,7 +29,7 @@ public final class SubscribeOptions {
          * Builder for building up a AudioSubscriptionConstraints.
          */
         public static class Builder {
-            private List<AudioCodecParameters> codecs = new ArrayList<>();
+            private final List<AudioCodecParameters> codecs = new ArrayList<>();
 
             Builder() {
             }
@@ -84,7 +84,7 @@ public final class SubscribeOptions {
          * Builder for building up a VideoSubscriptionConstraints.
          */
         public static class Builder {
-            private List<VideoCodecParameters> codecs = new ArrayList<>();
+            private final List<VideoCodecParameters> codecs = new ArrayList<>();
             private int resolutionWidth = 0, resolutionHeight = 0;
             private int frameRate = 0, keyFrameInterval = 0;
             private double bitrateMultiplier = 0;
@@ -222,7 +222,8 @@ public final class SubscribeOptions {
      * Builder for building up a SubscribeOptions.
      */
     public static class Builder {
-        private boolean subAudio, subVideo;
+        private final boolean subAudio;
+        private final boolean subVideo;
         private AudioSubscriptionConstraints audioOption;
         private VideoSubscriptionConstraints videoOption;
 

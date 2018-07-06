@@ -344,12 +344,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
             return;
         }
         P2PPeerConnectionChannel pcChannel = pcChannels.get(peerId);
-        pcChannel.getConnectionStats(new RTCStatsCollectorCallback() {
-            @Override
-            public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
-                triggerCallback(callback, rtcStatsReport);
-            }
-        });
+        pcChannel.getConnectionStats(rtcStatsReport -> triggerCallback(callback, rtcStatsReport));
     }
 
     /**
@@ -425,12 +420,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         if (callback == null) {
             return;
         }
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                callback.onSuccess(result);
-            }
-        });
+        callbackExecutor.execute(() -> callback.onSuccess(result));
     }
 
     private <T> void triggerCallback(final ActionCallback<T> callback, final IcsError e) {
@@ -438,12 +428,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         if (callback == null) {
             return;
         }
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                callback.onFailure(e);
-            }
-        });
+        callbackExecutor.execute(() -> callback.onFailure(e));
     }
 
     private P2PPeerConnectionChannel getPeerConnection(String peerId) {
@@ -522,37 +507,34 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                                       final Object message, final ActionCallback<Void> callback) {
         DCHECK(signalingExecutor);
         DCHECK(signalingChannel);
-        signalingExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
+        signalingExecutor.execute(() -> {
 
-                try {
-                    JSONObject messageObject = new JSONObject();
-                    messageObject.put("type", type.type);
-                    messageObject.put("data", message);
+            try {
+                JSONObject messageObject = new JSONObject();
+                messageObject.put("type", type.type);
+                messageObject.put("data", message);
 
-                    signalingChannel.sendMessage(peerId, messageObject.toString(),
-                                                 new ActionCallback<Void>() {
-                                                     @Override
-                                                     public void onSuccess(Void result) {
-                                                         if (callback != null) {
-                                                             callback.onSuccess(null);
-                                                         }
+                signalingChannel.sendMessage(peerId, messageObject.toString(),
+                                             new ActionCallback<Void>() {
+                                                 @Override
+                                                 public void onSuccess(Void result) {
+                                                     if (callback != null) {
+                                                         callback.onSuccess(null);
                                                      }
+                                                 }
 
-                                                     @Override
-                                                     public void onFailure(IcsError error) {
-                                                         if (callback != null) {
-                                                             callback.onFailure(error);
-                                                         }
+                                                 @Override
+                                                 public void onFailure(IcsError error) {
+                                                     if (callback != null) {
+                                                         callback.onFailure(error);
                                                      }
-                                                 });
-                } catch (JSONException e) {
-                    triggerCallback(callback, new IcsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value,
-                                                           e.getMessage()));
-                }
-
+                                                 }
+                                             });
+            } catch (JSONException e) {
+                triggerCallback(callback, new IcsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value,
+                                                       e.getMessage()));
             }
+
         });
     }
 
@@ -687,14 +669,11 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
         ((RemoteStream) remoteStream).setInfo(streamSourceInfo);
 
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
+        callbackExecutor.execute(() -> {
 
-                synchronized (observers) {
-                    for (P2PClientObserver observer : observers) {
-                        observer.onStreamAdded((RemoteStream) remoteStream);
-                    }
+            synchronized (observers) {
+                for (P2PClientObserver observer : observers) {
+                    observer.onStreamAdded((RemoteStream) remoteStream);
                 }
             }
         });
@@ -711,12 +690,9 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
             JSONObject msg = new JSONObject(message);
             Long msgId = msg.getLong("id");
             final String msgData = msg.getString("data");
-            callbackExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    for (P2PClientObserver observer : observers) {
-                        observer.onDataReceived(peerId, msgData);
-                    }
+            callbackExecutor.execute(() -> {
+                for (P2PClientObserver observer : observers) {
+                    observer.onDataReceived(peerId, msgData);
                 }
             });
 
@@ -804,13 +780,10 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         DCHECK(callbackExecutor);
         changeConnectionStatus(ServerConnectionStatus.DISCONNECTED);
         closeInternal();
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (observers) {
-                    for (P2PClientObserver observer : observers) {
-                        observer.onServerDisconnected();
-                    }
+        callbackExecutor.execute(() -> {
+            synchronized (observers) {
+                for (P2PClientObserver observer : observers) {
+                    observer.onServerDisconnected();
                 }
             }
         });

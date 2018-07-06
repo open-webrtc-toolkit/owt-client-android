@@ -13,7 +13,6 @@ import com.intel.webrtc.base.Stream.StreamSourceInfo.VideoSourceInfo;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
 import static com.intel.webrtc.conference.JsonUtils.getObj;
 import static com.intel.webrtc.conference.JsonUtils.getString;
 

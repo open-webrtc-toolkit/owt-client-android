@@ -10,7 +10,7 @@ public final class CheckCondition {
     private static final String TAG = "ICS";
     //TODO: As project variable BuildConfig.DEBUG isn't reliable reportedly, we set up ourselves.
     //TODO: DO NOT forget to disable ICS_DEBUG when exporting release jar files.
-    private static boolean ICS_DEBUG = true;
+    private static final boolean ICS_DEBUG = true;
 
     public static void DCHECK(Object obj) {
         if (ICS_DEBUG) {

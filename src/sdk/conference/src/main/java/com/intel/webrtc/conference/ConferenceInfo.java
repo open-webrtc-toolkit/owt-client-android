@@ -19,8 +19,8 @@ public final class ConferenceInfo {
     private Participant self;
 
     //package access here, as the getter methods return an immutable list.
-    List<Participant> participants;
-    List<RemoteStream> remoteStreams;
+    final List<Participant> participants;
+    final List<RemoteStream> remoteStreams;
 
     ConferenceInfo(JSONObject conferenceInfo) throws JSONException {
         participants = Collections.synchronizedList(new ArrayList<Participant>());

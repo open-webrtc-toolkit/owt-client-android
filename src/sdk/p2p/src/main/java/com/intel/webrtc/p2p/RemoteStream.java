@@ -8,7 +8,7 @@ import org.webrtc.MediaStream;
 public final class RemoteStream extends com.intel.webrtc.base.RemoteStream {
 
     RemoteStream(String origin, MediaStream mediaStream) {
-        super(mediaStream.label(), origin);
+        super(mediaStream.getId(), origin);
         this.mediaStream = mediaStream;
     }
 

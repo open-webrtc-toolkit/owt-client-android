@@ -26,7 +26,7 @@ public abstract class Stream {
             MIXED("mixed");
 
             ///@cond
-            public String type;
+            public final String type;
 
             VideoSourceInfo(String type) {
                 this.type = type;
@@ -56,7 +56,7 @@ public abstract class Stream {
             MIXED("mixed");
 
             ///@cond
-            public String type;
+            public final String type;
 
             AudioSourceInfo(String type) {
                 this.type = type;
@@ -97,7 +97,7 @@ public abstract class Stream {
     ///@endcond
     StreamSourceInfo streamSourceInfo;
     private HashMap<String, String> attributes;
-    private ConcurrentHashMap<VideoRenderer.Callbacks, VideoRenderer> renderers
+    private final ConcurrentHashMap<VideoRenderer.Callbacks, VideoRenderer> renderers
             = new ConcurrentHashMap<>();
 
     abstract public String id();

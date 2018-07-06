@@ -8,11 +8,9 @@ import android.util.Log;
 import com.intel.webrtc.base.ActionCallback;
 import com.intel.webrtc.base.IcsError;
 import com.intel.webrtc.base.LocalStream;
-import com.intel.webrtc.base.MediaConstraints;
 import com.intel.webrtc.base.PeerConnectionChannel;
 import com.intel.webrtc.base.MediaConstraints.TrackKind;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
@@ -83,16 +81,16 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     private SignalingChannel signalingChannel;
     private ConferenceInfo conferenceInfo;
     private ActionCallback<ConferenceInfo> joinCallback;
-    private ExecutorService signalingExecutor = Executors.newSingleThreadExecutor();
-    private ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService signalingExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
     //key: publication/subscription id.
-    private ConcurrentHashMap<String, ConferencePeerConnectionChannel> pcChannels;
+    private final ConcurrentHashMap<String, ConferencePeerConnectionChannel> pcChannels;
     //key: subscription id.
-    private ConcurrentHashMap<String, ActionCallback<Subscription>> subCallbacks;
-    private ConcurrentHashMap<String, ActionCallback<Publication>> pubCallbacks;
+    private final ConcurrentHashMap<String, ActionCallback<Subscription>> subCallbacks;
+    private final ConcurrentHashMap<String, ActionCallback<Publication>> pubCallbacks;
     private RoomStates roomStates;
     private final Object statusLock = new Object();
-    private List<ConferenceClientObserver> observers;
+    private final List<ConferenceClientObserver> observers;
 
     /**
      * Constructor for ConferenceClient.
@@ -166,12 +164,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             return;
         }
         DCHECK(signalingChannel);
-        sendSignalingMessage("logout", null, new Ack() {
-            @Override
-            public void call(Object... args) {
-                DCHECK(extractMsg(0, args).equals("ok"));
-                signalingChannel.disconnect();
-            }
+        sendSignalingMessage("logout", null, args -> {
+            DCHECK(extractMsg(0, args).equals("ok"));
+            signalingChannel.disconnect();
         });
     }
 
@@ -204,24 +199,21 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         }
         RCHECK(localStream);
 
-        Ack publishAck = new Ack() {
-            @Override
-            public void call(Object... args) {
-                if (extractMsg(0, args).equals("ok")) {
-                    try {
-                        JSONObject result = (JSONObject) args[1];
-                        ConferencePeerConnectionChannel pcChannel =
-                                getPeerConnection(result.getString("id"), false, false);
-                        if (callback != null) {
-                            pubCallbacks.put(result.getString("id"), callback);
-                        }
-                        pcChannel.publish(localStream, options);
-                    } catch (JSONException e) {
-                        triggerCallback(callback, new IcsError(e.getMessage()));
+        Ack publishAck = args -> {
+            if (extractMsg(0, args).equals("ok")) {
+                try {
+                    JSONObject result = (JSONObject) args[1];
+                    ConferencePeerConnectionChannel pcChannel =
+                            getPeerConnection(result.getString("id"), false, false);
+                    if (callback != null) {
+                        pubCallbacks.put(result.getString("id"), callback);
                     }
-                } else {
-                    triggerCallback(callback, new IcsError(extractMsg(1, args)));
+                    pcChannel.publish(localStream, options);
+                } catch (JSONException e) {
+                    triggerCallback(callback, new IcsError(e.getMessage()));
                 }
+            } else {
+                triggerCallback(callback, new IcsError(extractMsg(1, args)));
             }
         };
 
@@ -281,15 +273,12 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             JSONObject unpubMsg = new JSONObject();
             unpubMsg.put("id", publicationId);
 
-            sendSignalingMessage("unpublish", unpubMsg, new Ack() {
-                @Override
-                public void call(Object... args) {
-                    DCHECK(extractMsg(0, args).equals("ok"));
-                    ConferencePeerConnectionChannel pcChannel = getPeerConnection(publicationId);
-                    pcChannel.dispose();
-                    pcChannels.remove(publicationId);
-                    publication.onEnded();
-                }
+            sendSignalingMessage("unpublish", unpubMsg, args -> {
+                DCHECK(extractMsg(0, args).equals("ok"));
+                ConferencePeerConnectionChannel pcChannel = getPeerConnection(publicationId);
+                pcChannel.dispose();
+                pcChannels.remove(publicationId);
+                publication.onEnded();
             });
 
         } catch (JSONException e) {
@@ -329,31 +318,28 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         final boolean subVideo = options == null || options.videoOption != null;
         final boolean subAudio = options == null || options.audioOption != null;
 
-        Ack subscribeAck = new Ack() {
-            @Override
-            public void call(Object... args) {
-                if (extractMsg(0, args).equals("ok")) {
-                    for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
-                        if (pcChannel.stream.id().equals(remoteStream.id())) {
-                            triggerCallback(callback,
-                                            new IcsError("Remote stream has been subscribed."));
-                            return;
-                        }
+        Ack subscribeAck = args -> {
+            if (extractMsg(0, args).equals("ok")) {
+                for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
+                    if (pcChannel.stream.id().equals(remoteStream.id())) {
+                        triggerCallback(callback,
+                                        new IcsError("Remote stream has been subscribed."));
+                        return;
                     }
-                    JSONObject result = (JSONObject) args[1];
-                    try {
-                        ConferencePeerConnectionChannel pcChannel =
-                                getPeerConnection(result.getString("id"), subVideo, subAudio);
-                        if (callback != null) {
-                            subCallbacks.put(result.getString("id"), callback);
-                        }
-                        pcChannel.subscribe(remoteStream, options);
-                    } catch (JSONException e) {
-                        triggerCallback(callback, new IcsError(e.getMessage()));
-                    }
-                } else {
-                    triggerCallback(callback, new IcsError(extractMsg(1, args)));
                 }
+                JSONObject result = (JSONObject) args[1];
+                try {
+                    ConferencePeerConnectionChannel pcChannel =
+                            getPeerConnection(result.getString("id"), subVideo, subAudio);
+                    if (callback != null) {
+                        subCallbacks.put(result.getString("id"), callback);
+                    }
+                    pcChannel.subscribe(remoteStream, options);
+                } catch (JSONException e) {
+                    triggerCallback(callback, new IcsError(e.getMessage()));
+                }
+            } else {
+                triggerCallback(callback, new IcsError(extractMsg(1, args)));
             }
         };
 
@@ -398,15 +384,12 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             JSONObject unpubMsg = new JSONObject();
             unpubMsg.put("id", subscriptionId);
 
-            sendSignalingMessage("unsubscribe", unpubMsg, new Ack() {
-                @Override
-                public void call(Object... args) {
-                    if (pcChannels.containsKey(subscriptionId)) {
-                        ConferencePeerConnectionChannel pcChannel = getPeerConnection(subscriptionId);
-                        pcChannel.dispose();
-                        pcChannels.remove(subscriptionId);
-                        subscription.onEnded();
-                    }
+            sendSignalingMessage("unsubscribe", unpubMsg, args -> {
+                if (pcChannels.containsKey(subscriptionId)) {
+                    ConferencePeerConnectionChannel pcChannel = getPeerConnection(subscriptionId);
+                    pcChannel.dispose();
+                    pcChannels.remove(subscriptionId);
+                    subscription.onEnded();
                 }
             });
 
@@ -448,21 +431,15 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             sendMsg.put("to", participantId == null ? "all" : participantId);
             sendMsg.put("message", message);
 
-            sendSignalingMessage("text", sendMsg, new Ack() {
-                @Override
-                public void call(Object... args) {
-                    if (extractMsg(0, args).equals("ok")) {
-                        callbackExecutor.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (callback != null) {
-                                    callback.onSuccess(null);
-                                }
-                            }
-                        });
-                    } else {
-                        triggerCallback(callback, new IcsError(extractMsg(1, args)));
-                    }
+            sendSignalingMessage("text", sendMsg, args -> {
+                if (extractMsg(0, args).equals("ok")) {
+                    callbackExecutor.execute(() -> {
+                        if (callback != null) {
+                            callback.onSuccess(null);
+                        }
+                    });
+                } else {
+                    triggerCallback(callback, new IcsError(extractMsg(1, args)));
                 }
             });
 
@@ -477,12 +454,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             return;
         }
         ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
-        pcChannel.getConnectionStats(new RTCStatsCollectorCallback() {
-            @Override
-            public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
-                if (callback != null) {
-                    callback.onSuccess(rtcStatsReport);
-                }
+        pcChannel.getConnectionStats(rtcStatsReport -> {
+            if (callback != null) {
+                callback.onSuccess(rtcStatsReport);
             }
         });
     }
@@ -533,12 +507,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         if (callback == null) {
             return;
         }
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                callback.onFailure(error);
-            }
-        });
+        callbackExecutor.execute(() -> callback.onFailure(error));
     }
 
     private String extractMsg(int position, Object... args) {
@@ -553,52 +522,41 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     void sendSignalingMessage(final String type, final JSONObject message, final Ack ack) {
         DCHECK(signalingExecutor);
         DCHECK(signalingChannel);
-        signalingExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                signalingChannel.sendMsg(type, message, ack);
-            }
-        });
+        signalingExecutor.execute(() -> signalingChannel.sendMsg(type, message, ack));
     }
 
     private void processAck(final String id) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (pubCallbacks.containsKey(id)) {
-                    ActionCallback<Publication> callback = pubCallbacks.get(id);
-                    ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
-                    Publication publication = new Publication(id, pcChannel.getMediaStream(),
-                                                              ConferenceClient.this);
-                    getPeerConnection(id).muteEventObserver = publication;
-                    callback.onSuccess(publication);
-                    pubCallbacks.remove(id);
-                    return;
-                }
-                if (subCallbacks.containsKey(id)) {
-                    ActionCallback<Subscription> callback = subCallbacks.get(id);
-                    Subscription subscription = new Subscription(id, ConferenceClient.this);
-                    getPeerConnection(id).muteEventObserver = subscription;
-                    callback.onSuccess(subscription);
-                    subCallbacks.remove(id);
-                }
+        callbackExecutor.execute(() -> {
+            if (pubCallbacks.containsKey(id)) {
+                ActionCallback<Publication> callback = pubCallbacks.get(id);
+                ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
+                Publication publication = new Publication(id, pcChannel.getMediaStream(),
+                                                          ConferenceClient.this);
+                getPeerConnection(id).muteEventObserver = publication;
+                callback.onSuccess(publication);
+                pubCallbacks.remove(id);
+                return;
+            }
+            if (subCallbacks.containsKey(id)) {
+                ActionCallback<Subscription> callback = subCallbacks.get(id);
+                Subscription subscription = new Subscription(id, ConferenceClient.this);
+                getPeerConnection(id).muteEventObserver = subscription;
+                callback.onSuccess(subscription);
+                subCallbacks.remove(id);
             }
         });
     }
 
     private void processError(final String id, final String errorMsg) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (pubCallbacks.containsKey(id)) {
-                    ActionCallback<Publication> callback = pubCallbacks.get(id);
-                    triggerCallback(callback, new IcsError(errorMsg));
-                    pubCallbacks.remove(id);
-                } else {
-                    ActionCallback<Subscription> callback = subCallbacks.get(id);
-                    triggerCallback(callback, new IcsError(errorMsg));
-                    subCallbacks.remove(id);
-                }
+        callbackExecutor.execute(() -> {
+            if (pubCallbacks.containsKey(id)) {
+                ActionCallback<Publication> callback = pubCallbacks.get(id);
+                triggerCallback(callback, new IcsError(errorMsg));
+                pubCallbacks.remove(id);
+            } else {
+                ActionCallback<Subscription> callback = subCallbacks.get(id);
+                triggerCallback(callback, new IcsError(errorMsg));
+                subCallbacks.remove(id);
             }
         });
     }
@@ -610,21 +568,18 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         DCHECK(callbackExecutor);
         changeRoomStatus(RoomStates.CONNECTED);
 
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                ConferenceInfo conferenceInfo;
-                try {
-                    if (joinCallback != null) {
-                        conferenceInfo = new ConferenceInfo(info);
-                        ConferenceClient.this.conferenceInfo = conferenceInfo;
-                        joinCallback.onSuccess(conferenceInfo);
-                    }
-                } catch (JSONException e) {
-                    triggerCallback(joinCallback, new IcsError(e.getMessage()));
+        callbackExecutor.execute(() -> {
+            ConferenceInfo conferenceInfo;
+            try {
+                if (joinCallback != null) {
+                    conferenceInfo = new ConferenceInfo(info);
+                    ConferenceClient.this.conferenceInfo = conferenceInfo;
+                    joinCallback.onSuccess(conferenceInfo);
                 }
-                joinCallback = null;
+            } catch (JSONException e) {
+                triggerCallback(joinCallback, new IcsError(e.getMessage()));
             }
+            joinCallback = null;
         });
     }
 
@@ -646,13 +601,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     public void onRoomDisconnected() {
         DCHECK(callbackExecutor);
         changeRoomStatus(RoomStates.DISCONNECTED);
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                closeInternal();
-                for (ConferenceClientObserver observer : observers) {
-                    observer.onServerDisconnected();
-                }
+        callbackExecutor.execute(() -> {
+            closeInternal();
+            for (ConferenceClientObserver observer : observers) {
+                observer.onServerDisconnected();
             }
         });
     }
@@ -682,40 +634,31 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onTextMessage(final String participantId, final String message) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (ConferenceClientObserver observer : observers) {
-                    observer.onMessageReceived(participantId, message);
-                }
+        callbackExecutor.execute(() -> {
+            for (ConferenceClientObserver observer : observers) {
+                observer.onMessageReceived(participantId, message);
             }
         });
     }
 
     @Override
     public void onStreamAdded(final RemoteStream remoteStream) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                conferenceInfo.remoteStreams.add(remoteStream);
-                for (ConferenceClientObserver observer : observers) {
-                    observer.onStreamAdded(remoteStream);
-                }
+        callbackExecutor.execute(() -> {
+            conferenceInfo.remoteStreams.add(remoteStream);
+            for (ConferenceClientObserver observer : observers) {
+                observer.onStreamAdded(remoteStream);
             }
         });
     }
 
     @Override
     public void onStreamRemoved(final String streamId) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                    if (remoteStream.id().equals(streamId)) {
-                        remoteStream.onEnded();
-                        conferenceInfo.remoteStreams.remove(remoteStream);
-                        break;
-                    }
+        callbackExecutor.execute(() -> {
+            for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                if (remoteStream.id().equals(streamId)) {
+                    remoteStream.onEnded();
+                    conferenceInfo.remoteStreams.remove(remoteStream);
+                    break;
                 }
             }
         });
@@ -723,76 +666,67 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onStreamUpdated(final String id, final JSONObject updateInfo) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    String field = updateInfo.getString("field");
-                    if (field.equals("video.layout")) {
-                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                            if (remoteStream.id().equals(id)) {
-                                ((RemoteMixedStream) remoteStream).updateRegions(
-                                        updateInfo.getJSONArray("value"));
-                            }
+        callbackExecutor.execute(() -> {
+            try {
+                String field = updateInfo.getString("field");
+                if (field.equals("video.layout")) {
+                    for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                        if (remoteStream.id().equals(id)) {
+                            ((RemoteMixedStream) remoteStream).updateRegions(
+                                    updateInfo.getJSONArray("value"));
                         }
-                    } else if (field.equals("audio.status") || field.equals("video.status")) {
-                        for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
-                            // For subscription id will be the RemoteStream id, for publication
-                            // the id will be publication id which is pc.key.
-                            if (pcChannel.stream.id().equals(id)
-                                    || pcChannel.key.equals(id)) {
-                                if (pcChannel.muteEventObserver != null) {
-                                    TrackKind trackKind = field.equals("audio.status")
-                                                          ? TrackKind.AUDIO : TrackKind.VIDEO;
-                                    boolean active = updateInfo.getString("value").equals("active");
-                                    pcChannel.muteEventObserver.onStatusUpdated(trackKind, active);
-                                }
-                            }
-                        }
-                    } else if (field.equals("activeInput")) {
-                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                            if (remoteStream.id().equals(id)) {
-                                ((RemoteMixedStream) remoteStream).updateActiveInput(
-                                        updateInfo.getString("value"));
+                    }
+                } else if (field.equals("audio.status") || field.equals("video.status")) {
+                    for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
+                        // For subscription id will be the RemoteStream id, for publication
+                        // the id will be publication id which is pc.key.
+                        if (pcChannel.stream.id().equals(id)
+                                || pcChannel.key.equals(id)) {
+                            if (pcChannel.muteEventObserver != null) {
+                                TrackKind trackKind = field.equals("audio.status")
+                                                      ? TrackKind.AUDIO : TrackKind.VIDEO;
+                                boolean active = updateInfo.getString("value").equals("active");
+                                pcChannel.muteEventObserver.onStatusUpdated(trackKind, active);
                             }
                         }
                     }
-                } catch (JSONException e) {
-                    DCHECK(e);
+                } else if (field.equals("activeInput")) {
+                    for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                        if (remoteStream.id().equals(id)) {
+                            ((RemoteMixedStream) remoteStream).updateActiveInput(
+                                    updateInfo.getString("value"));
+                        }
+                    }
                 }
+            } catch (JSONException e) {
+                DCHECK(e);
             }
         });
     }
 
     @Override
     public void onParticipantJoined(final JSONObject participantInfo) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Participant participant = new Participant(participantInfo);
-                    conferenceInfo.participants.add(participant);
-                    for (ConferenceClientObserver observer : observers) {
-                        observer.onParticipantJoined(participant);
-                    }
-                } catch (JSONException e) {
-                    DCHECK(false);
+        callbackExecutor.execute(() -> {
+            try {
+                Participant participant = new Participant(participantInfo);
+                conferenceInfo.participants.add(participant);
+                for (ConferenceClientObserver observer : observers) {
+                    observer.onParticipantJoined(participant);
                 }
+            } catch (JSONException e) {
+                DCHECK(false);
             }
         });
     }
 
     @Override
     public void onParticipantLeft(final String participantId) {
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (Participant participant : conferenceInfo.participants) {
-                    if (participant.id.equals(participantId)) {
-                        participant.onLeft();
-                        conferenceInfo.participants.remove(participant);
-                        break;
-                    }
+        callbackExecutor.execute(() -> {
+            for (Participant participant : conferenceInfo.participants) {
+                if (participant.id.equals(participantId)) {
+                    participant.onLeft();
+                    conferenceInfo.participants.remove(participant);
+                    break;
                 }
             }
         });
@@ -801,57 +735,51 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     //PeerConnectionChannelObserver
     @Override
     public void onIceCandidate(final String id, final IceCandidate candidate) {
-        signalingExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    JSONObject candidateObj = new JSONObject();
-                    candidateObj.put("sdpMLineIndex", candidate.sdpMLineIndex);
-                    candidateObj.put("sdpMid", candidate.sdpMid);
-                    candidateObj.put("candidate",
-                                     candidate.sdp.indexOf("a=") == 0 ? candidate.sdp
-                                                                      : "a=" + candidate.sdp);
+        signalingExecutor.execute(() -> {
+            try {
+                JSONObject candidateObj = new JSONObject();
+                candidateObj.put("sdpMLineIndex", candidate.sdpMLineIndex);
+                candidateObj.put("sdpMid", candidate.sdpMid);
+                candidateObj.put("candidate",
+                                 candidate.sdp.indexOf("a=") == 0 ? candidate.sdp
+                                                                  : "a=" + candidate.sdp);
 
-                    JSONObject candidateMsg = new JSONObject();
-                    candidateMsg.put("type", "candidate");
-                    candidateMsg.put("candidate", candidateObj);
+                JSONObject candidateMsg = new JSONObject();
+                candidateMsg.put("type", "candidate");
+                candidateMsg.put("candidate", candidateObj);
 
-                    JSONObject msg = new JSONObject();
-                    msg.put("id", id);
-                    msg.put("signaling", candidateMsg);
+                JSONObject msg = new JSONObject();
+                msg.put("id", id);
+                msg.put("signaling", candidateMsg);
 
-                    sendSignalingMessage("soac", msg, null);
-                } catch (JSONException e) {
-                    DCHECK(e);
-                }
+                sendSignalingMessage("soac", msg, null);
+            } catch (JSONException e) {
+                DCHECK(e);
             }
         });
     }
 
     @Override
     public void onLocalDescription(final String id, final SessionDescription localSdp) {
-        signalingExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    SessionDescription sdp =
-                            new SessionDescription(localSdp.type,
-                                                   localSdp.description.replaceAll(
-                                                           "a=ice-options:google-ice\r\n", ""));
-                    JSONObject sdpObj = new JSONObject();
-                    sdpObj.put("type", sdp.type.toString().toLowerCase(Locale.US));
-                    sdpObj.put("sdp", sdp.description);
+        signalingExecutor.execute(() -> {
+            try {
+                SessionDescription sdp =
+                        new SessionDescription(localSdp.type,
+                                               localSdp.description.replaceAll(
+                                                       "a=ice-options:google-ice\r\n", ""));
+                JSONObject sdpObj = new JSONObject();
+                sdpObj.put("type", sdp.type.toString().toLowerCase(Locale.US));
+                sdpObj.put("sdp", sdp.description);
 
-                    JSONObject msg = new JSONObject();
-                    msg.put("id", id);
-                    msg.put("signaling", sdpObj);
+                JSONObject msg = new JSONObject();
+                msg.put("id", id);
+                msg.put("signaling", sdpObj);
 
-                    sendSignalingMessage("soac", msg, null);
-                } catch (JSONException e) {
-                    DCHECK(e);
-                }
-
+                sendSignalingMessage("soac", msg, null);
+            } catch (JSONException e) {
+                DCHECK(e);
             }
+
         });
     }
 
@@ -861,17 +789,14 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             pcChannels.get(id).dispose();
             pcChannels.remove(id);
         }
-        callbackExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (pubCallbacks.containsKey(id)) {
-                    triggerCallback(pubCallbacks.get(id), new IcsError(0, errorMsg));
-                    pubCallbacks.remove(id);
-                }
-                if (subCallbacks.containsKey(id)) {
-                    triggerCallback(subCallbacks.get(id), new IcsError(0, errorMsg));
-                    subCallbacks.remove(id);
-                }
+        callbackExecutor.execute(() -> {
+            if (pubCallbacks.containsKey(id)) {
+                triggerCallback(pubCallbacks.get(id), new IcsError(0, errorMsg));
+                pubCallbacks.remove(id);
+            }
+            if (subCallbacks.containsKey(id)) {
+                triggerCallback(subCallbacks.get(id), new IcsError(0, errorMsg));
+                subCallbacks.remove(id);
             }
         });
     }

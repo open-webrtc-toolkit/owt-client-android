@@ -10,6 +10,8 @@ import org.webrtc.EglBase;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
+import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.LegacyAudioDeviceModule;
 
 final class PCFactoryProxy {
     @SuppressLint("StaticFieldLeak")
@@ -22,6 +24,7 @@ final class PCFactoryProxy {
     static boolean hwAcc = true;
     static VideoEncoderFactory encoderFactory = null;
     static VideoDecoderFactory decoderFactory = null;
+    static AudioDeviceModule adm = null;
     static EglBase.Context localCtx = null, remoteCtx = null;
 
     static PeerConnectionFactory instance() {
@@ -34,8 +37,14 @@ final class PCFactoryProxy {
             PeerConnectionFactory.initialize(initializationOptions);
             PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
             options.networkIgnoreMask = networkIgnoreMask;
-            peerConnectionFactory = new PeerConnectionFactory(options, encoderFactory,
-                                                              decoderFactory);
+            peerConnectionFactory = PeerConnectionFactory.builder()
+                    .setOptions(options)
+                    // TODO: currently using legacy adm
+                    .setAudioDeviceModule(adm == null ? new LegacyAudioDeviceModule() : adm)
+                    // TODO: currently using legacy factory by default
+                    .setVideoEncoderFactory(encoderFactory)
+                    .setVideoDecoderFactory(decoderFactory)
+                    .createPeerConnectionFactory();
             if (localCtx != null || remoteCtx != null) {
                 peerConnectionFactory.setVideoHwAccelerationOptions(localCtx, remoteCtx);
             }

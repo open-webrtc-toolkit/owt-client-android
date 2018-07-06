@@ -16,7 +16,7 @@ buildscript {
         buildToolsVersion = "28.0.0"
         minSdkVersion = 16
         targetSdkVersion = 26
-        stackVersion = "18.03.0608"
+        stackVersion = "18.07.0515"
     }
 }
 
