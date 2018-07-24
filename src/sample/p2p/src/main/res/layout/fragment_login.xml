@@ -1,9 +1,9 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_marginBottom="60dp"
-    tools:context="com.intel.webrtc.p2p.sample.LoginFragment">
+             xmlns:tools="http://schemas.android.com/tools"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:layout_marginBottom="60dp"
+             tools:context="com.intel.webrtc.p2p.sample.LoginFragment">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -23,7 +23,7 @@
                 android:text="@string/ics_p2p"
                 android:textColor="@color/colorPrimary"
                 android:textSize="50sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -40,14 +40,14 @@
                         android:layout_height="69dp"
                         android:gravity="center_vertical|center_horizontal|end"
                         android:text="Server "
-                        android:textSize="18sp" />
+                        android:textSize="18sp"/>
 
                     <EditText
                         android:id="@+id/server_url"
                         android:layout_width="230dp"
                         android:layout_height="wrap_content"
                         android:hint="@string/please_input_server_url"
-                        android:singleLine="true" />
+                        android:singleLine="true"/>
 
                 </LinearLayout>
 
@@ -68,14 +68,14 @@
                         android:layout_height="69dp"
                         android:gravity="center_vertical|center_horizontal|end"
                         android:text="@string/user_id"
-                        android:textSize="18sp" />
+                        android:textSize="18sp"/>
 
                     <EditText
                         android:id="@+id/my_id"
                         android:layout_width="230dp"
                         android:layout_height="wrap_content"
                         android:hint="@string/please_input_user_id"
-                        android:singleLine="true" />
+                        android:singleLine="true"/>
 
                 </LinearLayout>
 
@@ -94,12 +94,12 @@
                     android:layout_width="295dp"
                     android:layout_height="match_parent"
                     android:background="@color/colorPrimaryDark"
-                    android:text="@string/connect" />
+                    android:text="@string/connect"/>
 
                 <TextView
                     android:id="@+id/error_msg"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"/>
 
             </LinearLayout>
 
@@ -125,14 +125,14 @@
                             android:layout_height="69dp"
                             android:gravity="center_vertical|center_horizontal|end"
                             android:text="@string/peer_id"
-                            android:textSize="18sp" />
+                            android:textSize="18sp"/>
 
                         <EditText
                             android:id="@+id/peer_id"
                             android:layout_width="230dp"
                             android:layout_height="wrap_content"
                             android:hint="@string/please_input_peer_id"
-                            android:singleLine="true" />
+                            android:singleLine="true"/>
 
                     </LinearLayout>
 
@@ -151,7 +151,7 @@
                         android:layout_width="295dp"
                         android:layout_height="match_parent"
                         android:background="@color/colorPrimaryDark"
-                        android:text="@string/call" />
+                        android:text="@string/call"/>
                 </LinearLayout>
             </LinearLayout>
 

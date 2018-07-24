@@ -15,12 +15,11 @@ import java.util.List;
  * Information of the conference.
  */
 public final class ConferenceInfo {
-    private String id;
-    private Participant self;
-
     //package access here, as the getter methods return an immutable list.
     final List<Participant> participants;
     final List<RemoteStream> remoteStreams;
+    private String id;
+    private Participant self;
 
     ConferenceInfo(JSONObject conferenceInfo) throws JSONException {
         participants = Collections.synchronizedList(new ArrayList<Participant>());

@@ -3,8 +3,10 @@
  */
 package com.intel.webrtc.conference;
 
-import com.intel.webrtc.base.VideoCodecParameters;
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import com.intel.webrtc.base.AudioCodecParameters;
+import com.intel.webrtc.base.VideoCodecParameters;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,18 +14,51 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
 /**
  * Options for subscribing a RemoteStream. Subscribing a RemoteStream with the SubscribeOptions that
  * does not comply with its SubscriptionCapabilities may cause failure.
  */
 public final class SubscribeOptions {
 
+    public final AudioSubscriptionConstraints audioOption;
+    public final VideoSubscriptionConstraints videoOption;
+
+    private SubscribeOptions(AudioSubscriptionConstraints audioOption,
+            VideoSubscriptionConstraints videoOption) {
+        this.audioOption = audioOption;
+        this.videoOption = videoOption;
+    }
+
+    /**
+     * Get a Builder for creating a SubscribeOptions.
+     *
+     * @param subAudio whether to subscribe the audio track.
+     * @param subVideo whether to subscribe the video track.
+     * @return Builder
+     */
+    public static Builder builder(boolean subAudio, boolean subVideo) {
+        return new Builder(subAudio, subVideo);
+    }
+
     /**
      * Audio options for subscribing a RemoteStream.
      */
     public static class AudioSubscriptionConstraints {
+
+        final List<AudioCodecParameters> codecs;
+
+        private AudioSubscriptionConstraints(List<AudioCodecParameters> codecs) {
+            this.codecs = codecs;
+        }
+
+        /**
+         * Get a Builder for creating a AudioSubscriptionConstraints.
+         *
+         * @return AudioSubscriptionConstraints
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
 
         /**
          * Builder for building up a AudioSubscriptionConstraints.
@@ -58,27 +93,55 @@ public final class SubscribeOptions {
             }
         }
 
-        final List<AudioCodecParameters> codecs;
-
-        /**
-         * Get a Builder for creating a AudioSubscriptionConstraints.
-         *
-         * @return AudioSubscriptionConstraints
-         */
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        private AudioSubscriptionConstraints(List<AudioCodecParameters> codecs) {
-            this.codecs = codecs;
-        }
-
     }
 
     /**
      * Video options for subscribing a RemoteStream.
      */
     public static class VideoSubscriptionConstraints {
+
+        final List<VideoCodecParameters> codecs;
+        private int resolutionWidth = 0, resolutionHeight = 0;
+        private int frameRate = 0, keyFrameInterval = 0;
+        private double bitrateMultiplier = 0;
+
+        private VideoSubscriptionConstraints(List<VideoCodecParameters> codecs) {
+            this.codecs = codecs;
+        }
+
+        /**
+         * Get a Builder for creating a VideoSubscriptionConstraints.
+         *
+         * @return VideoSubscriptionConstraints
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        JSONObject generateOptionsMsg() throws JSONException {
+            JSONObject videoParams = new JSONObject();
+
+            if (resolutionWidth != 0 && resolutionHeight != 0) {
+                JSONObject reso = new JSONObject();
+                reso.put("width", resolutionWidth);
+                reso.put("height", resolutionHeight);
+                videoParams.put("resolution", reso);
+            }
+
+            if (frameRate != 0) {
+                videoParams.put("framerate", frameRate);
+            }
+
+            if (bitrateMultiplier != 0) {
+                videoParams.put("bitrate", "x" + bitrateMultiplier);
+            }
+
+            if (keyFrameInterval != 0) {
+                videoParams.put("keyFrameInterval", keyFrameInterval);
+            }
+
+            return videoParams;
+        }
 
         /**
          * Builder for building up a VideoSubscriptionConstraints.
@@ -96,7 +159,7 @@ public final class SubscribeOptions {
              * Set up the video resolution for subscribing a RemoteStream. Mandatory for
              * VideoSubscriptionConstraints.
              *
-             * @param width  resolution width.
+             * @param width resolution width.
              * @param height resolution height.
              * @return Builder
              */
@@ -173,49 +236,6 @@ public final class SubscribeOptions {
             }
 
         }
-
-        final List<VideoCodecParameters> codecs;
-        private int resolutionWidth = 0, resolutionHeight = 0;
-        private int frameRate = 0, keyFrameInterval = 0;
-        private double bitrateMultiplier = 0;
-
-        /**
-         * Get a Builder for creating a VideoSubscriptionConstraints.
-         *
-         * @return VideoSubscriptionConstraints
-         */
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        private VideoSubscriptionConstraints(List<VideoCodecParameters> codecs) {
-            this.codecs = codecs;
-        }
-
-        JSONObject generateOptionsMsg() throws JSONException {
-            JSONObject videoParams = new JSONObject();
-
-            if (resolutionWidth != 0 && resolutionHeight != 0) {
-                JSONObject reso = new JSONObject();
-                reso.put("width", resolutionWidth);
-                reso.put("height", resolutionHeight);
-                videoParams.put("resolution", reso);
-            }
-
-            if (frameRate != 0) {
-                videoParams.put("framerate", frameRate);
-            }
-
-            if (bitrateMultiplier != 0) {
-                videoParams.put("bitrate", "x" + bitrateMultiplier);
-            }
-
-            if (keyFrameInterval != 0) {
-                videoParams.put("keyFrameInterval", keyFrameInterval);
-            }
-
-            return videoParams;
-        }
     }
 
     /**
@@ -263,28 +283,8 @@ public final class SubscribeOptions {
             RCHECK(!subAudio || audioOption != null);
             RCHECK(!subVideo || videoOption != null);
             return new SubscribeOptions(subAudio ? audioOption : null,
-                                        subVideo ? videoOption : null);
+                    subVideo ? videoOption : null);
         }
-    }
-
-    public final AudioSubscriptionConstraints audioOption;
-    public final VideoSubscriptionConstraints videoOption;
-
-    /**
-     * Get a Builder for creating a SubscribeOptions.
-     *
-     * @param subAudio whether to subscribe the audio track.
-     * @param subVideo whether to subscribe the video track.
-     * @return Builder
-     */
-    public static Builder builder(boolean subAudio, boolean subVideo) {
-        return new Builder(subAudio, subVideo);
-    }
-
-    private SubscribeOptions(AudioSubscriptionConstraints audioOption,
-                             VideoSubscriptionConstraints videoOption) {
-        this.audioOption = audioOption;
-        this.videoOption = videoOption;
     }
 
 }

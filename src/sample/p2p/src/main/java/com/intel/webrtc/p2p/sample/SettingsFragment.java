@@ -33,10 +33,9 @@ import android.view.ViewGroup;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
-public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedChangeListener{
-    private RadioGroup cameraRG, resolutionRG;
-
+public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedChangeListener {
     boolean cameraFront = true, resolutionVGA = true;
+    private RadioGroup cameraRG, resolutionRG;
 
     public SettingsFragment() {
     }
@@ -48,7 +47,7 @@ public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedCh
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_settings, container, false);
         cameraRG = mView.findViewById(R.id.camera_rg);
         cameraRG.setOnCheckedChangeListener(this);

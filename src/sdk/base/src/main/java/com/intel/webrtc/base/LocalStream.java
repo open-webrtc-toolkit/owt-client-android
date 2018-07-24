@@ -3,10 +3,10 @@
  */
 package com.intel.webrtc.base;
 
-import com.intel.webrtc.base.MediaConstraints.AudioTrackConstraints;
-
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo.AudioSourceInfo.MIC;
+
+import com.intel.webrtc.base.MediaConstraints.AudioTrackConstraints;
 
 /**
  * LocalStream is a Stream that created by current client.

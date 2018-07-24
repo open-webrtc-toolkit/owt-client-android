@@ -13,16 +13,11 @@ import android.widget.TextView;
 
 public class ChatFragment extends Fragment implements View.OnClickListener {
 
-    public interface ChatFragmentListener {
-        void onSendMessage(String message);
-    }
-
     private ScrollView chatSV;
     private TextView chatTV;
     private EditText chatET;
     private Button sendBtn;
     private ChatFragmentListener mListener;
-
     private StringBuilder chatHistory = new StringBuilder();
 
     public ChatFragment() {
@@ -30,7 +25,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_chat, container, false);
         chatSV = mView.findViewById(R.id.chat_history);
         chatTV = mView.findViewById(R.id.chat_history_content);
@@ -49,7 +44,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             mListener = (ChatFragmentListener) context;
         } else {
             throw new RuntimeException(context.toString()
-                                               + " must implement LoginFragmentListener");
+                    + " must implement LoginFragmentListener");
         }
     }
 
@@ -67,13 +62,12 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
 
     private void updateMessageView() {
         if (getActivity() != null) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    chatTV.setText(chatHistory.toString());
-                }
-            });
+            getActivity().runOnUiThread(() -> chatTV.setText(chatHistory.toString()));
         }
+    }
+
+    public interface ChatFragmentListener {
+        void onSendMessage(String message);
     }
 
 }

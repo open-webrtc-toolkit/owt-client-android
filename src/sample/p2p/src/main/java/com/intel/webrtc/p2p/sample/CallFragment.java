@@ -39,20 +39,10 @@ import org.webrtc.SurfaceViewRenderer;
 
 public class CallFragment extends Fragment implements View.OnClickListener {
 
-    public interface CallFragmentListener {
-        void onReady(SurfaceViewRenderer localRenderer, SurfaceViewRenderer remoteRenderer);
-
-        void onPublishRequest();
-
-        void onUnpublishRequest(boolean stop);
-    }
-
     private static final String TAG = "ICS_P2P";
     private SurfaceViewRenderer fullRenderer, smallRenderer;
     private Button publishBtn, backBtn;
-
     private CallFragmentListener mListener;
-
     private float dX, dY;
     private boolean isPublishing = false;
     private View.OnTouchListener touchListener = new View.OnTouchListener() {
@@ -66,17 +56,19 @@ public class CallFragment extends Fragment implements View.OnClickListener {
                         break;
                     case MotionEvent.ACTION_MOVE:
                         v.animate()
-                         .x(event.getRawX() + dX)
-                         .y(event.getRawY() + dY)
-                         .setDuration(0)
-                         .start();
+                                .x(event.getRawX() + dX)
+                                .y(event.getRawY() + dY)
+                                .setDuration(0)
+                                .start();
                         break;
                     case MotionEvent.ACTION_UP:
                         v.animate()
-                         .x(event.getRawX() + dX >= event.getRawY() + dY ? event.getRawX() + dX : 0)
-                         .y(event.getRawX() + dX >= event.getRawY() + dY ? 0 : event.getRawY() + dY)
-                         .setDuration(10)
-                         .start();
+                                .x(event.getRawX() + dX >= event.getRawY() + dY ? event.getRawX()
+                                        + dX : 0)
+                                .y(event.getRawX() + dX >= event.getRawY() + dY ? 0
+                                        : event.getRawY() + dY)
+                                .setDuration(10)
+                                .start();
                         break;
                 }
             }
@@ -94,7 +86,7 @@ public class CallFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_call, container, false);
         publishBtn = mView.findViewById(R.id.publish_btn);
         publishBtn.setText(isPublishing ? R.string.unpublish : R.string.publish);
@@ -151,13 +143,18 @@ public class CallFragment extends Fragment implements View.OnClickListener {
     }
 
     void onPublished(final boolean succeed) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                isPublishing = succeed;
-                publishBtn.setText(succeed ? R.string.unpublish : R.string.publish);
-                publishBtn.setEnabled(true);
-            }
+        getActivity().runOnUiThread(() -> {
+            isPublishing = succeed;
+            publishBtn.setText(succeed ? R.string.unpublish : R.string.publish);
+            publishBtn.setEnabled(true);
         });
+    }
+
+    public interface CallFragmentListener {
+        void onReady(SurfaceViewRenderer localRenderer, SurfaceViewRenderer remoteRenderer);
+
+        void onPublishRequest();
+
+        void onUnpublishRequest(boolean stop);
     }
 }

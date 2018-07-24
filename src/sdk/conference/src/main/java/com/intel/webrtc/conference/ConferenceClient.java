@@ -3,18 +3,20 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import android.util.Log;
 
 import com.intel.webrtc.base.ActionCallback;
 import com.intel.webrtc.base.IcsError;
 import com.intel.webrtc.base.LocalStream;
-import com.intel.webrtc.base.PeerConnectionChannel;
 import com.intel.webrtc.base.MediaConstraints.TrackKind;
+import com.intel.webrtc.base.PeerConnectionChannel;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
-import org.webrtc.RTCStatsCollectorCallback;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.SessionDescription;
 
@@ -28,59 +30,14 @@ import java.util.concurrent.Executors;
 
 import io.socket.client.Ack;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
 /**
  * ConferenceClient handles PeerConnection interactions between client and server.
  */
 public final class ConferenceClient implements SignalingChannel.SignalingChannelObserver,
-                                               PeerConnectionChannel.PeerConnectionChannelObserver {
-
-    /**
-     * Interface for observing conference client events.
-     */
-    public interface ConferenceClientObserver {
-        /**
-         * Called upon a RemoteStream gets added to the conference.
-         *
-         * @param remoteStream RemoteStream added.
-         */
-        void onStreamAdded(RemoteStream remoteStream);
-
-        /**
-         * Called upon a Participant joins the conference.
-         *
-         * @param participant Participant joins the conference.
-         */
-        void onParticipantJoined(Participant participant);
-
-        /**
-         * Called upon receiving a message.
-         *
-         * @param participantId id of the message sender.
-         * @param message       message received.
-         */
-        void onMessageReceived(String participantId, String message);
-
-        /**
-         * Called upon server disconnected.
-         */
-        void onServerDisconnected();
-    }
-
-    private enum RoomStates {
-        DISCONNECTED,
-        CONNECTING,
-        CONNECTED
-    }
+        PeerConnectionChannel.PeerConnectionChannelObserver {
 
     private static final String TAG = "ICS";
     private final ConferenceClientConfiguration configuration;
-    //signalingChannel will be created upon join() and will be destructed upon leave().
-    private SignalingChannel signalingChannel;
-    private ConferenceInfo conferenceInfo;
-    private ActionCallback<ConferenceInfo> joinCallback;
     private final ExecutorService signalingExecutor = Executors.newSingleThreadExecutor();
     private final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
     //key: publication/subscription id.
@@ -88,9 +45,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     //key: subscription id.
     private final ConcurrentHashMap<String, ActionCallback<Subscription>> subCallbacks;
     private final ConcurrentHashMap<String, ActionCallback<Publication>> pubCallbacks;
-    private RoomStates roomStates;
     private final Object statusLock = new Object();
     private final List<ConferenceClientObserver> observers;
+    //signalingChannel will be created upon join() and will be destructed upon leave().
+    private SignalingChannel signalingChannel;
+    private ConferenceInfo conferenceInfo;
+    private ActionCallback<ConferenceInfo> joinCallback;
+    private RoomStates roomStates;
 
     /**
      * Constructor for ConferenceClient.
@@ -138,10 +99,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     /**
      * Join a conference specified by |token|.
      *
-     * @param token    token issued by conference server (nuve).
+     * @param token token issued by conference server (nuve).
      * @param callback ActionCallback.onSuccess will be invoked with the ConferenceInfo when
-     *                 succeeds to join the conference room. Otherwise when fails to do so,
-     *                 ActionCallback.onFailure will be invoked with the corresponding IcsError.
+     * succeeds to join the conference room. Otherwise when fails to do so, ActionCallback
+     * .onFailure will be invoked with the corresponding IcsError.
      */
     public void join(String token, ActionCallback<ConferenceInfo> callback) {
         if (!checkRoomStatus(RoomStates.DISCONNECTED)) {
@@ -174,9 +135,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * Publish a LocalStream to the conference.
      *
      * @param localStream LocalStream to be published.
-     * @param callback    ActionCallback.onSuccess will be invoked with the Publication when
-     *                    succeeds to publish the LocalStream. Otherwise when fails to do so,
-     *                    ActionCallback.onFailure will be invoked with the corresponding IcsError.
+     * @param callback ActionCallback.onSuccess will be invoked with the Publication when
+     * succeeds to publish the LocalStream. Otherwise when fails to do so, ActionCallback
+     * .onFailure will be invoked with the corresponding IcsError.
      */
     public void publish(LocalStream localStream, ActionCallback<Publication> callback) {
         publish(localStream, null, callback);
@@ -186,13 +147,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * Publish a LocalStream to the conference.
      *
      * @param localStream LocalStream to be published.
-     * @param options     PublishOptions for publishing this LocalStream.
-     * @param callback    ActionCallback.onSuccess will be invoked with the Publication when
-     *                    succeeds to publish the LocalStream. Otherwise when fails to do so,
-     *                    ActionCallback.onFailure will be invoked with the corresponding IcsError.
+     * @param options PublishOptions for publishing this LocalStream.
+     * @param callback ActionCallback.onSuccess will be invoked with the Publication when
+     * succeeds to publish the LocalStream. Otherwise when fails to do so, ActionCallback
+     * .onFailure will be invoked with the corresponding IcsError.
      */
     public void publish(final LocalStream localStream, final PublishOptions options,
-                        final ActionCallback<Publication> callback) {
+            final ActionCallback<Publication> callback) {
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
             triggerCallback(callback, new IcsError("Wrong room status."));
             return;
@@ -290,9 +251,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * Subscribe a RemoteStream from the conference.
      *
      * @param remoteStream RemoteStream to be subscribed.
-     * @param callback     ActionCallback.onSuccess will be invoked with the Subscription when
-     *                     succeeds to subscribe the RemoteStream. Otherwise when fails to do so,
-     *                     ActionCallback.onFailure will be invoked with the corresponding IcsError.
+     * @param callback ActionCallback.onSuccess will be invoked with the Subscription when
+     * succeeds to subscribe the RemoteStream. Otherwise when fails to do so, ActionCallback
+     * .onFailure will be invoked with the corresponding IcsError.
      */
     public void subscribe(RemoteStream remoteStream, ActionCallback<Subscription> callback) {
         subscribe(remoteStream, null, callback);
@@ -302,13 +263,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * Subscribe a RemoteStream from the conference.
      *
      * @param remoteStream RemoteStream to be subscribed.
-     * @param options      SubscribeOptions for subscribing the RemoteStream.
-     * @param callback     ActionCallback.onSuccess will be invoked with the Subscription when
-     *                     succeeds to subscribe the RemoteStream. Otherwise when fails to do so,
-     *                     ActionCallback.onFailure will be invoked with the corresponding IcsError.
+     * @param options SubscribeOptions for subscribing the RemoteStream.
+     * @param callback ActionCallback.onSuccess will be invoked with the Subscription when
+     * succeeds to subscribe the RemoteStream. Otherwise when fails to do so, ActionCallback
+     * .onFailure will be invoked with the corresponding IcsError.
      */
     public void subscribe(final RemoteStream remoteStream, final SubscribeOptions options,
-                          final ActionCallback<Subscription> callback) {
+            final ActionCallback<Subscription> callback) {
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
             triggerCallback(callback, new IcsError("Wrong room status."));
             return;
@@ -323,7 +284,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
                     if (pcChannel.stream.id().equals(remoteStream.id())) {
                         triggerCallback(callback,
-                                        new IcsError("Remote stream has been subscribed."));
+                                new IcsError("Remote stream has been subscribed."));
                         return;
                     }
                 }
@@ -401,10 +362,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     /**
      * Send a text message to all participants in the conference.
      *
-     * @param message  message to be sent.
+     * @param message message to be sent.
      * @param callback ActionCallback.onSuccess will be invoked succeeds to send the message.
-     *                 Otherwise when fails to do so, ActionCallback.onFailure will be invoked
-     *                 with the corresponding IcsError.
+     * Otherwise when fails to do so, ActionCallback.onFailure will be invoked with the
+     * corresponding IcsError.
      */
     public void send(String message, ActionCallback<Void> callback) {
         send(null, message, callback);
@@ -414,10 +375,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * Send a text message to a specific participant in the conference.
      *
      * @param participantId id of Participant the message to be sent to.
-     * @param message       message to be sent.
-     * @param callback      ActionCallback.onSuccess will be invoked succeeds to send the message.
-     *                      Otherwise when fails to do so, ActionCallback.onFailure will be invoked
-     *                      with the corresponding IcsError.
+     * @param message message to be sent.
+     * @param callback ActionCallback.onSuccess will be invoked succeeds to send the message.
+     * Otherwise when fails to do so, ActionCallback.onFailure will be invoked with the
+     * corresponding IcsError.
      */
     public void send(String participantId, String message, final ActionCallback<Void> callback) {
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
@@ -491,13 +452,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     private ConferencePeerConnectionChannel getPeerConnection(String id, boolean enableVideo,
-                                                              boolean enableAudio) {
+            boolean enableAudio) {
         if (pcChannels.containsKey(id)) {
             return pcChannels.get(id);
         }
         ConferencePeerConnectionChannel pcChannel =
                 new ConferencePeerConnectionChannel(id, configuration.rtcConfiguration,
-                                                    enableVideo, enableAudio, this);
+                        enableVideo, enableAudio, this);
         pcChannels.put(id, pcChannel);
         return pcChannel;
     }
@@ -531,7 +492,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 ActionCallback<Publication> callback = pubCallbacks.get(id);
                 ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
                 Publication publication = new Publication(id, pcChannel.getMediaStream(),
-                                                          ConferenceClient.this);
+                        ConferenceClient.this);
                 getPeerConnection(id).muteEventObserver = publication;
                 callback.onSuccess(publication);
                 pubCallbacks.remove(id);
@@ -669,34 +630,38 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         callbackExecutor.execute(() -> {
             try {
                 String field = updateInfo.getString("field");
-                if (field.equals("video.layout")) {
-                    for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                        if (remoteStream.id().equals(id)) {
-                            ((RemoteMixedStream) remoteStream).updateRegions(
-                                    updateInfo.getJSONArray("value"));
-                        }
-                    }
-                } else if (field.equals("audio.status") || field.equals("video.status")) {
-                    for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
-                        // For subscription id will be the RemoteStream id, for publication
-                        // the id will be publication id which is pc.key.
-                        if (pcChannel.stream.id().equals(id)
-                                || pcChannel.key.equals(id)) {
-                            if (pcChannel.muteEventObserver != null) {
-                                TrackKind trackKind = field.equals("audio.status")
-                                                      ? TrackKind.AUDIO : TrackKind.VIDEO;
-                                boolean active = updateInfo.getString("value").equals("active");
-                                pcChannel.muteEventObserver.onStatusUpdated(trackKind, active);
+                switch (field) {
+                    case "video.layout":
+                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                            if (remoteStream.id().equals(id)) {
+                                ((RemoteMixedStream) remoteStream).updateRegions(
+                                        updateInfo.getJSONArray("value"));
                             }
                         }
-                    }
-                } else if (field.equals("activeInput")) {
-                    for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                        if (remoteStream.id().equals(id)) {
-                            ((RemoteMixedStream) remoteStream).updateActiveInput(
-                                    updateInfo.getString("value"));
+                        break;
+                    case "audio.status":
+                    case "video.status":
+                        for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
+                            // For subscription id will be the RemoteStream id, for publication
+                            // the id will be publication id which is pc.key.
+                            if (pcChannel.stream.id().equals(id) || pcChannel.key.equals(id)) {
+                                if (pcChannel.muteEventObserver != null) {
+                                    TrackKind trackKind = field.equals("audio.status")
+                                            ? TrackKind.AUDIO : TrackKind.VIDEO;
+                                    boolean active = updateInfo.getString("value").equals("active");
+                                    pcChannel.muteEventObserver.onStatusUpdated(trackKind, active);
+                                }
+                            }
                         }
-                    }
+                        break;
+                    case "activeInput":
+                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                            if (remoteStream.id().equals(id)) {
+                                ((RemoteMixedStream) remoteStream).updateActiveInput(
+                                        updateInfo.getString("value"));
+                            }
+                        }
+                        break;
                 }
             } catch (JSONException e) {
                 DCHECK(e);
@@ -741,8 +706,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 candidateObj.put("sdpMLineIndex", candidate.sdpMLineIndex);
                 candidateObj.put("sdpMid", candidate.sdpMid);
                 candidateObj.put("candidate",
-                                 candidate.sdp.indexOf("a=") == 0 ? candidate.sdp
-                                                                  : "a=" + candidate.sdp);
+                        candidate.sdp.indexOf("a=") == 0 ? candidate.sdp : "a=" + candidate.sdp);
 
                 JSONObject candidateMsg = new JSONObject();
                 candidateMsg.put("type", "candidate");
@@ -765,8 +729,8 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             try {
                 SessionDescription sdp =
                         new SessionDescription(localSdp.type,
-                                               localSdp.description.replaceAll(
-                                                       "a=ice-options:google-ice\r\n", ""));
+                                localSdp.description.replaceAll(
+                                        "a=ice-options:google-ice\r\n", ""));
                 JSONObject sdpObj = new JSONObject();
                 sdpObj.put("type", sdp.type.toString().toLowerCase(Locale.US));
                 sdpObj.put("sdp", sdp.description);
@@ -803,7 +767,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onAddStream(final String key,
-                            final com.intel.webrtc.base.RemoteStream remoteStream) {
+            final com.intel.webrtc.base.RemoteStream remoteStream) {
 
     }
 
@@ -817,5 +781,42 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     }
 
+    private enum RoomStates {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
+
+    /**
+     * Interface for observing conference client events.
+     */
+    public interface ConferenceClientObserver {
+        /**
+         * Called upon a RemoteStream gets added to the conference.
+         *
+         * @param remoteStream RemoteStream added.
+         */
+        void onStreamAdded(RemoteStream remoteStream);
+
+        /**
+         * Called upon a Participant joins the conference.
+         *
+         * @param participant Participant joins the conference.
+         */
+        void onParticipantJoined(Participant participant);
+
+        /**
+         * Called upon receiving a message.
+         *
+         * @param participantId id of the message sender.
+         * @param message message received.
+         */
+        void onMessageReceived(String participantId, String message);
+
+        /**
+         * Called upon server disconnected.
+         */
+        void onServerDisconnected();
+    }
     ///@endcond
 }

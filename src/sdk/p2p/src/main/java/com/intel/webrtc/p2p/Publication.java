@@ -3,33 +3,22 @@
  */
 package com.intel.webrtc.p2p;
 
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
+
 import com.intel.webrtc.base.ActionCallback;
 import com.intel.webrtc.base.IcsError;
 
 import org.webrtc.MediaStream;
-import org.webrtc.RTCStatsCollectorCallback;
 import org.webrtc.RTCStatsReport;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
-
 /**
  * Publication handles the actions on a LocalStream published by a P2PClient.
  */
 public final class Publication extends com.intel.webrtc.base.Publication {
-
-    /**
-     * Interface for observing publication events.
-     */
-    public interface PublicationObserver {
-        /**
-         * Called upon Publication ended.
-         */
-        void onEnded();
-    }
 
     private final P2PPeerConnectionChannel pcChannel;
     private List<PublicationObserver> observers;
@@ -66,8 +55,8 @@ public final class Publication extends com.intel.webrtc.base.Publication {
      * Get the PeerConnection stats.
      *
      * @param callback ActionCallback.onSuccess will be invoked with RTCStatsReport when succeeds
-     *                 to get the stats. Otherwise when fails to do so, ActionCallback.onFailure
-     *                 will be invoked with the corresponding IcsError.
+     * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure
+     * will be invoked with the corresponding IcsError.
      */
     @Override
     public void getStats(final ActionCallback<RTCStatsReport> callback) {
@@ -107,5 +96,15 @@ public final class Publication extends com.intel.webrtc.base.Publication {
                 observer.onEnded();
             }
         }
+    }
+
+    /**
+     * Interface for observing publication events.
+     */
+    public interface PublicationObserver {
+        /**
+         * Called upon Publication ended.
+         */
+        void onEnded();
     }
 }

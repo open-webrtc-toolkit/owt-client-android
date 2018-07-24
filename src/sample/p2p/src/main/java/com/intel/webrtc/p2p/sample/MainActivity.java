@@ -25,6 +25,14 @@
  */
 package com.intel.webrtc.p2p.sample;
 
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
+import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H264;
+import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H265;
+import static com.intel.webrtc.base.MediaCodecs.VideoCodec.VP8;
+import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
+import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
+
 import android.Manifest;
 import android.content.Context;
 import android.media.AudioManager;
@@ -62,30 +70,19 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H264;
-import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H265;
-import static com.intel.webrtc.base.MediaCodecs.VideoCodec.VP8;
-import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
-import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
-
-public class MainActivity extends AppCompatActivity
-        implements LoginFragment.LoginFragmentListener,
-                   CallFragment.CallFragmentListener,
-                   ChatFragment.ChatFragmentListener,
-                   P2PClient.P2PClientObserver {
+public class MainActivity extends AppCompatActivity implements LoginFragment.LoginFragmentListener,
+        CallFragment.CallFragmentListener, ChatFragment.ChatFragmentListener,
+        P2PClient.P2PClientObserver {
 
     private static final String TAG = "ICS_P2P";
     private static final int ICS_REQUEST_CODE = 100;
     private static final int STATS_INTERVAL_MS = 10000;
-
+    EglBase rootEglBase;
     private LoginFragment loginFragment;
     private CallFragment callFragment;
     private SettingsFragment settingsFragment;
     private ChatFragment chatFragment;
     private SurfaceViewRenderer localRenderer, remoteRenderer;
-
-    EglBase rootEglBase;
     private P2PClient p2PClient;
     private Publication publication;
     private String peerId;
@@ -130,7 +127,7 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
-                                     | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
 
@@ -150,21 +147,21 @@ public class MainActivity extends AppCompatActivity
         rootEglBase = EglBase.create();
 
         ContextInitialization.create()
-                             .setApplicationContext(this)
-                             .setCodecHardwareAccelerationEnabled(true)
-                             .setVideoHardwareAccelerationOptions(
-                                     rootEglBase.getEglBaseContext(),
-                                     rootEglBase.getEglBaseContext())
-                             .initialize();
+                .setApplicationContext(this)
+                .setCodecHardwareAccelerationEnabled(true)
+                .setVideoHardwareAccelerationOptions(
+                        rootEglBase.getEglBaseContext(),
+                        rootEglBase.getEglBaseContext())
+                .initialize();
 
         VideoEncodingParameters h264 = new VideoEncodingParameters(H264);
         VideoEncodingParameters h265 = new VideoEncodingParameters(H265);
         VideoEncodingParameters vp8 = new VideoEncodingParameters(VP8);
         P2PClientConfiguration configuration = P2PClientConfiguration.builder()
-                                                                     .addVideoParameters(h264)
-                                                                     .addVideoParameters(vp8)
-                                                                     .addVideoParameters(h265)
-                                                                     .build();
+                .addVideoParameters(h264)
+                .addVideoParameters(vp8)
+                .addVideoParameters(h265)
+                .build();
 
         p2PClient = new P2PClient(configuration, new SocketSignalingChannel());
         p2PClient.addObserver(this);
@@ -172,21 +169,21 @@ public class MainActivity extends AppCompatActivity
 
     private void switchFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
-                                   .replace(R.id.fragment_container, fragment)
-                                   .commitAllowingStateLoss();
+                .replace(R.id.fragment_container, fragment)
+                .commitAllowingStateLoss();
 
     }
 
     private void requestPermission() {
         String[] permissions = new String[]{Manifest.permission.CAMERA,
-                                            Manifest.permission.RECORD_AUDIO};
+                Manifest.permission.RECORD_AUDIO};
 
         for (String permission : permissions) {
             if (ContextCompat.checkSelfPermission(MainActivity.this,
-                                                  permission) != PERMISSION_GRANTED) {
+                    permission) != PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(MainActivity.this,
-                                                  permissions,
-                                                  ICS_REQUEST_CODE);
+                        permissions,
+                        ICS_REQUEST_CODE);
                 return;
             }
         }
@@ -195,7 +192,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                                           int[] grantResults) {
+            int[] grantResults) {
         if (requestCode == ICS_REQUEST_CODE
                 && grantResults.length == 2
                 && grantResults[0] == PERMISSION_GRANTED
@@ -228,18 +225,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onStreamAdded(final RemoteStream remoteStream) {
         this.remoteStream = remoteStream;
-        remoteStream.addObserver(new com.intel.webrtc.base.RemoteStream.StreamObserver() {
-            @Override
-            public void onStreamEnded() {
-                remoteStreamEnded = true;
-            }
-        });
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (remoteRenderer != null) {
-                    remoteStream.attach(remoteRenderer);
-                }
+        remoteStream.addObserver(() -> remoteStreamEnded = true);
+        executor.execute(() -> {
+            if (remoteRenderer != null) {
+                remoteStream.attach(remoteRenderer);
             }
         });
     }
@@ -254,94 +243,78 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onConnectRequest(final String server, final String myId) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                JSONObject loginObj = new JSONObject();
-                try {
-                    loginObj.put("host", server);
-                    loginObj.put("token", myId);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                p2PClient.addAllowedRemotePeer(myId);
-                p2PClient.connect(loginObj.toString(), new ActionCallback<String>() {
-                    @Override
-                    public void onSuccess(String result) {
-                        requestPermission();
-                    }
-
-                    @Override
-                    public void onFailure(IcsError error) {
-                        loginFragment.onConnectFailed(error.errorMessage);
-                    }
-                });
+        executor.execute(() -> {
+            JSONObject loginObj = new JSONObject();
+            try {
+                loginObj.put("host", server);
+                loginObj.put("token", myId);
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
+            p2PClient.addAllowedRemotePeer(myId);
+            p2PClient.connect(loginObj.toString(), new ActionCallback<String>() {
+                @Override
+                public void onSuccess(String result) {
+                    requestPermission();
+                }
+
+                @Override
+                public void onFailure(IcsError error) {
+                    loginFragment.onConnectFailed(error.errorMessage);
+                }
+            });
         });
     }
 
     @Override
     public void onDisconnectRequest() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                p2PClient.disconnect();
-            }
-        });
+        executor.execute(() -> p2PClient.disconnect());
     }
 
     @Override
     public void onCallRequest(final String peerId) {
         inCalling = true;
         this.peerId = peerId;
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                p2PClient.addAllowedRemotePeer(peerId);
-                if (callFragment == null) {
-                    callFragment = new CallFragment();
-                }
-                switchFragment(callFragment);
+        executor.execute(() -> {
+            p2PClient.addAllowedRemotePeer(peerId);
+            if (callFragment == null) {
+                callFragment = new CallFragment();
             }
+            switchFragment(callFragment);
         });
     }
 
     @Override
     public void onReady(final SurfaceViewRenderer localRenderer,
-                        final SurfaceViewRenderer remoteRenderer) {
+            final SurfaceViewRenderer remoteRenderer) {
         this.localRenderer = localRenderer;
         this.remoteRenderer = remoteRenderer;
         localRenderer.init(rootEglBase.getEglBaseContext(), null);
         remoteRenderer.init(rootEglBase.getEglBaseContext(), null);
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                boolean cameraFront = settingsFragment == null || settingsFragment.cameraFront;
-                MediaConstraints.VideoTrackConstraints vmc = MediaConstraints.VideoTrackConstraints
-                        .create(true)
-                        .setCameraFacing(cameraFront ? FRONT : BACK)
-                        .setResolution(1280, 720)
-                        .setFramerate(30);
-                if (capturer == null) {
-                    capturer = new IcsVideoCapturer(vmc);
-                    localStream = new LocalStream(capturer,
-                                                  new MediaConstraints.AudioTrackConstraints());
-                }
-                localStream.attach(localRenderer);
-                if (remoteStream != null && !remoteStreamEnded) {
-                    remoteStream.attach(remoteRenderer);
-                }
+        executor.execute(() -> {
+            boolean cameraFront = settingsFragment == null || settingsFragment.cameraFront;
+            MediaConstraints.VideoTrackConstraints vmc = MediaConstraints.VideoTrackConstraints
+                    .create(true)
+                    .setCameraFacing(cameraFront ? FRONT : BACK)
+                    .setResolution(1280, 720)
+                    .setFramerate(30);
+            if (capturer == null) {
+                capturer = new IcsVideoCapturer(vmc);
+                localStream = new LocalStream(capturer,
+                        new MediaConstraints.AudioTrackConstraints());
+            }
+            localStream.attach(localRenderer);
+            if (remoteStream != null && !remoteStreamEnded) {
+                remoteStream.attach(remoteRenderer);
             }
         });
     }
 
     @Override
     public void onPublishRequest() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                p2PClient.publish(peerId, localStream, new ActionCallback<Publication>() {
+        executor.execute(
+                () -> p2PClient.publish(peerId, localStream, new ActionCallback<Publication>() {
                     @Override
                     public void onSuccess(Publication result) {
                         inCalling = true;
@@ -365,9 +338,7 @@ public class MainActivity extends AppCompatActivity
                     public void onFailure(IcsError error) {
                         callFragment.onPublished(false);
                     }
-                });
-            }
-        });
+                }));
     }
 
     private void getStats() {
@@ -405,32 +376,22 @@ public class MainActivity extends AppCompatActivity
                 localStream.dispose();
                 localStream = null;
             }
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    p2PClient.stop(peerId);
-                }
-            });
+            executor.execute(() -> p2PClient.stop(peerId));
         }
     }
 
     @Override
     public void onSendMessage(final String message) {
-        executor.execute(new Runnable() {
+        executor.execute(() -> p2PClient.send(peerId, message, new ActionCallback<Void>() {
             @Override
-            public void run() {
-                p2PClient.send(peerId, message, new ActionCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        chatFragment.onMessage("me", message);
-                    }
-
-                    @Override
-                    public void onFailure(IcsError error) {
-
-                    }
-                });
+            public void onSuccess(Void result) {
+                chatFragment.onMessage("me", message);
             }
-        });
+
+            @Override
+            public void onFailure(IcsError error) {
+
+            }
+        }));
     }
 }

@@ -25,6 +25,9 @@
  */
 package com.intel.webrtc.p2p.sample;
 
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT;
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_CONN_SERVER_UNKNOWN;
+
 import android.util.Log;
 
 import com.intel.webrtc.base.ActionCallback;
@@ -49,9 +52,6 @@ import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter.Listener;
-
-import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT;
-import static com.intel.webrtc.p2p.IcsP2PError.P2P_CONN_SERVER_UNKNOWN;
 
 /**
  * Socket.IO implementation of P2P signaling channel.
@@ -117,7 +117,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
                 if (pattern.matcher(arg0[0].toString()).matches()) {
                     connectCallback.onFailure(
                             new IcsError(IcsP2PError.get(Integer.parseInt((String) arg0[0])).value,
-                                         "Server error"));
+                                    "Server error"));
                 } else {
                     connectCallback.onFailure(new IcsError(arg0[0].toString()));
                 }
@@ -133,7 +133,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
             for (SignalingChannelObserver observer : signalingChannelObservers) {
                 try {
                     observer.onMessage(argumentJsonObject.getString("from"),
-                                       argumentJsonObject.getString("data"));
+                            argumentJsonObject.getString("data"));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -216,11 +216,11 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
      */
     private void bindCallbacks() {
         socketIOClient.on(CLIENT_CHAT_TYPE, onMessageCallback)
-                      .on(SERVER_AUTHENTICATED, onServerAuthenticatedCallback)
-                      .on(FORCE_DISCONNECT, onForceDisconnectCallback)
-                      .on(Socket.EVENT_CONNECT_ERROR, onConnectFailedCallback)
-                      .on(Socket.EVENT_DISCONNECT, onDisconnectCallback)
-                      .on(Socket.EVENT_ERROR, onServerErrorCallback);
+                .on(SERVER_AUTHENTICATED, onServerAuthenticatedCallback)
+                .on(FORCE_DISCONNECT, onForceDisconnectCallback)
+                .on(Socket.EVENT_CONNECT_ERROR, onConnectFailedCallback)
+                .on(Socket.EVENT_DISCONNECT, onDisconnectCallback)
+                .on(Socket.EVENT_ERROR, onServerErrorCallback);
     }
 
     @Override
@@ -242,17 +242,14 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
         try {
             jsonObject.put("to", peerId);
             jsonObject.put("data", message);
-            socketIOClient.emit(CLIENT_CHAT_TYPE, jsonObject, new Ack() {
-                @Override
-                public void call(Object... args) {
-                    if (args == null || args.length != 0) {
-                        if (callback != null) {
-                            callback.onFailure(new IcsError("Failed to send message."));
-                        }
-                    } else {
-                        if (callback != null) {
-                            callback.onSuccess(null);
-                        }
+            socketIOClient.emit(CLIENT_CHAT_TYPE, jsonObject, (Ack) args -> {
+                if (args == null || args.length != 0) {
+                    if (callback != null) {
+                        callback.onFailure(new IcsError("Failed to send message."));
+                    }
+                } else {
+                    if (callback != null) {
+                        callback.onSuccess(null);
                     }
                 }
             });

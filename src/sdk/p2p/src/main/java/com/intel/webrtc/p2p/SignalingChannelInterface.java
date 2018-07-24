@@ -13,24 +13,6 @@ import com.intel.webrtc.base.ActionCallback;
 public interface SignalingChannelInterface {
 
     /**
-     * Interface for observing signaling channel events.
-     */
-    interface SignalingChannelObserver {
-        /**
-         * Called upon receiving a message.
-         *
-         * @param peerId id of message sender.
-         * @param message message received.
-         */
-        void onMessage(String peerId, String message);
-
-        /**
-         * Called upon server disconnected.
-         */
-        void onServerDisconnected();
-    }
-
-    /**
      * Connect to signaling server. Since signaling channel can be customized, this method does not
      * define how a token should look like. Token will be passed into SignalingChannelInterface
      * implemented by the app without any changes.
@@ -56,4 +38,22 @@ public interface SignalingChannelInterface {
      * Remove a SignalingChannelObserver.
      */
     void removeObserver(SignalingChannelObserver observer);
+
+    /**
+     * Interface for observing signaling channel events.
+     */
+    interface SignalingChannelObserver {
+        /**
+         * Called upon receiving a message.
+         *
+         * @param peerId id of message sender.
+         * @param message message received.
+         */
+        void onMessage(String peerId, String message);
+
+        /**
+         * Called upon server disconnected.
+         */
+        void onServerDisconnected();
+    }
 }

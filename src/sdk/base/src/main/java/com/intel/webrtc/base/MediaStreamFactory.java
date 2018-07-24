@@ -3,6 +3,9 @@
  */
 package com.intel.webrtc.base;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import com.intel.webrtc.base.MediaConstraints.AudioTrackConstraints;
 
 import org.webrtc.AudioSource;
@@ -12,18 +15,15 @@ import org.webrtc.VideoSource;
 import java.util.HashMap;
 import java.util.UUID;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
 final class MediaStreamFactory {
 
     private static MediaStreamFactory instance;
+    private final HashMap<String, VideoSource> unsharedVideoSources = new HashMap<>();
     private AudioSource sharedAudioSource;
     private int audioSourceRef = 0;
 
-    private final HashMap<String, VideoSource> unsharedVideoSources = new HashMap<>();
-
-    private MediaStreamFactory() {}
+    private MediaStreamFactory() {
+    }
 
     synchronized static MediaStreamFactory instance() {
         if (instance == null) {
@@ -33,7 +33,7 @@ final class MediaStreamFactory {
     }
 
     MediaStream createMediaStream(VideoCapturer videoCapturer,
-                                  AudioTrackConstraints audioMediaConstraints) {
+            AudioTrackConstraints audioMediaConstraints) {
         RCHECK(videoCapturer != null || audioMediaConstraints != null);
 
         String label = UUID.randomUUID().toString();
@@ -42,8 +42,8 @@ final class MediaStreamFactory {
         if (videoCapturer != null) {
             VideoSource videoSource = PCFactoryProxy.instance().createVideoSource(videoCapturer);
             videoCapturer.startCapture(videoCapturer.getWidth(),
-                                       videoCapturer.getHeight(),
-                                       videoCapturer.getFps());
+                    videoCapturer.getHeight(),
+                    videoCapturer.getFps());
             mediaStream.addTrack(
                     PCFactoryProxy.instance().createVideoTrack(label + "v0", videoSource));
             unsharedVideoSources.put(label, videoSource);

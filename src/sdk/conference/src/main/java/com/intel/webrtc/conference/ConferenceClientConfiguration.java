@@ -15,6 +15,22 @@ import javax.net.ssl.SSLContext;
  */
 public final class ConferenceClientConfiguration extends ClientConfiguration {
 
+    SSLContext sslContext = null;
+    HostnameVerifier hostnameVerifier = null;
+
+    private ConferenceClientConfiguration(PeerConnection.RTCConfiguration configuration) {
+        super(configuration);
+    }
+
+    /**
+     * Get a Builder for creating a ConferenceClientConfiguration.
+     *
+     * @return Builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /**
      * Builder for building up a ConferenceClientConfiguration.
      */
@@ -50,6 +66,7 @@ public final class ConferenceClientConfiguration extends ClientConfiguration {
 
         /**
          * Set up the RTCConfiguration for the underlying WebRTC PeerConnection
+         *
          * @param rtcConfiguration RTCConfiguration to be set.
          * @return Builder
          */
@@ -60,6 +77,7 @@ public final class ConferenceClientConfiguration extends ClientConfiguration {
 
         /**
          * Build up the ConferenceClientConfiguration.
+         *
          * @return ConferenceClientConfiguration.
          */
         public ConferenceClientConfiguration build() {
@@ -69,21 +87,5 @@ public final class ConferenceClientConfiguration extends ClientConfiguration {
             configuration.hostnameVerifier = hostnameVerifier;
             return configuration;
         }
-    }
-
-
-    SSLContext sslContext = null;
-    HostnameVerifier hostnameVerifier = null;
-
-    private ConferenceClientConfiguration(PeerConnection.RTCConfiguration configuration) {
-        super(configuration);
-    }
-
-    /**
-     * Get a Builder for creating a ConferenceClientConfiguration.
-     * @return Builder
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 }

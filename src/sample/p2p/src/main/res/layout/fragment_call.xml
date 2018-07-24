@@ -23,26 +23,26 @@
 
         <Button
             android:id="@+id/publish_btn"
+            style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:layout_alignBaseline="@+id/full_renderer"
             android:layout_alignBottom="@+id/full_renderer"
-            android:layout_marginLeft="80dp"
             android:layout_marginBottom="80dp"
-            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_marginLeft="80dp"
             android:background="@color/colorPrimaryDark"
             android:text="@string/publish"/>
 
         <Button
             android:id="@+id/back_btn"
+            style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:layout_alignBaseline="@+id/full_renderer"
             android:layout_alignBottom="@+id/full_renderer"
             android:layout_alignRight="@+id/full_renderer"
-            android:layout_marginRight="80dp"
             android:layout_marginBottom="80dp"
-            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_marginRight="80dp"
             android:background="@color/colorPrimaryDark"
             android:text="@string/back"/>
 

@@ -39,19 +39,10 @@ import android.widget.TextView;
 
 public class LoginFragment extends Fragment implements View.OnClickListener {
 
-    public interface LoginFragmentListener {
-        void onConnectRequest(String server, String myId);
-
-        void onDisconnectRequest();
-
-        void onCallRequest(String peerId);
-    }
-
     private Button connectBtn, callBtn;
     private EditText serverText, myIdText, peerIdText;
     private TextView errorTV;
     private LinearLayout peerContainer;
-
     private LoginFragmentListener mListener;
     private boolean loggedIn = false;
 
@@ -65,7 +56,7 @@ public class LoginFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_login, container, false);
         connectBtn = mView.findViewById(R.id.connect_btn);
         connectBtn.setText(loggedIn ? R.string.disconnect : R.string.connect);
@@ -89,7 +80,7 @@ public class LoginFragment extends Fragment implements View.OnClickListener {
             mListener = (LoginFragmentListener) context;
         } else {
             throw new RuntimeException(context.toString()
-                                               + " must implement LoginFragmentListener");
+                    + " must implement LoginFragmentListener");
         }
     }
 
@@ -106,7 +97,7 @@ public class LoginFragment extends Fragment implements View.OnClickListener {
 
         if (getActivity().getCurrentFocus() != null) {
             inputManager.hideSoftInputFromWindow(getActivity().getCurrentFocus().getWindowToken(),
-                                                 InputMethodManager.HIDE_NOT_ALWAYS);
+                    InputMethodManager.HIDE_NOT_ALWAYS);
         }
         switch (v.getId()) {
             case R.id.connect_btn:
@@ -119,7 +110,7 @@ public class LoginFragment extends Fragment implements View.OnClickListener {
                     connectBtn.setEnabled(false);
                     errorTV.setText("");
                     mListener.onConnectRequest(serverText.getText().toString(),
-                                               myIdText.getText().toString());
+                            myIdText.getText().toString());
                 }
                 break;
             case R.id.call_btn:
@@ -130,25 +121,27 @@ public class LoginFragment extends Fragment implements View.OnClickListener {
 
     void onConnected() {
         loggedIn = true;
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                connectBtn.setText(R.string.disconnect);
-                connectBtn.setEnabled(true);
-                errorTV.setText("");
-                peerContainer.setVisibility(View.VISIBLE);
-            }
+        getActivity().runOnUiThread(() -> {
+            connectBtn.setText(R.string.disconnect);
+            connectBtn.setEnabled(true);
+            errorTV.setText("");
+            peerContainer.setVisibility(View.VISIBLE);
         });
     }
 
     void onConnectFailed(final String errorMsg) {
         loggedIn = false;
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                connectBtn.setEnabled(true);
-                errorTV.setText(errorMsg);
-            }
+        getActivity().runOnUiThread(() -> {
+            connectBtn.setEnabled(true);
+            errorTV.setText(errorMsg);
         });
+    }
+
+    public interface LoginFragmentListener {
+        void onConnectRequest(String server, String myId);
+
+        void onDisconnectRequest();
+
+        void onCallRequest(String peerId);
     }
 }

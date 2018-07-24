@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import com.intel.webrtc.base.ActionCallback;
 import com.intel.webrtc.base.IcsError;
 import com.intel.webrtc.base.MediaConstraints.TrackKind;
@@ -16,71 +18,11 @@ import java.util.List;
 
 import io.socket.client.Ack;
 
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
 /**
  * Subscription handles the actions on a RemoteStream subscribed by a ConferenceClient.
  */
 
 public final class Subscription implements MuteEventObserver {
-
-    /**
-     * Interface for observing the subscription events.
-     */
-    public interface SubscriptionObserver {
-        /**
-         * Called upon Subscription ended.
-         */
-        void onEnded();
-
-        /**
-         * Called upon media track associated with the subscription muted.
-         *
-         * @param trackKind TrackKind muted.
-         */
-        void onMute(TrackKind trackKind);
-
-        /**
-         * Called upon media track associated with the subscription unmute.
-         *
-         * @param trackKind TrackKind unmute.
-         */
-        void onUnmute(TrackKind trackKind);
-    }
-
-
-    /**
-     * Options for updating the video track parameters for current Subscription.
-     */
-    public static final class VideoUpdateOptions {
-        public int resolutionHeight = 0, resolutionWidth = 0, fps = 0, keyframeInterval = 0;
-        public double bitrateMultiplier = 0;
-
-        JSONObject generateOptionMsg() throws JSONException {
-            JSONObject optionMsg = new JSONObject();
-            JSONObject video = new JSONObject();
-            JSONObject parameters = new JSONObject();
-            if (resolutionWidth != 0 && resolutionHeight != 0) {
-                JSONObject reso = new JSONObject();
-                reso.put("width", resolutionWidth);
-                reso.put("height", resolutionHeight);
-                parameters.put("resolution", reso);
-            }
-            if (fps != 0) {
-                parameters.put("framerate", fps);
-            }
-            if (keyframeInterval != 0) {
-                parameters.put("keyFrameInterval", keyframeInterval);
-            }
-            if (bitrateMultiplier != 0) {
-                parameters.put("bitrate", "x" + bitrateMultiplier);
-            }
-
-            video.put("parameters", parameters);
-            optionMsg.put("video", video);
-            return optionMsg;
-        }
-    }
 
     /**
      * Id of the Subscription
@@ -99,9 +41,9 @@ public final class Subscription implements MuteEventObserver {
      * Stop receiving the media track data to conference.
      *
      * @param trackKind TrackKind of the media to be stopped.
-     * @param callback  ActionCallback.onSuccess will be invoked when succeeds to mute. Otherwise
-     *                  when fails to do so, ActionCallback.onFailure will be invoked with the
-     *                  corresponding IcsError.
+     * @param callback ActionCallback.onSuccess will be invoked when succeeds to mute. Otherwise
+     * when fails to do so, ActionCallback.onFailure will be invoked with the
+     * corresponding IcsError.
      */
     public void mute(final TrackKind trackKind, final ActionCallback<Void> callback) {
         if (ended) {
@@ -121,8 +63,8 @@ public final class Subscription implements MuteEventObserver {
 
         try {
             client.sendSignalingMessage("subscription-control",
-                                        generateMsg(trackKind, true),
-                                        ack);
+                    generateMsg(trackKind, true),
+                    ack);
         } catch (JSONException e) {
             callback.onFailure(new IcsError(e.getMessage()));
         }
@@ -132,9 +74,9 @@ public final class Subscription implements MuteEventObserver {
      * Start to receive the media track data that has been stopped before to conference.
      *
      * @param trackKind TrackKind of the media to be started.
-     * @param callback  ActionCallback.onSuccess will be invoked when succeeds to unmute. Otherwise
-     *                  when fails to do so, ActionCallback.onFailure will be invoked with the
-     *                  corresponding IcsError.
+     * @param callback ActionCallback.onSuccess will be invoked when succeeds to unmute. Otherwise
+     * when fails to do so, ActionCallback.onFailure will be invoked with the
+     * corresponding IcsError.
      */
     public void unmute(final TrackKind trackKind, final ActionCallback<Void> callback) {
         if (ended) {
@@ -154,8 +96,8 @@ public final class Subscription implements MuteEventObserver {
 
         try {
             client.sendSignalingMessage("subscription-control",
-                                        generateMsg(trackKind, false),
-                                        ack);
+                    generateMsg(trackKind, false),
+                    ack);
         } catch (JSONException e) {
             callback.onFailure(new IcsError(e.getMessage()));
         }
@@ -174,11 +116,12 @@ public final class Subscription implements MuteEventObserver {
      * tracks is supported.
      *
      * @param updateOptions UpdateOptions
-     * @param callback      ActionCallback.onSuccess will be invoked when succeeds to get the
-     *                      update. Otherwise when fails to do so, ActionCallback
-     *                      .onFailure will be invoked with the corresponding IcsError.
+     * @param callback ActionCallback.onSuccess will be invoked when succeeds to get the
+     * update. Otherwise when fails to do so, ActionCallback
+     * .onFailure will be invoked with the corresponding IcsError.
      */
-    public void applyOptions(VideoUpdateOptions updateOptions, final ActionCallback<Void> callback) {
+    public void applyOptions(VideoUpdateOptions updateOptions,
+            final ActionCallback<Void> callback) {
         if (ended) {
             client.triggerCallback(callback, new IcsError(0, "Wrong state"));
             return;
@@ -208,8 +151,8 @@ public final class Subscription implements MuteEventObserver {
      * Get the PeerConnection stats.
      *
      * @param callback ActionCallback.onSuccess will be invoked with RTCStatsReport when succeeds
-     *                 to get the stats. Otherwise when fails to do so, ActionCallback.onFailure
-     *                 will be invoked with the corresponding IcsError.
+     * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure
+     * will be invoked with the corresponding IcsError.
      */
     public void getStats(ActionCallback<RTCStatsReport> callback) {
         if (ended) {
@@ -271,6 +214,63 @@ public final class Subscription implements MuteEventObserver {
                     observer.onMute(trackKind);
                 }
             }
+        }
+    }
+
+    /**
+     * Interface for observing the subscription events.
+     */
+    public interface SubscriptionObserver {
+        /**
+         * Called upon Subscription ended.
+         */
+        void onEnded();
+
+        /**
+         * Called upon media track associated with the subscription muted.
+         *
+         * @param trackKind TrackKind muted.
+         */
+        void onMute(TrackKind trackKind);
+
+        /**
+         * Called upon media track associated with the subscription unmute.
+         *
+         * @param trackKind TrackKind unmute.
+         */
+        void onUnmute(TrackKind trackKind);
+    }
+
+    /**
+     * Options for updating the video track parameters for current Subscription.
+     */
+    public static final class VideoUpdateOptions {
+        public int resolutionHeight = 0, resolutionWidth = 0, fps = 0, keyframeInterval = 0;
+        public double bitrateMultiplier = 0;
+
+        JSONObject generateOptionMsg() throws JSONException {
+            JSONObject optionMsg = new JSONObject();
+            JSONObject video = new JSONObject();
+            JSONObject parameters = new JSONObject();
+            if (resolutionWidth != 0 && resolutionHeight != 0) {
+                JSONObject reso = new JSONObject();
+                reso.put("width", resolutionWidth);
+                reso.put("height", resolutionHeight);
+                parameters.put("resolution", reso);
+            }
+            if (fps != 0) {
+                parameters.put("framerate", fps);
+            }
+            if (keyframeInterval != 0) {
+                parameters.put("keyFrameInterval", keyframeInterval);
+            }
+            if (bitrateMultiplier != 0) {
+                parameters.put("bitrate", "x" + bitrateMultiplier);
+            }
+
+            video.put("parameters", parameters);
+            optionMsg.put("video", video);
+            return optionMsg;
         }
     }
     ///@endcond

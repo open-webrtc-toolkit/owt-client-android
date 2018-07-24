@@ -13,15 +13,15 @@
             android:layout_width="150dp"
             android:layout_height="match_parent"
             android:layout_gravity="right|center_vertical"
-            android:orientation="vertical"
-            android:elevation="1dp">
+            android:elevation="1dp"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/stats_in"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
                 android:layout_gravity="right|center_vertical"
+                android:layout_weight="1"
                 android:background="@color/black_overlay"
                 android:gravity="top"
                 android:textColor="@color/colorPrimary"/>
@@ -30,8 +30,8 @@
                 android:id="@+id/stats_out"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
                 android:layout_gravity="right|center_vertical"
+                android:layout_weight="1"
                 android:background="@color/black_overlay"
                 android:gravity="top"
                 android:textColor="@color/colorPrimary"/>

@@ -25,6 +25,15 @@
  */
 package com.intel.webrtc.conference.sample;
 
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
+import static com.intel.webrtc.base.MediaCodecs.AudioCodec.OPUS;
+import static com.intel.webrtc.base.MediaCodecs.AudioCodec.PCMU;
+import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H264;
+import static com.intel.webrtc.base.MediaCodecs.VideoCodec.VP8;
+import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
+import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
+
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -53,9 +62,9 @@ import com.intel.webrtc.base.IcsError;
 import com.intel.webrtc.base.IcsVideoCapturer;
 import com.intel.webrtc.base.LocalStream;
 import com.intel.webrtc.base.MediaConstraints;
+import com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints;
 import com.intel.webrtc.base.VideoCodecParameters;
 import com.intel.webrtc.base.VideoEncodingParameters;
-import com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints;
 import com.intel.webrtc.conference.ConferenceClient;
 import com.intel.webrtc.conference.ConferenceClientConfiguration;
 import com.intel.webrtc.conference.ConferenceInfo;
@@ -82,39 +91,26 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static com.intel.webrtc.base.MediaCodecs.AudioCodec.OPUS;
-import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
-import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
-import static com.intel.webrtc.base.MediaCodecs.AudioCodec.PCMU;
-import static com.intel.webrtc.base.MediaCodecs.VideoCodec.VP8;
-import static com.intel.webrtc.base.MediaCodecs.VideoCodec.H264;
-
 public class MainActivity extends AppCompatActivity
         implements VideoFragment.VideoFragmentListener,
-                   ActivityCompat.OnRequestPermissionsResultCallback,
-                   ConferenceClient.ConferenceClientObserver {
+        ActivityCompat.OnRequestPermissionsResultCallback,
+        ConferenceClient.ConferenceClientObserver {
 
+    static final int STATS_INTERVAL_MS = 5000;
     private static final String TAG = "ICS_CONF";
     private static final int ICS_REQUEST_CODE = 100;
-    static final int STATS_INTERVAL_MS = 5000;
-
     private static boolean contextHasInitialized = false;
+    EglBase rootEglBase;
     private boolean fullScreen = false;
     private boolean settingsCurrent = false;
-
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private Timer statsTimer;
-
     private LoginFragment loginFragment;
     private VideoFragment videoFragment;
     private SettingsFragment settingsFragment;
-
     private View fragmentContainer;
     private View bottomView;
     private Button leftBtn, rightBtn, middleBtn;
-
-    EglBase rootEglBase;
     private ConferenceClient conferenceClient;
     private ConferenceInfo conferenceInfo;
     private Publication publication;
@@ -165,7 +161,109 @@ public class MainActivity extends AppCompatActivity
             settingsCurrent = !settingsCurrent;
         }
     };
+    private View.OnClickListener leaveRoom = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            executor.execute(() -> conferenceClient.leave());
+        }
+    };
+    private View.OnClickListener unpublish = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            localRenderer.setVisibility(View.GONE);
+            rightBtn.setText(R.string.publish);
+            rightBtn.setOnClickListener(publish);
+            videoFragment.clearStats(true);
 
+            executor.execute(() -> {
+                publication.stop();
+                localStream.detach(localRenderer);
+
+                capturer.stopCapture();
+                capturer.dispose();
+                capturer = null;
+
+                localStream.dispose();
+                localStream = null;
+            });
+        }
+    };
+    private View.OnClickListener publish = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            rightBtn.setEnabled(false);
+            rightBtn.setTextColor(Color.DKGRAY);
+            executor.execute(() -> {
+                boolean front = settingsFragment == null || settingsFragment.cameraFront;
+                VideoTrackConstraints.CameraFacing cameraFacing = front ? FRONT : BACK;
+                boolean vga = settingsFragment == null || settingsFragment.resolutionVGA;
+                VideoTrackConstraints vmc =
+                        VideoTrackConstraints.create(true)
+                                .setCameraFacing(cameraFacing)
+                                .setResolution(vga ? 640 : 1280, vga ? 480 : 720);
+                capturer = new IcsVideoCapturer(vmc);
+                localStream = new LocalStream(capturer,
+                        new MediaConstraints.AudioTrackConstraints());
+                localStream.attach(localRenderer);
+
+                VideoEncodingParameters h264 = new VideoEncodingParameters(H264);
+                VideoEncodingParameters vp8 = new VideoEncodingParameters(VP8);
+
+                PublishOptions options = PublishOptions.builder()
+                        .addVideoParameter(h264)
+                        .addVideoParameter(vp8)
+                        .build();
+
+                ActionCallback<Publication> callback = new ActionCallback<Publication>() {
+                    @Override
+                    public void onSuccess(final Publication result) {
+                        runOnUiThread(() -> {
+                            localRenderer.setVisibility(View.VISIBLE);
+
+                            rightBtn.setEnabled(true);
+                            rightBtn.setTextColor(Color.WHITE);
+                            rightBtn.setText(R.string.unpublish);
+                            rightBtn.setOnClickListener(unpublish);
+                        });
+
+                        publication = result;
+
+                        try {
+                            JSONArray mixBody = new JSONArray();
+                            JSONObject body = new JSONObject();
+                            body.put("op", "add");
+                            body.put("path", "/info/inViews");
+                            body.put("value", "common");
+                            mixBody.put(body);
+
+                            String serverUrl = loginFragment.getServerUrl();
+                            String uri = serverUrl
+                                    + "/rooms/" + conferenceInfo.id()
+                                    + "/streams/" + result.id();
+                            HttpUtils.request(uri, "PATCH", mixBody.toString(), true);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(final IcsError error) {
+                        runOnUiThread(() -> {
+                            rightBtn.setEnabled(true);
+                            rightBtn.setTextColor(Color.WHITE);
+                            rightBtn.setText(R.string.publish);
+                            Toast.makeText(MainActivity.this,
+                                    "Failed to publish " + error.errorMessage,
+                                    Toast.LENGTH_SHORT).show();
+                        });
+
+                    }
+                };
+
+                conferenceClient.publish(localStream, options, callback);
+            });
+        }
+    };
     private View.OnClickListener joinRoom = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -175,173 +273,43 @@ public class MainActivity extends AppCompatActivity
             rightBtn.setEnabled(false);
             rightBtn.setTextColor(Color.DKGRAY);
 
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    String serverUrl = loginFragment.getServerUrl();
-                    String roomId = settingsFragment == null ? "" : settingsFragment.getRoomId();
+            executor.execute(() -> {
+                String serverUrl = loginFragment.getServerUrl();
+                String roomId = settingsFragment == null ? "" : settingsFragment.getRoomId();
 
-                    JSONObject joinBody = new JSONObject();
-                    try {
-                        joinBody.put("role", "presenter");
-                        joinBody.put("username", "user");
-                        joinBody.put("room", roomId.equals("") ? "" : roomId);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                JSONObject joinBody = new JSONObject();
+                try {
+                    joinBody.put("role", "presenter");
+                    joinBody.put("username", "user");
+                    joinBody.put("room", roomId.equals("") ? "" : roomId);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                String uri = serverUrl + "/createToken/";
+                String token = HttpUtils.request(uri, "POST", joinBody.toString(), true);
+
+                conferenceClient.join(token, new ActionCallback<ConferenceInfo>() {
+                    @Override
+                    public void onSuccess(ConferenceInfo conferenceInfo) {
+                        MainActivity.this.conferenceInfo = conferenceInfo;
+                        requestPermission();
                     }
 
-                    String uri = serverUrl + "/createToken/";
-                    String token = HttpUtils.request(uri, "POST", joinBody.toString(), true);
-
-                    conferenceClient.join(token, new ActionCallback<ConferenceInfo>() {
-                        @Override
-                        public void onSuccess(ConferenceInfo conferenceInfo) {
-                            MainActivity.this.conferenceInfo = conferenceInfo;
-                            requestPermission();
-                        }
-
-                        @Override
-                        public void onFailure(IcsError e) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    leftBtn.setEnabled(true);
-                                    leftBtn.setTextColor(Color.WHITE);
-                                    leftBtn.setText(R.string.connect);
-                                    rightBtn.setEnabled(true);
-                                    rightBtn.setTextColor(Color.WHITE);
-                                }
-                            });
-                        }
-                    });
-                }
+                    @Override
+                    public void onFailure(IcsError e) {
+                        runOnUiThread(() -> {
+                            leftBtn.setEnabled(true);
+                            leftBtn.setTextColor(Color.WHITE);
+                            leftBtn.setText(R.string.connect);
+                            rightBtn.setEnabled(true);
+                            rightBtn.setTextColor(Color.WHITE);
+                        });
+                    }
+                });
             });
         }
     };
-
-    private View.OnClickListener leaveRoom = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    conferenceClient.leave();
-                }
-            });
-        }
-    };
-
-    private View.OnClickListener publish = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            rightBtn.setEnabled(false);
-            rightBtn.setTextColor(Color.DKGRAY);
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    boolean front = settingsFragment == null || settingsFragment.cameraFront;
-                    VideoTrackConstraints.CameraFacing cameraFacing = front ? FRONT : BACK;
-                    boolean vga = settingsFragment == null || settingsFragment.resolutionVGA;
-                    VideoTrackConstraints vmc =
-                            VideoTrackConstraints.create(true)
-                                                 .setCameraFacing(cameraFacing)
-                                                 .setResolution(vga ? 640 : 1280, vga ? 480 : 720);
-                    capturer = new IcsVideoCapturer(vmc);
-                    localStream = new LocalStream(capturer,
-                                                  new MediaConstraints.AudioTrackConstraints());
-                    localStream.attach(localRenderer);
-
-                    VideoEncodingParameters h264 = new VideoEncodingParameters(H264);
-                    VideoEncodingParameters vp8 = new VideoEncodingParameters(VP8);
-
-                    PublishOptions options = PublishOptions.builder()
-                                                           .addVideoParameter(h264)
-                                                           .addVideoParameter(vp8)
-                                                           .build();
-
-                    ActionCallback<Publication> callback = new ActionCallback<Publication>() {
-                        @Override
-                        public void onSuccess(final Publication result) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    localRenderer.setVisibility(View.VISIBLE);
-
-                                    rightBtn.setEnabled(true);
-                                    rightBtn.setTextColor(Color.WHITE);
-                                    rightBtn.setText(R.string.unpublish);
-                                    rightBtn.setOnClickListener(unpublish);
-                                }
-                            });
-
-                            publication = result;
-
-                            try {
-                                JSONArray mixBody = new JSONArray();
-                                JSONObject body = new JSONObject();
-                                body.put("op", "add");
-                                body.put("path", "/info/inViews");
-                                body.put("value", "common");
-                                mixBody.put(body);
-
-                                String serverUrl = loginFragment.getServerUrl();
-                                String uri = serverUrl
-                                        + "/rooms/" + conferenceInfo.id()
-                                        + "/streams/" + result.id();
-                                HttpUtils.request(uri, "PATCH", mixBody.toString(), true);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(final IcsError error) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    rightBtn.setEnabled(true);
-                                    rightBtn.setTextColor(Color.WHITE);
-                                    rightBtn.setText(R.string.publish);
-                                    Toast.makeText(MainActivity.this,
-                                                   "Failed to publish " + error.errorMessage,
-                                                   Toast.LENGTH_SHORT).show();
-                                }
-                            });
-
-                        }
-                    };
-
-                    conferenceClient.publish(localStream, options, callback);
-                }
-            });
-        }
-    };
-
-    private View.OnClickListener unpublish = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            localRenderer.setVisibility(View.GONE);
-            rightBtn.setText(R.string.publish);
-            rightBtn.setOnClickListener(publish);
-            videoFragment.clearStats(true);
-
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    publication.stop();
-                    localStream.detach(localRenderer);
-
-                    capturer.stopCapture();
-                    capturer.dispose();
-                    capturer = null;
-
-                    localStream.dispose();
-                    localStream = null;
-                }
-            });
-        }
-    };
-
     private View.OnClickListener shareScreen = new View.OnClickListener() {
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         @Override
@@ -353,13 +321,10 @@ public class MainActivity extends AppCompatActivity
                         (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
                 startActivityForResult(manager.createScreenCaptureIntent(), ICS_REQUEST_CODE);
             } else {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (screenPublication != null) {
-                            screenPublication.stop();
-                            screenPublication = null;
-                        }
+                executor.execute(() -> {
+                    if (screenPublication != null) {
+                        screenPublication.stop();
+                        screenPublication = null;
                     }
                 });
                 middleBtn.setEnabled(true);
@@ -374,7 +339,7 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
-                                     | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
 
         fullScreen = true;
@@ -425,35 +390,35 @@ public class MainActivity extends AppCompatActivity
 
         if (!contextHasInitialized) {
             ContextInitialization.create()
-                                 .setApplicationContext(this)
-                                 .setCodecHardwareAccelerationEnabled(true)
-                                 .setVideoHardwareAccelerationOptions(
-                                         rootEglBase.getEglBaseContext(),
-                                         rootEglBase.getEglBaseContext())
-                                 .initialize();
+                    .setApplicationContext(this)
+                    .setCodecHardwareAccelerationEnabled(true)
+                    .setVideoHardwareAccelerationOptions(
+                            rootEglBase.getEglBaseContext(),
+                            rootEglBase.getEglBaseContext())
+                    .initialize();
             contextHasInitialized = true;
         }
 
         HttpUtils.setUpINSECURESSLContext();
         ConferenceClientConfiguration configuration
                 = ConferenceClientConfiguration.builder()
-                                               .setHostnameVerifier(HttpUtils.hostnameVerifier)
-                                               .setSSLContext(HttpUtils.sslContext)
-                                               .build();
+                .setHostnameVerifier(HttpUtils.hostnameVerifier)
+                .setSSLContext(HttpUtils.sslContext)
+                .build();
         conferenceClient = new ConferenceClient(configuration);
         conferenceClient.addObserver(this);
     }
 
     private void requestPermission() {
         String[] permissions = new String[]{Manifest.permission.CAMERA,
-                                            Manifest.permission.RECORD_AUDIO};
+                Manifest.permission.RECORD_AUDIO};
 
         for (String permission : permissions) {
             if (ContextCompat.checkSelfPermission(MainActivity.this,
-                                                  permission) != PERMISSION_GRANTED) {
+                    permission) != PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(MainActivity.this,
-                                                  permissions,
-                                                  ICS_REQUEST_CODE);
+                        permissions,
+                        ICS_REQUEST_CODE);
                 return;
             }
         }
@@ -463,7 +428,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                                           int[] grantResults) {
+            int[] grantResults) {
         if (requestCode == ICS_REQUEST_CODE
                 && grantResults.length == 2
                 && grantResults[0] == PERMISSION_GRANTED
@@ -473,24 +438,21 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void onConnectSucceed() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (videoFragment == null) {
-                    videoFragment = new VideoFragment();
-                }
-                videoFragment.setListener(MainActivity.this);
-                switchFragment(videoFragment);
-                leftBtn.setEnabled(true);
-                leftBtn.setTextColor(Color.WHITE);
-                leftBtn.setText(R.string.disconnect);
-                leftBtn.setOnClickListener(leaveRoom);
-                rightBtn.setEnabled(true);
-                rightBtn.setTextColor(Color.WHITE);
-                rightBtn.setText(R.string.publish);
-                rightBtn.setOnClickListener(publish);
-                fragmentContainer.setOnClickListener(screenControl);
+        runOnUiThread(() -> {
+            if (videoFragment == null) {
+                videoFragment = new VideoFragment();
             }
+            videoFragment.setListener(MainActivity.this);
+            switchFragment(videoFragment);
+            leftBtn.setEnabled(true);
+            leftBtn.setTextColor(Color.WHITE);
+            leftBtn.setText(R.string.disconnect);
+            leftBtn.setOnClickListener(leaveRoom);
+            rightBtn.setEnabled(true);
+            rightBtn.setTextColor(Color.WHITE);
+            rightBtn.setText(R.string.publish);
+            rightBtn.setOnClickListener(publish);
+            fragmentContainer.setOnClickListener(screenControl);
         });
 
         if (statsTimer != null) {
@@ -508,51 +470,48 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void subscribeMixedStream() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (RemoteStream remoteStream : conferenceClient.info().getRemoteStreams()) {
-                    if (remoteStream instanceof RemoteMixedStream
-                            && ((RemoteMixedStream) remoteStream).view.equals("common")) {
-                        stream2Sub = remoteStream;
-                        break;
-                    }
+        executor.execute(() -> {
+            for (RemoteStream remoteStream : conferenceClient.info().getRemoteStreams()) {
+                if (remoteStream instanceof RemoteMixedStream
+                        && ((RemoteMixedStream) remoteStream).view.equals("common")) {
+                    stream2Sub = remoteStream;
+                    break;
                 }
-                final RemoteStream finalStream2bSub = stream2Sub;
-                VideoSubscriptionConstraints videoOption =
-                        VideoSubscriptionConstraints.builder()
-                                                    .setResolution(640, 480)
-                                                    .setFrameRate(24)
-                                                    .addCodec(new VideoCodecParameters(H264))
-                                                    .addCodec(new VideoCodecParameters(VP8))
-                                                    .build();
-
-                AudioSubscriptionConstraints audioOption =
-                        AudioSubscriptionConstraints.builder()
-                                                    .addCodec(new AudioCodecParameters(OPUS))
-                                                    .addCodec(new AudioCodecParameters(PCMU))
-                                                    .build();
-
-                SubscribeOptions options = SubscribeOptions.builder(true, true)
-                                                           .setAudioOption(audioOption)
-                                                           .setVideoOption(videoOption)
-                                                           .build();
-
-                conferenceClient.subscribe(stream2Sub, options,
-                                           new ActionCallback<Subscription>() {
-                                               @Override
-                                               public void onSuccess(Subscription result) {
-                                                   MainActivity.this.subscription = result;
-                                                   finalStream2bSub.attach(remoteRenderer);
-                                               }
-
-                                               @Override
-                                               public void onFailure(IcsError error) {
-                                                   Log.e(TAG, "Failed to subscribe "
-                                                           + error.errorMessage);
-                                               }
-                                           });
             }
+            final RemoteStream finalStream2bSub = stream2Sub;
+            VideoSubscriptionConstraints videoOption =
+                    VideoSubscriptionConstraints.builder()
+                            .setResolution(640, 480)
+                            .setFrameRate(24)
+                            .addCodec(new VideoCodecParameters(H264))
+                            .addCodec(new VideoCodecParameters(VP8))
+                            .build();
+
+            AudioSubscriptionConstraints audioOption =
+                    AudioSubscriptionConstraints.builder()
+                            .addCodec(new AudioCodecParameters(OPUS))
+                            .addCodec(new AudioCodecParameters(PCMU))
+                            .build();
+
+            SubscribeOptions options = SubscribeOptions.builder(true, true)
+                    .setAudioOption(audioOption)
+                    .setVideoOption(videoOption)
+                    .build();
+
+            conferenceClient.subscribe(stream2Sub, options,
+                    new ActionCallback<Subscription>() {
+                        @Override
+                        public void onSuccess(Subscription result) {
+                            MainActivity.this.subscription = result;
+                            finalStream2bSub.attach(remoteRenderer);
+                        }
+
+                        @Override
+                        public void onFailure(IcsError error) {
+                            Log.e(TAG, "Failed to subscribe "
+                                    + error.errorMessage);
+                        }
+                    });
         });
     }
 
@@ -561,42 +520,31 @@ public class MainActivity extends AppCompatActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         screenCapturer = new IcsScreenCapturer(data, 1280, 720);
         screenStream = new LocalStream(screenCapturer);
-        executor.execute(new Runnable() {
+        executor.execute(() -> conferenceClient.publish(screenStream, new ActionCallback<Publication>() {
             @Override
-            public void run() {
-                conferenceClient.publish(screenStream, new ActionCallback<Publication>() {
-                    @Override
-                    public void onSuccess(Publication result) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                middleBtn.setEnabled(true);
-                                middleBtn.setTextColor(Color.WHITE);
-                                middleBtn.setText(R.string.stop_screen);
-                            }
-                        });
-                        screenPublication = result;
-                    }
-
-                    @Override
-                    public void onFailure(IcsError error) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                middleBtn.setEnabled(true);
-                                middleBtn.setTextColor(Color.WHITE);
-                                middleBtn.setText(R.string.share_screen);
-                            }
-                        });
-                        screenCapturer.stopCapture();
-                        screenCapturer.dispose();
-                        screenCapturer = null;
-                        screenStream.dispose();
-                        screenStream = null;
-                    }
+            public void onSuccess(Publication result) {
+                runOnUiThread(() -> {
+                    middleBtn.setEnabled(true);
+                    middleBtn.setTextColor(Color.WHITE);
+                    middleBtn.setText(R.string.stop_screen);
                 });
+                screenPublication = result;
             }
-        });
+
+            @Override
+            public void onFailure(IcsError error) {
+                runOnUiThread(() -> {
+                    middleBtn.setEnabled(true);
+                    middleBtn.setTextColor(Color.WHITE);
+                    middleBtn.setText(R.string.share_screen);
+                });
+                screenCapturer.stopCapture();
+                screenCapturer.dispose();
+                screenCapturer = null;
+                screenStream.dispose();
+                screenStream = null;
+            }
+        }));
     }
 
     private void getStats() {
@@ -630,8 +578,8 @@ public class MainActivity extends AppCompatActivity
 
     private void switchFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
-                                   .replace(R.id.fragment_container, fragment)
-                                   .commitAllowingStateLoss();
+                .replace(R.id.fragment_container, fragment)
+                .commitAllowingStateLoss();
         if (fragment instanceof VideoFragment) {
             middleBtn.setVisibility(View.VISIBLE);
         } else {
@@ -662,20 +610,17 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onServerDisconnected() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                switchFragment(loginFragment);
-                leftBtn.setEnabled(true);
-                leftBtn.setTextColor(Color.WHITE);
-                leftBtn.setText(R.string.connect);
-                leftBtn.setOnClickListener(joinRoom);
-                rightBtn.setEnabled(true);
-                rightBtn.setTextColor(Color.WHITE);
-                rightBtn.setText(R.string.settings);
-                rightBtn.setOnClickListener(settings);
-                fragmentContainer.setOnClickListener(null);
-            }
+        runOnUiThread(() -> {
+            switchFragment(loginFragment);
+            leftBtn.setEnabled(true);
+            leftBtn.setTextColor(Color.WHITE);
+            leftBtn.setText(R.string.connect);
+            leftBtn.setOnClickListener(joinRoom);
+            rightBtn.setEnabled(true);
+            rightBtn.setTextColor(Color.WHITE);
+            rightBtn.setText(R.string.settings);
+            rightBtn.setOnClickListener(settings);
+            fragmentContainer.setOnClickListener(null);
         });
 
         if (statsTimer != null) {

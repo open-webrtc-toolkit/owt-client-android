@@ -3,12 +3,12 @@
  */
 package com.intel.webrtc.base;
 
-import org.webrtc.Camera1Enumerator;
-import org.webrtc.CameraEnumerator;
-
 import static com.intel.webrtc.base.CheckCondition.RCHECK;
 import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
 import static com.intel.webrtc.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
+
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.CameraEnumerator;
 
 public abstract class MediaConstraints {
 
@@ -27,21 +27,16 @@ public abstract class MediaConstraints {
     }
 
     public final static class VideoTrackConstraints {
-        public enum CameraFacing {
-            FRONT,
-            BACK
-        }
-
         public int resolutionWidth = 640, resolutionHeight = 480, fps = 30;
         public boolean captureToTexture = true;
         public CameraFacing cameraFacing = CameraFacing.FRONT;
 
-        public static VideoTrackConstraints create(boolean captureToTexture) {
-            return new VideoTrackConstraints(captureToTexture);
-        }
-
         private VideoTrackConstraints(boolean captureToTexture) {
             this.captureToTexture = captureToTexture;
+        }
+
+        public static VideoTrackConstraints create(boolean captureToTexture) {
+            return new VideoTrackConstraints(captureToTexture);
         }
 
         public VideoTrackConstraints setResolution(int width, int height) {
@@ -79,6 +74,11 @@ public abstract class MediaConstraints {
 
             return deviceName == null ? enumerator.getDeviceNames()[0] : deviceName;
         }
+
+        public enum CameraFacing {
+            FRONT,
+            BACK
+        }
     }
 
     public final static class AudioTrackConstraints {
@@ -91,17 +91,17 @@ public abstract class MediaConstraints {
             if (echoCancellation) {
                 result.mandatory.add(
                         new org.webrtc.MediaConstraints.KeyValuePair("googEchoCancellation",
-                                                                     "true"));
+                                "true"));
             }
             if (extendedFilterEchoCancellation) {
                 result.mandatory.add(
                         new org.webrtc.MediaConstraints.KeyValuePair("googEchoCancellation2",
-                                                                     "true"));
+                                "true"));
             }
             if (delayAgnosticEchoCancellation) {
                 result.mandatory.add(
                         new org.webrtc.MediaConstraints.KeyValuePair("googDAEchoCancellation",
-                                                                     "true"));
+                                "true"));
             }
             return result;
         }

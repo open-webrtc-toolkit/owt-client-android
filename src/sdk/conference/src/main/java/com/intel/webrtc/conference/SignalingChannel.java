@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+
 import android.util.Base64;
 
 import com.intel.webrtc.base.IcsConst;
@@ -20,91 +22,14 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter.Listener;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-
 final class SignalingChannel {
-
-    interface SignalingChannelObserver {
-
-        void onRoomConnected(JSONObject info);
-
-        void onRoomConnectFailed(String errorMsg);
-
-        void onReconnecting();
-
-        void onRoomDisconnected();
-
-        void onProgressMessage(JSONObject message);
-
-        void onTextMessage(String participantId, String message);
-
-        void onStreamAdded(RemoteStream remoteStream);
-
-        void onStreamRemoved(String streamId);
-
-        void onStreamUpdated(String id, JSONObject updateInfo);
-
-        void onParticipantJoined(JSONObject participantInfo);
-
-        void onParticipantLeft(String participantId);
-    }
 
     private final SignalingChannelObserver observer;
     //Base64 encoded token.
     private final String token;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    private Socket socketClient;
-    private String reconnectionTicket;
     private final int MAX_RECONNECT_ATTEMPTS = 5;
-    private int reconnectAttempts = 0;
-    private Timer refreshTimer;
     private final Object timerLock = new Object();
-    private boolean loggedIn = false;
-
-    private final Listener connectedCallback = new Listener() {
-        @Override
-        public void call(Object... args) {
-            try {
-                login();
-            } catch (JSONException e) {
-                observer.onRoomConnectFailed(e.getMessage());
-            }
-
-        }
-    };
-
-    private final Listener connectErrorCallback = new Listener() {
-        @Override
-        public void call(final Object... args) {
-            executor.execute(() -> {
-                String msg = extractMsg(0, args);
-                if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                    observer.onRoomConnectFailed("Socket.IO connected failed: " + msg);
-                    if (loggedIn) {
-                        triggerDisconnected();
-                    }
-                }
-            });
-
-        }
-    };
-
-    private final Listener reconnectingCallback = new Listener() {
-        @Override
-        public void call(Object... args) {
-            executor.execute(() -> {
-                reconnectAttempts++;
-                //trigger onReconnecting, ONLY when already logged in and first time to reconnect
-                if (loggedIn && reconnectAttempts == 1) {
-                    observer.onReconnecting();
-                }
-            });
-        }
-    };
-
-    private final Listener disconnectCallback = args -> triggerDisconnected();
-
     private final Listener progressCallback = new Listener() {
         @Override
         public void call(final Object... args) {
@@ -114,7 +39,6 @@ final class SignalingChannel {
             });
         }
     };
-
     private final Listener participantCallback = new Listener() {
         @Override
         public void call(final Object... args) {
@@ -137,7 +61,6 @@ final class SignalingChannel {
             });
         }
     };
-
     private final Listener streamCallback = new Listener() {
         @Override
         public void call(final Object... args) {
@@ -168,7 +91,6 @@ final class SignalingChannel {
             });
         }
     };
-
     private final Listener textCallback = new Listener() {
         @Override
         public void call(final Object... args) {
@@ -182,10 +104,53 @@ final class SignalingChannel {
             });
         }
     };
-
     private final Listener dropCallback = args -> {
         //TODO
     };
+    private Socket socketClient;
+    private final Listener connectedCallback = new Listener() {
+        @Override
+        public void call(Object... args) {
+            try {
+                login();
+            } catch (JSONException e) {
+                observer.onRoomConnectFailed(e.getMessage());
+            }
+
+        }
+    };
+    private String reconnectionTicket;
+    private int reconnectAttempts = 0;
+    private Timer refreshTimer;
+    private boolean loggedIn = false;
+    private final Listener connectErrorCallback = new Listener() {
+        @Override
+        public void call(final Object... args) {
+            executor.execute(() -> {
+                String msg = extractMsg(0, args);
+                if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                    observer.onRoomConnectFailed("Socket.IO connected failed: " + msg);
+                    if (loggedIn) {
+                        triggerDisconnected();
+                    }
+                }
+            });
+
+        }
+    };
+    private final Listener reconnectingCallback = new Listener() {
+        @Override
+        public void call(Object... args) {
+            executor.execute(() -> {
+                reconnectAttempts++;
+                //trigger onReconnecting, ONLY when already logged in and first time to reconnect
+                if (loggedIn && reconnectAttempts == 1) {
+                    observer.onReconnecting();
+                }
+            });
+        }
+    };
+    private final Listener disconnectCallback = args -> triggerDisconnected();
 
     SignalingChannel(String token, SignalingChannelObserver observer) {
         this.token = token;
@@ -219,14 +184,14 @@ final class SignalingChannel {
                 socketClient = IO.socket(url, opt);
 
                 socketClient.on(Socket.EVENT_CONNECT, connectedCallback)
-                            .on(Socket.EVENT_CONNECT_ERROR, connectErrorCallback)
-                            .on(Socket.EVENT_RECONNECTING, reconnectingCallback)
-                            .on(Socket.EVENT_DISCONNECT, disconnectCallback)
-                            .on("progress", progressCallback)
-                            .on("participant", participantCallback)
-                            .on("stream", streamCallback)
-                            .on("text", textCallback)
-                            .on("drop", dropCallback);
+                        .on(Socket.EVENT_CONNECT_ERROR, connectErrorCallback)
+                        .on(Socket.EVENT_RECONNECTING, reconnectingCallback)
+                        .on(Socket.EVENT_DISCONNECT, disconnectCallback)
+                        .on("progress", progressCallback)
+                        .on("participant", participantCallback)
+                        .on("stream", streamCallback)
+                        .on("text", textCallback)
+                        .on("drop", dropCallback);
                 socketClient.connect();
 
             } catch (JSONException e) {
@@ -286,6 +251,31 @@ final class SignalingChannel {
             return "";
         }
         return args[position].toString();
+    }
+
+    interface SignalingChannelObserver {
+
+        void onRoomConnected(JSONObject info);
+
+        void onRoomConnectFailed(String errorMsg);
+
+        void onReconnecting();
+
+        void onRoomDisconnected();
+
+        void onProgressMessage(JSONObject message);
+
+        void onTextMessage(String participantId, String message);
+
+        void onStreamAdded(RemoteStream remoteStream);
+
+        void onStreamRemoved(String streamId);
+
+        void onStreamUpdated(String id, JSONObject updateInfo);
+
+        void onParticipantJoined(JSONObject participantInfo);
+
+        void onParticipantLeft(String participantId);
     }
 
 }

@@ -3,10 +3,15 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.conference.JsonUtils.getInt;
+import static com.intel.webrtc.conference.JsonUtils.getObj;
+import static com.intel.webrtc.conference.JsonUtils.getString;
+
 import com.intel.webrtc.base.AudioCodecParameters;
 import com.intel.webrtc.base.MediaCodecs.AudioCodec;
-import com.intel.webrtc.base.VideoCodecParameters;
 import com.intel.webrtc.base.MediaCodecs.VideoCodec;
+import com.intel.webrtc.base.VideoCodecParameters;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,17 +21,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.conference.JsonUtils.getInt;
-import static com.intel.webrtc.conference.JsonUtils.getObj;
-import static com.intel.webrtc.conference.JsonUtils.getString;
-
 /**
  * Capabilities for subscribing a RemoteStream, which indicates the video or/and audio options
  * that ConferenceClient may use to subscribe a RemoteStream. Subscribing a RemoteStream with the
  * options that beyonds its SubscriptionCapabilities may cause failure.
  */
 public class SubscriptionCapabilities {
+
+    public final AudioSubscriptionCapabilities audioSubscriptionCapabilities;
+    public final VideoSubscriptionCapabilities videoSubscriptionCapabilities;
+
+    SubscriptionCapabilities(JSONObject mediaInfo) throws JSONException {
+        DCHECK(mediaInfo);
+
+        JSONObject audio = getObj(mediaInfo, "audio");
+        audioSubscriptionCapabilities = audio == null ? null
+                : new AudioSubscriptionCapabilities(audio);
+
+        JSONObject video = getObj(mediaInfo, "video");
+        videoSubscriptionCapabilities = video == null ? null
+                : new VideoSubscriptionCapabilities(video);
+    }
 
     /**
      * Audio capabilities for subscribing a RemoteStream.
@@ -42,8 +57,8 @@ public class SubscriptionCapabilities {
 
             JSONObject format = getObj(audioObj, "format");
             audioCodecs.add(new AudioCodecParameters(AudioCodec.get(getString(format, "codec", "")),
-                                                     getInt(format, "channelNum", 0),
-                                                     getInt(format, "sampleRate", 0)));
+                    getInt(format, "channelNum", 0),
+                    getInt(format, "sampleRate", 0)));
 
             JSONObject audioOpt = getObj(audioObj, "optional");
             if (audioOpt != null && audioOpt.has("format")) {
@@ -167,21 +182,5 @@ public class SubscriptionCapabilities {
             }
 
         }
-    }
-
-
-    public final AudioSubscriptionCapabilities audioSubscriptionCapabilities;
-    public final VideoSubscriptionCapabilities videoSubscriptionCapabilities;
-
-    SubscriptionCapabilities(JSONObject mediaInfo) throws JSONException {
-        DCHECK(mediaInfo);
-
-        JSONObject audio = getObj(mediaInfo, "audio");
-        audioSubscriptionCapabilities = audio == null ? null
-                                                      : new AudioSubscriptionCapabilities(audio);
-
-        JSONObject video = getObj(mediaInfo, "video");
-        videoSubscriptionCapabilities = video == null ? null
-                                                      : new VideoSubscriptionCapabilities(video);
     }
 }

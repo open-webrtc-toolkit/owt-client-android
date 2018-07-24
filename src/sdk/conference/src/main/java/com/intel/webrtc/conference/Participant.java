@@ -15,25 +15,13 @@ import java.util.List;
 public final class Participant {
 
     /**
-     * Interface for observing participant events.
-     */
-    public interface ParticipantObserver {
-        /**
-         * Called upon the participant leaves the conference.
-         */
-        void onLeft();
-    }
-
-    /**
      * Id of this Participant instance.
      */
     public final String id;
-
     /**
      * Role of the participant.
      */
     public final String role;
-
     /**
      * User id of the participant.
      */
@@ -75,5 +63,15 @@ public final class Participant {
                 observer.onLeft();
             }
         }
+    }
+
+    /**
+     * Interface for observing participant events.
+     */
+    public interface ParticipantObserver {
+        /**
+         * Called upon the participant leaves the conference.
+         */
+        void onLeft();
     }
 }

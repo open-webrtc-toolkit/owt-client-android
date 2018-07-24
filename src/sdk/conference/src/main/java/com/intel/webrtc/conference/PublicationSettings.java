@@ -3,22 +3,35 @@
  */
 package com.intel.webrtc.conference;
 
-import com.intel.webrtc.base.MediaCodecs.AudioCodec;
-import com.intel.webrtc.base.AudioCodecParameters;
-import com.intel.webrtc.base.MediaCodecs.VideoCodec;
-import com.intel.webrtc.base.VideoCodecParameters;
-
-import org.json.JSONObject;
-
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
 import static com.intel.webrtc.conference.JsonUtils.getInt;
 import static com.intel.webrtc.conference.JsonUtils.getObj;
 import static com.intel.webrtc.conference.JsonUtils.getString;
 
+import com.intel.webrtc.base.AudioCodecParameters;
+import com.intel.webrtc.base.MediaCodecs.AudioCodec;
+import com.intel.webrtc.base.MediaCodecs.VideoCodec;
+import com.intel.webrtc.base.VideoCodecParameters;
+
+import org.json.JSONObject;
+
 /**
  * The settings for a publication.
  */
 public final class PublicationSettings {
+
+    public final AudioPublicationSettings audioPublicationSettings;
+    public final VideoPublicationSettings videoPublicationSettings;
+
+    PublicationSettings(JSONObject mediaInfo) {
+        DCHECK(mediaInfo);
+
+        JSONObject audio = getObj(mediaInfo, "audio");
+        audioPublicationSettings = audio == null ? null : new AudioPublicationSettings(audio);
+
+        JSONObject video = getObj(mediaInfo, "video");
+        videoPublicationSettings = video == null ? null : new VideoPublicationSettings(video);
+    }
 
     /**
      * Audio settings for a publication.
@@ -63,19 +76,6 @@ public final class PublicationSettings {
                 keyFrameInterval = 0;
             }
         }
-    }
-
-    public final AudioPublicationSettings audioPublicationSettings;
-    public final VideoPublicationSettings videoPublicationSettings;
-
-    PublicationSettings(JSONObject mediaInfo) {
-        DCHECK(mediaInfo);
-
-        JSONObject audio = getObj(mediaInfo, "audio");
-        audioPublicationSettings = audio == null ? null : new AudioPublicationSettings(audio);
-
-        JSONObject video = getObj(mediaInfo, "video");
-        videoPublicationSettings = video == null ? null : new VideoPublicationSettings(video);
     }
 
 }

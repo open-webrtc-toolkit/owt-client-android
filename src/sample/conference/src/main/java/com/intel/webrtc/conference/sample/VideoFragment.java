@@ -45,17 +45,12 @@ import java.util.Map;
 
 public class VideoFragment extends Fragment {
 
-    public interface VideoFragmentListener {
-        void onRenderer(SurfaceViewRenderer localRenderer, SurfaceViewRenderer remoteRenderer);
-    }
-
     private VideoFragmentListener listener;
     private SurfaceViewRenderer fullRenderer, smallRenderer;
     private TextView statsInView, statsOutView;
     private float dX, dY;
     private BigInteger lastBytesSent = BigInteger.valueOf(0);
     private BigInteger lastBytesReceived = BigInteger.valueOf(0);
-
     private View.OnTouchListener touchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
@@ -67,17 +62,19 @@ public class VideoFragment extends Fragment {
                         break;
                     case MotionEvent.ACTION_MOVE:
                         v.animate()
-                         .x(event.getRawX() + dX)
-                         .y(event.getRawY() + dY)
-                         .setDuration(0)
-                         .start();
+                                .x(event.getRawX() + dX)
+                                .y(event.getRawY() + dY)
+                                .setDuration(0)
+                                .start();
                         break;
                     case MotionEvent.ACTION_UP:
                         v.animate()
-                         .x(event.getRawX() + dX >= event.getRawY() + dY ? event.getRawX() + dX : 0)
-                         .y(event.getRawX() + dX >= event.getRawY() + dY ? 0 : event.getRawY() + dY)
-                         .setDuration(10)
-                         .start();
+                                .x(event.getRawX() + dX >= event.getRawY() + dY ? event.getRawX()
+                                        + dX : 0)
+                                .y(event.getRawX() + dX >= event.getRawY() + dY ? 0
+                                        : event.getRawY() + dY)
+                                .setDuration(10)
+                                .start();
                         break;
                 }
             }
@@ -94,7 +91,7 @@ public class VideoFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_video, container, false);
 
         statsInView = mView.findViewById(R.id.stats_in);
@@ -195,12 +192,13 @@ public class VideoFragment extends Fragment {
                 + "\nResolution: " + width + "x" + height
                 + "\nBitrate: " + bytesSR * 8 / MainActivity.STATS_INTERVAL_MS + "kbps"
                 + "\nPackets: " + packetsSR;
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                statsView.setVisibility(View.VISIBLE);
-                statsView.setText(statsReport);
-            }
+        getActivity().runOnUiThread(() -> {
+            statsView.setVisibility(View.VISIBLE);
+            statsView.setText(statsReport);
         });
+    }
+
+    public interface VideoFragmentListener {
+        void onRenderer(SurfaceViewRenderer localRenderer, SurfaceViewRenderer remoteRenderer);
     }
 }

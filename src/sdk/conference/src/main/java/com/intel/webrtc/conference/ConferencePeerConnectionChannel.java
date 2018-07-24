@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+
 import com.intel.webrtc.base.AudioCodecParameters;
 import com.intel.webrtc.base.AudioEncodingParameters;
 import com.intel.webrtc.base.LocalStream;
@@ -19,17 +21,15 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-
 final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
-    private boolean remoteSdpSet = false;
     private final List<IceCandidate> queuedLocalCandidates;
     Stream stream;
     MuteEventObserver muteEventObserver;
+    private boolean remoteSdpSet = false;
 
     ConferencePeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
-                                    boolean enableVideo, boolean enableAudio,
-                                    PeerConnectionChannelObserver observer) {
+            boolean enableVideo, boolean enableAudio,
+            PeerConnectionChannelObserver observer) {
         super(key, configuration, enableVideo, enableAudio, observer);
         queuedLocalCandidates = new LinkedList<>();
     }

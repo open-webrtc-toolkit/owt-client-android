@@ -3,7 +3,13 @@
  */
 package com.intel.webrtc.base;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import android.util.Log;
+
+import com.intel.webrtc.base.MediaCodecs.AudioCodec;
+import com.intel.webrtc.base.MediaCodecs.VideoCodec;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,63 +30,39 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
-import com.intel.webrtc.base.MediaCodecs.AudioCodec;
-import com.intel.webrtc.base.MediaCodecs.VideoCodec;
-
 ///@cond
 public abstract class PeerConnectionChannel
         implements PeerConnection.Observer, SdpObserver, DataChannel.Observer {
 
     protected static final String TAG = "ICS";
-
-    public interface PeerConnectionChannelObserver {
-        void onIceCandidate(String key, IceCandidate candidate);
-
-        void onLocalDescription(String key, SessionDescription localSdp);
-
-        void onError(String key, String errorMsg);
-
-        void onAddStream(String key, RemoteStream remoteStream);
-
-        void onDataChannelMessage(String key, String message);
-
-        void onRenegotiationRequest(String key);
-    }
-
     //For P2P, key is peer id, for conference, key is Publication/Subscription id.
     public final String key;
-    protected PeerConnection peerConnection;
     protected final PeerConnectionChannelObserver observer;
-    private final ExecutorService pcExecutor = Executors.newSingleThreadExecutor();
     protected final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService pcExecutor = Executors.newSingleThreadExecutor();
+    private final List<IceCandidate> queuedRemoteCandidates;
+    private final Object remoteIceLock = new Object();
+    private final Object disposeLock = new Object();
+    protected PeerConnection peerConnection;
     protected PeerConnection.SignalingState signalingState;
     protected PeerConnection.IceConnectionState iceConnectionState;
     protected DataChannel localDataChannel;
-
-    private MediaConstraints sdpConstraints;
-    private SessionDescription localSdp;
-    private final List<IceCandidate> queuedRemoteCandidates;
-    private final Object remoteIceLock = new Object();
-
     protected List<VideoCodec> videoCodecs;
     protected List<AudioCodec> audioCodecs;
     protected Integer videoMaxBitrate = null, audioMaxBitrate = null;
-
     protected ArrayList<String> queuedMessage;
+    private MediaConstraints sdpConstraints;
+    private SessionDescription localSdp;
     private boolean disposed = false;
-    private final Object disposeLock = new Object();
 
     protected PeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
             boolean enableVideo, boolean enableAudio,
@@ -539,6 +521,20 @@ public abstract class PeerConnectionChannel
             String message = new String(bytes);
             observer.onDataChannelMessage(key, message);
         });
+    }
+
+    public interface PeerConnectionChannelObserver {
+        void onIceCandidate(String key, IceCandidate candidate);
+
+        void onLocalDescription(String key, SessionDescription localSdp);
+
+        void onError(String key, String errorMsg);
+
+        void onAddStream(String key, RemoteStream remoteStream);
+
+        void onDataChannelMessage(String key, String message);
+
+        void onRenegotiationRequest(String key);
     }
 
 }

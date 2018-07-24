@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.base;
 
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import android.content.Context;
 
 import org.webrtc.EglBase;
@@ -10,33 +12,11 @@ import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
 import org.webrtc.audio.AudioDeviceModule;
 
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
 /**
  * Initialization settings. ContextInitialization.initialize must be called before creating
  * P2PClient or ConferenceClient.
  */
 public class ContextInitialization {
-
-    /**
-     * Network types: Ethernet, wifi, cellular, vpn and loopback.
-     */
-    public enum NetworkType {
-        ETHERNET(1),
-        WIFI(1 << 1),
-        CELLULAR(1 << 2),
-        VPN(1 << 3),
-        LOOPBACK(1 << 4);
-        //BLUETOOTH();
-
-        private final int value;
-
-        ///@cond
-        NetworkType(int v) {
-            value = v;
-        }
-        ///@endcond
-    }
 
     private static boolean initialized = false;
     private static ContextInitialization instance = null;
@@ -171,5 +151,25 @@ public class ContextInitialization {
         RCHECK(!initialized);
         initialized = true;
         PCFactoryProxy.instance();
+    }
+
+    /**
+     * Network types: Ethernet, wifi, cellular, vpn and loopback.
+     */
+    public enum NetworkType {
+        ETHERNET(1),
+        WIFI(1 << 1),
+        CELLULAR(1 << 2),
+        VPN(1 << 3),
+        LOOPBACK(1 << 4);
+        //BLUETOOTH();
+
+        private final int value;
+
+        ///@cond
+        NetworkType(int v) {
+            value = v;
+        }
+        ///@endcond
     }
 }

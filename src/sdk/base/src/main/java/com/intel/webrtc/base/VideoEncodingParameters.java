@@ -10,14 +10,14 @@ import static com.intel.webrtc.base.CheckCondition.RCHECK;
  */
 public final class VideoEncodingParameters {
     /**
-     * Video codec.
-     */
-    public final VideoCodecParameters codec;
-    /**
      * Maximum bitrate for sending a video track.
      * *NOTE* currently setting different bitrates for different video codecs is not supported.
      */
     public static int maxBitrate = 0;
+    /**
+     * Video codec.
+     */
+    public final VideoCodecParameters codec;
 
     public VideoEncodingParameters(MediaCodecs.VideoCodec codec) {
         RCHECK(codec);

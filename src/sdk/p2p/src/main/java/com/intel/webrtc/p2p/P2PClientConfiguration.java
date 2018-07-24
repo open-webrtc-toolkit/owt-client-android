@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.p2p;
 
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import com.intel.webrtc.base.AudioEncodingParameters;
 import com.intel.webrtc.base.ClientConfiguration;
 import com.intel.webrtc.base.VideoEncodingParameters;
@@ -12,12 +14,30 @@ import org.webrtc.PeerConnection;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
 /**
  * Configuration for P2PClient.
  */
 public final class P2PClientConfiguration extends ClientConfiguration {
+
+    final List<VideoEncodingParameters> videoEncodings;
+    final List<AudioEncodingParameters> audioEncodings;
+
+    private P2PClientConfiguration(PeerConnection.RTCConfiguration rtcConfiguration,
+            List<AudioEncodingParameters> audioEncodings,
+            List<VideoEncodingParameters> videoEncodings) {
+        super(rtcConfiguration);
+        this.audioEncodings = audioEncodings;
+        this.videoEncodings = videoEncodings;
+    }
+
+    /**
+     * Get a Builder for creating a P2PClientConfiguration.
+     *
+     * @return Builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
 
     /**
      * Builder for building up a P2PClientConfiguration.
@@ -62,6 +82,7 @@ public final class P2PClientConfiguration extends ClientConfiguration {
 
         /**
          * Set up the RTCConfiguration for the underlying WebRTC PeerConnection
+         *
          * @param rtcConfiguration RTCConfiguration to be set.
          * @return Builder
          */
@@ -72,31 +93,12 @@ public final class P2PClientConfiguration extends ClientConfiguration {
 
         /**
          * Build up the P2PClientConfiguration.
+         *
          * @return P2PClientConfiguration.
          */
         public P2PClientConfiguration build() {
             return new P2PClientConfiguration(rtcConfiguration, audioEncodings, videoEncodings);
         }
-    }
-
-
-    final List<VideoEncodingParameters> videoEncodings;
-    final List<AudioEncodingParameters> audioEncodings;
-
-    private P2PClientConfiguration(PeerConnection.RTCConfiguration rtcConfiguration,
-                                   List<AudioEncodingParameters> audioEncodings,
-                                   List<VideoEncodingParameters> videoEncodings) {
-        super(rtcConfiguration);
-        this.audioEncodings = audioEncodings;
-        this.videoEncodings = videoEncodings;
-    }
-
-    /**
-     * Get a Builder for creating a P2PClientConfiguration.
-     * @return Builder
-     */
-    public static Builder builder() {
-        return new Builder();
     }
 
 

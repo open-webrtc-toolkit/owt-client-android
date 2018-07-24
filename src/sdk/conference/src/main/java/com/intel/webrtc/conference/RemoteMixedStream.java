@@ -3,6 +3,10 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.conference.JsonUtils.getObj;
+import static com.intel.webrtc.conference.JsonUtils.getString;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,66 +17,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.conference.JsonUtils.getObj;
-import static com.intel.webrtc.conference.JsonUtils.getString;
-
 /**
  * RemoteMixedStream represents the stream mixed by the conference server.
  */
 public final class RemoteMixedStream extends RemoteStream {
-
-    /**
-     * Region information of a RemoteStream in this RemoteMixedStream.
-     */
-    public static class Region {
-        /**
-         * Id of this region.
-         */
-        public final String regionId;
-
-        /**
-         * Id of the RemoteStream corresponding to this Region.
-         */
-        public final String streamId;
-
-        /**
-         * Shape of this Region.
-         */
-        public final String shape;
-
-        /**
-         * Shape specific parameters of this Region.
-         */
-        public final HashMap<String, String> parameters = new HashMap<>();
-
-        Region(JSONObject regionObj) {
-            streamId = getString(regionObj, "stream");
-            JSONObject region = getObj(regionObj, "region");
-            if (region != null) {
-                regionId = getString(region, "id");
-                shape = getString(region, "shape");
-                JSONObject area = getObj(region, "area");
-                for (Iterator<String> it = area.keys(); it.hasNext(); ) {
-                    String key = it.next();
-                    String value = getString(area, key);
-                    parameters.put(key, value);
-                }
-            } else {
-                regionId = null;
-                shape = null;
-            }
-        }
-    }
-
-    /**
-     * Interface for observing remote mixed stream events.
-     */
-    public interface RemoteMixedStreamObserver extends StreamObserver {
-        void onLayoutChange(List<Region> regions);
-
-        void onActiveAudioInputChange(String activeAudioInput);
-    }
 
     /**
      * View label of the RemoteMixedStream.
@@ -140,6 +88,58 @@ public final class RemoteMixedStream extends RemoteStream {
                 if (observer instanceof RemoteMixedStreamObserver) {
                     ((RemoteMixedStreamObserver) observer).onActiveAudioInputChange(activeInput);
                 }
+            }
+        }
+    }
+
+    /**
+     * Interface for observing remote mixed stream events.
+     */
+    public interface RemoteMixedStreamObserver extends StreamObserver {
+        void onLayoutChange(List<Region> regions);
+
+        void onActiveAudioInputChange(String activeAudioInput);
+    }
+
+    /**
+     * Region information of a RemoteStream in this RemoteMixedStream.
+     */
+    public static class Region {
+        /**
+         * Id of this region.
+         */
+        public final String regionId;
+
+        /**
+         * Id of the RemoteStream corresponding to this Region.
+         */
+        public final String streamId;
+
+        /**
+         * Shape of this Region.
+         */
+        public final String shape;
+
+        /**
+         * Shape specific parameters of this Region.
+         */
+        public final HashMap<String, String> parameters = new HashMap<>();
+
+        Region(JSONObject regionObj) {
+            streamId = getString(regionObj, "stream");
+            JSONObject region = getObj(regionObj, "region");
+            if (region != null) {
+                regionId = getString(region, "id");
+                shape = getString(region, "shape");
+                JSONObject area = getObj(region, "area");
+                for (Iterator<String> it = area.keys(); it.hasNext(); ) {
+                    String key = it.next();
+                    String value = getString(area, key);
+                    parameters.put(key, value);
+                }
+            } else {
+                regionId = null;
+                shape = null;
             }
         }
     }

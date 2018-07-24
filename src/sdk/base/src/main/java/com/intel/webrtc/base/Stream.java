@@ -3,102 +3,24 @@
  */
 package com.intel.webrtc.base;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+
 import org.webrtc.MediaStream;
 import org.webrtc.VideoRenderer;
 
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-
 public abstract class Stream {
 
-    /**
-     * Information of the source of a Stream.
-     */
-    public static class StreamSourceInfo {
-        public enum VideoSourceInfo {
-            CAMERA("camera"),
-            SCREENCAST("screen-cast"),
-            FILE("file"),
-            OTHERS("other"),
-            MIXED("mixed");
-
-            ///@cond
-            public final String type;
-
-            VideoSourceInfo(String type) {
-                this.type = type;
-            }
-
-            public static VideoSourceInfo get(String type) {
-                switch (type) {
-                    case "camera":
-                        return CAMERA;
-                    case "screen-cast":
-                        return SCREENCAST;
-                    case "file":
-                        return FILE;
-                    case "mixed":
-                        return MIXED;
-                    default:
-                        return OTHERS;
-                }
-            }
-            ///@endcond
-        }
-
-        public enum AudioSourceInfo {
-            MIC("mic"),
-            FILE("file"),
-            OTHERS("other"),
-            MIXED("mixed");
-
-            ///@cond
-            public final String type;
-
-            AudioSourceInfo(String type) {
-                this.type = type;
-            }
-
-            public static AudioSourceInfo get(String info) {
-                switch (info) {
-                    case "mic":
-                        return MIC;
-                    case "file":
-                        return FILE;
-                    case "mixed":
-                        return MIXED;
-                    default:
-                        return OTHERS;
-                }
-            }
-            ///@endcond
-        }
-
-        /**
-         * Video source info of the Stream.
-         */
-        public final VideoSourceInfo videoSourceInfo;
-        /**
-         * Audio source info of the Stream.
-         */
-        public final AudioSourceInfo audioSourceInfo;
-
-        public StreamSourceInfo(VideoSourceInfo videoSourceInfo, AudioSourceInfo audioSourceInfo) {
-            this.videoSourceInfo = videoSourceInfo;
-            this.audioSourceInfo = audioSourceInfo;
-        }
-    }
-
+    private final ConcurrentHashMap<VideoRenderer.Callbacks, VideoRenderer> renderers
+            = new ConcurrentHashMap<>();
     ///@cond
     protected MediaStream mediaStream;
     ///@endcond
     StreamSourceInfo streamSourceInfo;
     private HashMap<String, String> attributes;
-    private final ConcurrentHashMap<VideoRenderer.Callbacks, VideoRenderer> renderers
-            = new ConcurrentHashMap<>();
 
     abstract public String id();
 
@@ -134,6 +56,15 @@ public abstract class Stream {
     protected void setStreamSourceInfo(StreamSourceInfo info) {
         streamSourceInfo = info;
     }
+
+    /**
+     * Get attributes that has been set to the Stream.
+     *
+     * @return attributes
+     */
+    public HashMap<String, String> getAttributes() {
+        return attributes;
+    }
     ///@endcond
 
     /**
@@ -143,15 +74,6 @@ public abstract class Stream {
      */
     public void setAttributes(HashMap<String, String> attributes) {
         this.attributes = attributes;
-    }
-
-    /**
-     * Get attributes that has been set to the Stream.
-     *
-     * @return attributes
-     */
-    public HashMap<String, String> getAttributes() {
-        return attributes;
     }
 
     /**
@@ -248,6 +170,84 @@ public abstract class Stream {
             return mediaStream.audioTracks.get(0).id();
         }
         return null;
+    }
+
+    /**
+     * Information of the source of a Stream.
+     */
+    public static class StreamSourceInfo {
+        /**
+         * Video source info of the Stream.
+         */
+        public final VideoSourceInfo videoSourceInfo;
+        /**
+         * Audio source info of the Stream.
+         */
+        public final AudioSourceInfo audioSourceInfo;
+
+        public StreamSourceInfo(VideoSourceInfo videoSourceInfo, AudioSourceInfo audioSourceInfo) {
+            this.videoSourceInfo = videoSourceInfo;
+            this.audioSourceInfo = audioSourceInfo;
+        }
+
+        public enum VideoSourceInfo {
+            CAMERA("camera"),
+            SCREENCAST("screen-cast"),
+            FILE("file"),
+            OTHERS("other"),
+            MIXED("mixed");
+
+            ///@cond
+            public final String type;
+
+            VideoSourceInfo(String type) {
+                this.type = type;
+            }
+
+            public static VideoSourceInfo get(String type) {
+                switch (type) {
+                    case "camera":
+                        return CAMERA;
+                    case "screen-cast":
+                        return SCREENCAST;
+                    case "file":
+                        return FILE;
+                    case "mixed":
+                        return MIXED;
+                    default:
+                        return OTHERS;
+                }
+            }
+            ///@endcond
+        }
+
+        public enum AudioSourceInfo {
+            MIC("mic"),
+            FILE("file"),
+            OTHERS("other"),
+            MIXED("mixed");
+
+            ///@cond
+            public final String type;
+
+            AudioSourceInfo(String type) {
+                this.type = type;
+            }
+
+            public static AudioSourceInfo get(String info) {
+                switch (info) {
+                    case "mic":
+                        return MIC;
+                    case "file":
+                        return FILE;
+                    case "mixed":
+                        return MIXED;
+                    default:
+                        return OTHERS;
+                }
+            }
+            ///@endcond
+        }
     }
     ///@endcond
 }

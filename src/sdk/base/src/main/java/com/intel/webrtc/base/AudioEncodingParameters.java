@@ -10,14 +10,14 @@ import static com.intel.webrtc.base.CheckCondition.RCHECK;
  */
 public class AudioEncodingParameters {
     /**
-     * Audio codec.
-     */
-    public final AudioCodecParameters codec;
-    /**
      * Maximum bitrate for sending an audio track.
      * *NOTE* currently setting different bitrates for different audio codecs is not supported.
      */
     public static int maxBitrate = 0;
+    /**
+     * Audio codec.
+     */
+    public final AudioCodecParameters codec;
 
     public AudioEncodingParameters(MediaCodecs.AudioCodec codec) {
         RCHECK(codec);

@@ -12,16 +12,6 @@ import java.util.List;
  */
 public abstract class RemoteStream extends Stream {
 
-    /**
-     * Interface for observing stream events.
-     */
-    public interface StreamObserver {
-        /**
-         * Called upon stream ended.
-         */
-        void onStreamEnded();
-    }
-
     private final String id;
     private final String origin;
     ///@cond
@@ -34,7 +24,6 @@ public abstract class RemoteStream extends Stream {
         this.id = id;
         this.origin = origin;
     }
-    ///@endcond
 
     /**
      * Id of the RemoteStream.
@@ -45,6 +34,7 @@ public abstract class RemoteStream extends Stream {
     public String id() {
         return id;
     }
+    ///@endcond
 
     /**
      * Id of the remote client that published this stream.
@@ -86,6 +76,16 @@ public abstract class RemoteStream extends Stream {
                 observer.onStreamEnded();
             }
         }
+    }
+
+    /**
+     * Interface for observing stream events.
+     */
+    public interface StreamObserver {
+        /**
+         * Called upon stream ended.
+         */
+        void onStreamEnded();
     }
     ///@endcond
 }

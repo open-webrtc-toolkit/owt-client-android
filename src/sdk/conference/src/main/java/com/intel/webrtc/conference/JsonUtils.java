@@ -3,10 +3,10 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
 
 final class JsonUtils {
 

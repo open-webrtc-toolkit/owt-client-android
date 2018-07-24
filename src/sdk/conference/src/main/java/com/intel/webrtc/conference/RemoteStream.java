@@ -3,18 +3,18 @@
  */
 package com.intel.webrtc.conference;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.webrtc.MediaStream;
+import static com.intel.webrtc.conference.JsonUtils.getObj;
+import static com.intel.webrtc.conference.JsonUtils.getString;
 
 import com.intel.webrtc.base.Stream.StreamSourceInfo.AudioSourceInfo;
 import com.intel.webrtc.base.Stream.StreamSourceInfo.VideoSourceInfo;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.webrtc.MediaStream;
+
 import java.util.HashMap;
 import java.util.Iterator;
-
-import static com.intel.webrtc.conference.JsonUtils.getObj;
-import static com.intel.webrtc.conference.JsonUtils.getString;
 
 /**
  * RemoteStream represent the stream published by other endpoints in the conference.
@@ -25,7 +25,7 @@ public class RemoteStream extends com.intel.webrtc.base.RemoteStream {
 
     RemoteStream(JSONObject streamInfo) throws JSONException {
         super(getString(streamInfo, "id"),
-              getString(streamInfo.getJSONObject("info"), "owner", "mixer"));
+                getString(streamInfo.getJSONObject("info"), "owner", "mixer"));
 
         JSONObject mediaInfo = getObj(streamInfo, "media", true);
         publicationSettings = new PublicationSettings(mediaInfo);
@@ -47,12 +47,12 @@ public class RemoteStream extends com.intel.webrtc.base.RemoteStream {
         setAttributes(getObj(getObj(streamInfo, "info"), "attributes"));
     }
 
-    void setMediaStream(MediaStream mediaStream) {
-        this.mediaStream = mediaStream;
-    }
-
     MediaStream getMediaStream() {
         return mediaStream;
+    }
+
+    void setMediaStream(MediaStream mediaStream) {
+        this.mediaStream = mediaStream;
     }
 
     private void setAttributes(JSONObject attributes) throws JSONException {

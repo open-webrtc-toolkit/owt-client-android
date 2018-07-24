@@ -3,6 +3,16 @@
  */
 package com.intel.webrtc.p2p;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_SDP;
+
+import static org.webrtc.DataChannel.State.OPEN;
+import static org.webrtc.PeerConnection.IceConnectionState.COMPLETED;
+import static org.webrtc.PeerConnection.IceConnectionState.CONNECTED;
+import static org.webrtc.PeerConnection.SignalingState.STABLE;
+
 import android.util.Log;
 
 import com.intel.webrtc.base.ActionCallback;
@@ -26,36 +36,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.intel.webrtc.base.CheckCondition.DCHECK;
-import static com.intel.webrtc.base.CheckCondition.RCHECK;
-import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
-import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_SDP;
-import static org.webrtc.DataChannel.State.OPEN;
-import static org.webrtc.PeerConnection.SignalingState.STABLE;
-import static org.webrtc.PeerConnection.IceConnectionState.COMPLETED;
-import static org.webrtc.PeerConnection.IceConnectionState.CONNECTED;
-
 final class P2PPeerConnectionChannel extends PeerConnectionChannel {
 
-    static class CallbackInfo {
-        int trackNum;
-        final MediaStream mediaStream;
-        final ActionCallback<Publication> callback;
-
-        CallbackInfo(MediaStream mediaStream, ActionCallback<Publication> callback) {
-            this.mediaStream = mediaStream;
-            this.callback = callback;
-            trackNum = mediaStream.audioTracks.size() + mediaStream.videoTracks.size();
-        }
-    }
-
-    private boolean renegotiationNeeded = false;
-    private boolean negotiating = false;
     private final Object negLock = new Object();
     //key: trackId
     ConcurrentHashMap<String, CallbackInfo> publishCallbacks;
     //key: localstream id
     ConcurrentHashMap<String, LocalStream> localStreams;
+    private boolean renegotiationNeeded = false;
+    private boolean negotiating = false;
     private ConcurrentHashMap<MediaStream, RemoteStream> remoteStreams;
     private List<RemoteStream> pendingAckRemoteStreams;
     private ConcurrentHashMap<Long, ActionCallback<Void>> sendMsgCallbacks;
@@ -68,7 +57,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     private boolean isCaller = true;
 
     P2PPeerConnectionChannel(String peerId, P2PClientConfiguration configuration,
-                             PeerConnectionChannelObserver observer) {
+            PeerConnectionChannelObserver observer) {
         super(peerId, configuration.rtcConfiguration, true, true, observer);
         publishCallbacks = new ConcurrentHashMap<>();
         localStreams = new ConcurrentHashMap<>();
@@ -98,7 +87,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         if (isFireFox && everPublished) {
             if (callback != null) {
                 callback.onFailure(new IcsError(P2P_CLIENT_INVALID_STATE.value,
-                                                "Cannot publish multiple streams to Firefox."));
+                        "Cannot publish multiple streams to Firefox."));
             }
             return;
         }
@@ -190,7 +179,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     void processUserInfo(JSONObject userInfo) {
         try {
             isFireFox = userInfo.getJSONObject("runtime").getString("name")
-                                .equalsIgnoreCase("Firefox");
+                    .equalsIgnoreCase("Firefox");
         } catch (JSONException e) {
             DCHECK(e);
         }
@@ -381,5 +370,17 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             publishCallbacks.clear();
             observer.onError(key, error);
         });
+    }
+
+    static class CallbackInfo {
+        final MediaStream mediaStream;
+        final ActionCallback<Publication> callback;
+        int trackNum;
+
+        CallbackInfo(MediaStream mediaStream, ActionCallback<Publication> callback) {
+            this.mediaStream = mediaStream;
+            this.callback = callback;
+            trackNum = mediaStream.audioTracks.size() + mediaStream.videoTracks.size();
+        }
     }
 }
