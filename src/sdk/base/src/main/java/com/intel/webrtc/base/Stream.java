@@ -192,10 +192,11 @@ public abstract class Stream {
 
         public enum VideoSourceInfo {
             CAMERA("camera"),
-            SCREENCAST("screen-cast"),
-            FILE("file"),
-            OTHERS("other"),
-            MIXED("mixed");
+            SCREEN_CAST("screen-cast"),
+            RAW_FILE("raw-file"),
+            ENCODED_FILE("encoded-file"),
+            MIXED("mixed"),
+            OTHERS("other");
 
             ///@cond
             public final String type;
@@ -209,9 +210,11 @@ public abstract class Stream {
                     case "camera":
                         return CAMERA;
                     case "screen-cast":
-                        return SCREENCAST;
-                    case "file":
-                        return FILE;
+                        return SCREEN_CAST;
+                    case "raw-file":
+                        return RAW_FILE;
+                    case "encoded-file":
+                        return ENCODED_FILE;
                     case "mixed":
                         return MIXED;
                     default:

@@ -43,6 +43,6 @@ public class IcsScreenCapturer extends ScreenCapturerAndroid implements VideoCap
 
     @Override
     public Stream.StreamSourceInfo.VideoSourceInfo getVideoSource() {
-        return Stream.StreamSourceInfo.VideoSourceInfo.SCREENCAST;
+        return Stream.StreamSourceInfo.VideoSourceInfo.SCREEN_CAST;
     }
 }
