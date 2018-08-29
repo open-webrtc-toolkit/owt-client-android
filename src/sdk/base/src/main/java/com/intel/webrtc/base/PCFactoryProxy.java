@@ -15,8 +15,9 @@ import org.webrtc.audio.LegacyAudioDeviceModule;
 
 final class PCFactoryProxy {
     static int networkIgnoreMask = 0;
-    //Enable Intel VP8 by default
-    static String fieldTrials = "WebRTC-IntelVP8/Enabled/";
+    // Enable Intel and MTK VP8/H264 by default.
+    static String fieldTrials =
+            "WebRTC-IntelVP8/Enabled/WebRTC-MediaTekH264/Enabled/WebRTC-MediaTekVP8/Enabled/";
     @SuppressLint("StaticFieldLeak")
     static Context context;
     static boolean hwAcc = true;

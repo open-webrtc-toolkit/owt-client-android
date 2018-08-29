@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.base;
 
+import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+
 import org.webrtc.PeerConnection.RTCConfiguration;
 
 import java.util.LinkedList;
@@ -16,6 +18,7 @@ public abstract class ClientConfiguration {
         if (rtcConf == null) {
             rtcConf = new RTCConfiguration(new LinkedList<>());
             rtcConf.enableDtlsSrtp = true;
+            rtcConf.continualGatheringPolicy = GATHER_CONTINUALLY;
         }
         this.rtcConfiguration = rtcConf;
     }
