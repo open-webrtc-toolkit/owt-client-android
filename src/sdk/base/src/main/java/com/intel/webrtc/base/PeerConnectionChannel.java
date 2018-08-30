@@ -63,6 +63,7 @@ public abstract class PeerConnectionChannel
     private MediaConstraints sdpConstraints;
     private SessionDescription localSdp;
     private boolean disposed = false;
+    protected boolean onError = false;
 
     protected PeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
             boolean enableVideo, boolean enableAudio,
@@ -122,6 +123,13 @@ public abstract class PeerConnectionChannel
                     data.getString("candidate"));
             addOrQueueCandidate(candidate);
         } else if (signalingType.equals("offer") || signalingType.equals("answer")) {
+            // When gets an SDP during onError, it means that i'm waiting for peer to re-configure
+            // itself to keep compatibility with me.
+            if (onError) {
+                // Ignore the SDP only once.
+                onError = false;
+                return;
+            }
             String sdpString = data.getString("sdp");
             SessionDescription remoteSdp = new SessionDescription(
                     SessionDescription.Type.fromCanonicalForm(signalingType),
@@ -528,7 +536,11 @@ public abstract class PeerConnectionChannel
 
         void onLocalDescription(String key, SessionDescription localSdp);
 
-        void onError(String key, String errorMsg);
+        /**
+         * @param recoverable true means SDK gotta reconfigure the peerconnection instead of
+         * triggering failure actions.
+         */
+        void onError(String key, String errorMsg, boolean recoverable);
 
         void onAddStream(String key, RemoteStream remoteStream);
 

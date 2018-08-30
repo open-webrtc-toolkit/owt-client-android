@@ -5,12 +5,17 @@ package com.intel.webrtc.p2p;
 
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
 import static com.intel.webrtc.base.CheckCondition.RCHECK;
+import static com.intel.webrtc.base.IcsConst.LOG_TAG;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo.AudioSourceInfo;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo.VideoSourceInfo;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_ICE_POLICY_UNSUPPORTED;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_SDP;
+import static com.intel.webrtc.p2p.P2PClient.ServerConnectionStatus.CONNECTED;
+import static com.intel.webrtc.p2p.P2PClient.ServerConnectionStatus.CONNECTING;
+import static com.intel.webrtc.p2p.P2PClient.ServerConnectionStatus.DISCONNECTED;
 import static com.intel.webrtc.p2p.P2PClient.SignalingMessageType.CHAT_CLOSED;
 import static com.intel.webrtc.p2p.P2PClient.SignalingMessageType.CHAT_DATA_ACK;
 import static com.intel.webrtc.p2p.P2PClient.SignalingMessageType.CHAT_UA;
@@ -20,6 +25,8 @@ import static com.intel.webrtc.p2p.P2PClient.SignalingMessageType.STREAM_INFO;
 import static com.intel.webrtc.p2p.P2PClient.SignalingMessageType.TRACK_ADD_ACK;
 import static com.intel.webrtc.p2p.P2PClient.SignalingMessageType.TRACK_INFO;
 
+import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_ONCE;
 import static org.webrtc.PeerConnection.SignalingState.HAVE_LOCAL_OFFER;
 
 import android.util.Log;
@@ -52,13 +59,13 @@ import java.util.concurrent.Executors;
 public final class P2PClient implements PeerConnectionChannel.PeerConnectionChannelObserver,
         SignalingChannelInterface.SignalingChannelObserver {
 
-    private final String TAG = "ICS";
     private final P2PClientConfiguration configuration;
     private final List<P2PClientObserver> observers;
     private final HashSet<String> allowedRemotePeers;
     private final ConcurrentHashMap<String, P2PPeerConnectionChannel> pcChannels;
     private final ConcurrentHashMap<String, String> streamInfos;
     private final Object statusLock = new Object();
+    private final Object pcChannelsLock = new Object();
     private String id;
     private SignalingChannelInterface signalingChannel;
     private ServerConnectionStatus serverConnectionStatus;
@@ -82,7 +89,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         allowedRemotePeers = new HashSet<>();
         pcChannels = new ConcurrentHashMap<>();
         streamInfos = new ConcurrentHashMap<>();
-        serverConnectionStatus = ServerConnectionStatus.DISCONNECTED;
+        serverConnectionStatus = DISCONNECTED;
         callbackExecutor = Executors.newSingleThreadExecutor();
         signalingExecutor = Executors.newSingleThreadExecutor();
     }
@@ -108,13 +115,20 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     /**
+     * Remove all P2PClientObservers previously added.
+     */
+    public void removeObservers() {
+        observers.clear();
+    }
+
+    /**
      * Get the id of the P2PClient.
      *
      * @return id of P2PClient.
      */
     public String id() {
         if (id == null) {
-            Log.d(TAG, "P2PClient hasn't connected to server, no id yet");
+            Log.d(LOG_TAG, "P2PClient hasn't connected to server, no id yet");
         }
         return id;
     }
@@ -139,6 +153,10 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         allowedRemotePeers.remove(peerId);
     }
 
+    public void removeAllAllowedRemotePeers() {
+        allowedRemotePeers.clear();
+    }
+
     /**
      * Connect to signaling server. Since signaling channel can be customized, this method does not
      * define how a token should look like. Token will be passed into SignalingChannelInterface
@@ -150,13 +168,13 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * invoked with the corresponding IcsError.
      */
     public void connect(final String token, final ActionCallback<String> callback) {
-        if (!checkConnectionStatus(ServerConnectionStatus.DISCONNECTED)) {
+        if (!checkConnectionStatus(DISCONNECTED)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
             return;
         }
+        changeConnectionStatus(CONNECTING);
         DCHECK(signalingChannel);
-        changeConnectionStatus(ServerConnectionStatus.CONNECTING);
         signalingChannel.connect(token, new ActionCallback<String>() {
             @Override
             public void onSuccess(String result) {
@@ -166,13 +184,13 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                 } catch (JSONException e) {
                     RCHECK(e);
                 }
-                changeConnectionStatus(ServerConnectionStatus.CONNECTED);
+                changeConnectionStatus(CONNECTED);
                 triggerCallback(callback, result);
             }
 
             @Override
             public void onFailure(IcsError error) {
-                changeConnectionStatus(ServerConnectionStatus.DISCONNECTED);
+                changeConnectionStatus(DISCONNECTED);
                 triggerCallback(callback, error);
             }
         });
@@ -183,7 +201,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * other P2PClients.
      */
     public void disconnect() {
-        if (checkConnectionStatus(ServerConnectionStatus.DISCONNECTED)) {
+        if (checkConnectionStatus(DISCONNECTED)) {
             return;
         }
         DCHECK(signalingChannel);
@@ -201,7 +219,8 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      */
     public void publish(final String peerId, final LocalStream localStream,
             final ActionCallback<Publication> callback) {
-        if (!checkConnectionStatus(ServerConnectionStatus.CONNECTED)) {
+        RCHECK(localStream);
+        if (!checkConnectionStatus(CONNECTED)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
             return;
@@ -209,25 +228,19 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         if (!checkPermission(peerId, callback)) {
             return;
         }
-
-        RCHECK(localStream);
-
-        if (!pcChannels.containsKey(peerId)) {
+        if (!containsPCChannel(peerId)) {
             sendStop(peerId);
             sendUserInfo(peerId);
         }
-
-        final P2PPeerConnectionChannel pcChannel = getPeerConnection(peerId);
         sendStreamInfo(peerId, localStream, new ActionCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
+                P2PPeerConnectionChannel pcChannel = getPeerConnection(peerId);
                 pcChannel.publish(localStream, callback);
             }
 
             @Override
             public void onFailure(IcsError error) {
-                pcChannels.get(peerId).dispose();
-                pcChannels.remove(peerId);
                 triggerCallback(callback, error);
             }
         });
@@ -241,16 +254,18 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * @param peerId id of remote P2PClient.
      */
     public void stop(String peerId) {
-        if (!checkConnectionStatus(ServerConnectionStatus.CONNECTED)) {
+        if (!checkConnectionStatus(CONNECTED)) {
             return;
         }
         RCHECK(peerId);
-        if (!pcChannels.containsKey(peerId)) {
-            return;
+        synchronized (pcChannelsLock) {
+            if (!pcChannels.containsKey(peerId)) {
+                return;
+            }
+            pcChannels.get(peerId).dispose();
+            pcChannels.remove(peerId);
         }
         sendSignalingMessage(peerId, CHAT_CLOSED, null, null);
-        pcChannels.get(peerId).dispose();
-        pcChannels.remove(peerId);
     }
 
     /**
@@ -263,12 +278,12 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      */
     public void getStats(String peerId, final ActionCallback<RTCStatsReport> callback) {
         RCHECK(peerId);
-        if (!pcChannels.containsKey(peerId)) {
+        if (!containsPCChannel(peerId)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
                     "No peerconnection established yet."));
             return;
         }
-        P2PPeerConnectionChannel pcChannel = pcChannels.get(peerId);
+        P2PPeerConnectionChannel pcChannel = getPeerConnection(peerId);
         pcChannel.getConnectionStats(rtcStatsReport -> triggerCallback(callback, rtcStatsReport));
     }
 
@@ -282,7 +297,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * corresponding IcsError.
      */
     public void send(String peerId, String message, ActionCallback<Void> callback) {
-        if (!checkConnectionStatus(ServerConnectionStatus.CONNECTED)) {
+        if (!checkConnectionStatus(CONNECTED)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
             return;
@@ -296,7 +311,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                     new IcsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Message too long."));
             return;
         }
-        if (!pcChannels.containsKey(peerId)) {
+        if (!containsPCChannel(peerId)) {
             sendStop(peerId);
             sendUserInfo(peerId);
         }
@@ -305,9 +320,11 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     private void permissionDenied(String peerId) {
-        if (pcChannels.containsKey(peerId)) {
-            pcChannels.get(peerId).dispose();
-            pcChannels.remove(peerId);
+        synchronized (pcChannelsLock) {
+            if (pcChannels.containsKey(peerId)) {
+                pcChannels.get(peerId).dispose();
+                pcChannels.remove(peerId);
+            }
         }
 
         JSONObject errorMsg = new JSONObject();
@@ -321,10 +338,12 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     private void closeInternal() {
-        for (String key : pcChannels.keySet()) {
-            pcChannels.get(key).dispose();
+        synchronized (pcChannelsLock) {
+            for (String key : pcChannels.keySet()) {
+                pcChannels.get(key).dispose();
+            }
+            pcChannels.clear();
         }
-        pcChannels.clear();
         streamInfos.clear();
     }
 
@@ -356,15 +375,28 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         callbackExecutor.execute(() -> callback.onFailure(e));
     }
 
-    private P2PPeerConnectionChannel getPeerConnection(String peerId) {
-        DCHECK(pcChannels);
-        if (pcChannels.containsKey(peerId)) {
-            return pcChannels.get(peerId);
+    private boolean containsPCChannel(String key) {
+        synchronized (pcChannelsLock) {
+            return pcChannels != null && pcChannels.containsKey(key);
         }
-        P2PPeerConnectionChannel pcChannel = new P2PPeerConnectionChannel(peerId, configuration,
-                this);
-        pcChannels.put(peerId, pcChannel);
-        return pcChannel;
+    }
+
+    private P2PPeerConnectionChannel getPeerConnection(String peerId) {
+        return getPeerConnection(peerId, null);
+    }
+
+    private P2PPeerConnectionChannel getPeerConnection(String peerId,
+            P2PClientConfiguration config) {
+        synchronized (pcChannelsLock) {
+            DCHECK(pcChannels);
+            if (pcChannels.containsKey(peerId)) {
+                return pcChannels.get(peerId);
+            }
+            P2PPeerConnectionChannel pcChannel = new P2PPeerConnectionChannel(peerId,
+                    config == null ? this.configuration : config, this);
+            pcChannels.put(peerId, pcChannel);
+            return pcChannel;
+        }
     }
 
     private <T> boolean checkPermission(String peerId, ActionCallback<T> callback) {
@@ -554,15 +586,16 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     @Override
-    public void onError(String peerId, String error) {
-        if (pcChannels.containsKey(peerId)) {
+    public void onError(String peerId, String error, boolean recoverable) {
+        if (!recoverable && pcChannels.containsKey(peerId)) {
             pcChannels.get(peerId).dispose();
             pcChannels.remove(peerId);
         }
 
         JSONObject errorMsg = new JSONObject();
         try {
-            errorMsg.put("code", P2P_WEBRTC_SDP.value);
+            errorMsg.put("code",
+                    recoverable ? P2P_ICE_POLICY_UNSUPPORTED.value : P2P_WEBRTC_SDP.value);
             errorMsg.put("message", error);
         } catch (JSONException e) {
             DCHECK(e);
@@ -668,10 +701,21 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                     }
                     break;
                 case CHAT_UA:
+                    P2PPeerConnectionChannel pcChannel;
                     if (!pcChannels.containsKey(peerId)) {
                         sendUserInfo(peerId);
+                        boolean hasCap = messageObject.getJSONObject("data").has("capabilities");
+                        JSONObject cap = hasCap ? messageObject.getJSONObject("data").getJSONObject(
+                                "capabilities") : null;
+                        boolean continualIceGathering = cap != null && cap.getBoolean(
+                                "continualIceGathering");
+                        configuration.rtcConfiguration.continualGatheringPolicy =
+                                continualIceGathering ? GATHER_CONTINUALLY : GATHER_ONCE;
+                        pcChannel = getPeerConnection(peerId, configuration);
+                    } else {
+                        pcChannel = getPeerConnection(peerId);
                     }
-                    getPeerConnection(peerId).processUserInfo(messageObject.getJSONObject("data"));
+                    pcChannel.processUserInfo(messageObject.getJSONObject("data"));
                     break;
                 case CHAT_CLOSED:
                     if (pcChannels.containsKey(peerId)) {
@@ -683,9 +727,30 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             code = dataObj.has("code") ? dataObj.getInt("code") : 0;
                             error = dataObj.has("message") ? dataObj.getString("message") : "";
                         }
-                        getPeerConnection(peerId).processError(new IcsError(code, error));
-                        getPeerConnection(peerId).dispose();
+                        P2PPeerConnectionChannel oldChannel = getPeerConnection(peerId);
                         pcChannels.remove(peerId);
+                        if (code == P2P_ICE_POLICY_UNSUPPORTED.value) {
+                            // re-create peerconnection and re-publish.
+                            LocalStream localStream = null;
+                            ActionCallback<Publication> callback = null;
+                            // As this situation will happen only at the initial phase of a pc,
+                            // so iterate the lists below will only get one instance of each kind.
+                            for (LocalStream ls : oldChannel.localStreams.values()) {
+                                localStream = ls;
+                            }
+                            for (CallbackInfo cbi : oldChannel.publishCallbacks.values()) {
+                                callback = cbi.callback;
+                            }
+                            // disable continual gathering.
+                            P2PClientConfiguration config = this.configuration;
+                            config.rtcConfiguration.continualGatheringPolicy = GATHER_ONCE;
+                            P2PPeerConnectionChannel newChannel = getPeerConnection(peerId, config);
+                            newChannel.publish(localStream, callback);
+                        } else {
+                            // trigger callbacks.
+                            getPeerConnection(peerId).processError(new IcsError(code, error));
+                        }
+                        oldChannel.dispose();
                     }
                     break;
                 case CHAT_DATA_ACK:
@@ -703,7 +768,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     @Override
     public void onServerDisconnected() {
         DCHECK(callbackExecutor);
-        changeConnectionStatus(ServerConnectionStatus.DISCONNECTED);
+        changeConnectionStatus(DISCONNECTED);
         closeInternal();
         callbackExecutor.execute(() -> {
             synchronized (observers) {
@@ -714,7 +779,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         });
     }
 
-    private enum ServerConnectionStatus {
+    enum ServerConnectionStatus {
         DISCONNECTED,
         CONNECTING,
         CONNECTED
@@ -762,6 +827,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
             }
         }
     }
+    ///@endcond
 
     /**
      * Interface for observing client events.
@@ -787,6 +853,4 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
          */
         void onDataReceived(String peerId, String message);
     }
-
-    ///@endcond
 }

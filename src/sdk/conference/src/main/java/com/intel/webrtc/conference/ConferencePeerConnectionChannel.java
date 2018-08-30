@@ -113,12 +113,12 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
 
     @Override
     public void onCreateFailure(final String error) {
-        callbackExecutor.execute(() -> observer.onError(key, error));
+        callbackExecutor.execute(() -> observer.onError(key, error, false));
     }
 
     @Override
     public void onSetFailure(final String error) {
-        callbackExecutor.execute(() -> observer.onError(key, error));
+        callbackExecutor.execute(() -> observer.onError(key, error, false));
     }
 
     @Override
@@ -131,7 +131,7 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     public void onIceConnectionChange(final PeerConnection.IceConnectionState iceConnectionState) {
         callbackExecutor.execute(() -> {
             if (iceConnectionState == PeerConnection.IceConnectionState.CLOSED) {
-                observer.onError(key, "");
+                observer.onError(key, "", false);
             }
         });
     }

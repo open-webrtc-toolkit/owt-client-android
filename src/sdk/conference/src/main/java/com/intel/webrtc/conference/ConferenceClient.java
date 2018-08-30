@@ -775,7 +775,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     @Override
-    public void onError(final String id, final String errorMsg) {
+    public void onError(final String id, final String errorMsg, boolean ignored) {
         if (pcChannels.containsKey(id)) {
             pcChannels.get(id).dispose();
             pcChannels.remove(id);

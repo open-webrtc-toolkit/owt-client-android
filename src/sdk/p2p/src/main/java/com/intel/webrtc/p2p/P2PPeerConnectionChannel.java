@@ -51,7 +51,9 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     private List<Publication> publications;
     private MediaStream currentMediaStream;
     private Long messageId = 0L;
-    private boolean isFireFox = false;
+    private boolean streamRemovable = true;
+    private boolean unifiedPlan = false;
+    private boolean continualIceGathering = true;
     private boolean everPublished = false;
     // default isCaller true
     private boolean isCaller = true;
@@ -84,10 +86,10 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     }
 
     void publish(LocalStream localStream, ActionCallback<Publication> callback) {
-        if (isFireFox && everPublished) {
+        if (!streamRemovable && everPublished) {
             if (callback != null) {
                 callback.onFailure(new IcsError(P2P_CLIENT_INVALID_STATE.value,
-                        "Cannot publish multiple streams to Firefox."));
+                        "Cannot publish multiple streams due to the ability of peer client."));
             }
             return;
         }
@@ -176,12 +178,27 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         sendMsgCallbacks.clear();
     }
 
-    void processUserInfo(JSONObject userInfo) {
+    // TODO: currently (v4.1) Android is compatible with all other platforms.
+    private boolean checkCompatibility(JSONObject userInfo) {
         try {
-            isFireFox = userInfo.getJSONObject("runtime").getString("name")
-                    .equalsIgnoreCase("Firefox");
+            boolean hasCap = userInfo.has("capabilities");
+            JSONObject cap = hasCap ? userInfo.getJSONObject("capabilities") : null;
+            streamRemovable = cap == null ?
+                    !userInfo.getJSONObject("runtime").getString("name").equals("Firefox")
+                    : cap.getBoolean("streamRemovable");
+            unifiedPlan = cap != null && cap.getBoolean("unifiedPlan");
+            continualIceGathering = cap != null && cap.getBoolean("continualIceGathering");
         } catch (JSONException e) {
             DCHECK(e);
+        }
+        return true;
+    }
+
+    void processUserInfo(JSONObject userInfo) {
+        // check capabilities.
+        if (!checkCompatibility(userInfo)) {
+            onError = true;
+            observer.onError(key, "Incompatible", true);
         }
     }
 
@@ -355,7 +372,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
                 }
             }
             publishCallbacks.clear();
-            observer.onError(key, error);
+            observer.onError(key, error, false);
         });
     }
 
@@ -368,7 +385,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
                 }
             }
             publishCallbacks.clear();
-            observer.onError(key, error);
+            observer.onError(key, error, false);
         });
     }
 
