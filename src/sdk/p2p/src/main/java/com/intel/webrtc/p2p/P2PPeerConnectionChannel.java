@@ -129,6 +129,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         for (LocalStream localStream : localStreams.values()) {
             removeStream(GetMediaStream(localStream));
         }
+        super.dispose();
         for (RemoteStream remoteStream : remoteStreams.values()) {
             remoteStream.onEnded();
         }
@@ -138,7 +139,6 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         localStreams.clear();
         remoteStreams.clear();
         publications.clear();
-        super.dispose();
     }
 
     void processTrackAck(JSONArray tracksData) throws JSONException {
