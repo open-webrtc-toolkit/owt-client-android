@@ -50,6 +50,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     //signalingChannel will be created upon join() and will be destructed upon leave().
     private SignalingChannel signalingChannel;
     private ConferenceInfo conferenceInfo;
+    private final Object infoLock = new Object();
     private ActionCallback<ConferenceInfo> joinCallback;
     private RoomStates roomStates;
 
@@ -93,7 +94,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @return current ConferenceInfo of this ConferenceClient.
      */
     public ConferenceInfo info() {
-        return conferenceInfo;
+        synchronized (infoLock) {
+            return conferenceInfo;
+        }
     }
 
     /**
@@ -493,7 +496,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
                 Publication publication = new Publication(id, pcChannel.getMediaStream(),
                         ConferenceClient.this);
-                getPeerConnection(id).muteEventObserver = publication;
+                getPeerConnection(id).publication = publication;
                 callback.onSuccess(publication);
                 pubCallbacks.remove(id);
                 return;
@@ -501,7 +504,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             if (subCallbacks.containsKey(id)) {
                 ActionCallback<Subscription> callback = subCallbacks.get(id);
                 Subscription subscription = new Subscription(id, ConferenceClient.this);
-                getPeerConnection(id).muteEventObserver = subscription;
+                getPeerConnection(id).subscription = subscription;
                 callback.onSuccess(subscription);
                 subCallbacks.remove(id);
             }
@@ -534,8 +537,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             try {
                 if (joinCallback != null) {
                     conferenceInfo = new ConferenceInfo(info);
-                    ConferenceClient.this.conferenceInfo = conferenceInfo;
                     joinCallback.onSuccess(conferenceInfo);
+                    synchronized (infoLock) {
+                        ConferenceClient.this.conferenceInfo = conferenceInfo;
+                    }
                 }
             } catch (JSONException e) {
                 triggerCallback(joinCallback, new IcsError(e.getMessage()));
@@ -605,9 +610,11 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     @Override
     public void onStreamAdded(final RemoteStream remoteStream) {
         callbackExecutor.execute(() -> {
-            conferenceInfo.remoteStreams.add(remoteStream);
             for (ConferenceClientObserver observer : observers) {
                 observer.onStreamAdded(remoteStream);
+            }
+            synchronized (infoLock) {
+                conferenceInfo.remoteStreams.add(remoteStream);
             }
         });
     }
@@ -615,11 +622,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     @Override
     public void onStreamRemoved(final String streamId) {
         callbackExecutor.execute(() -> {
-            for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                if (remoteStream.id().equals(streamId)) {
-                    remoteStream.onEnded();
-                    conferenceInfo.remoteStreams.remove(remoteStream);
-                    break;
+            synchronized (infoLock) {
+                for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                    if (remoteStream.id().equals(streamId)) {
+                        remoteStream.onEnded();
+                        conferenceInfo.remoteStreams.remove(remoteStream);
+                        break;
+                    }
                 }
             }
         });
@@ -632,10 +641,12 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 String field = updateInfo.getString("field");
                 switch (field) {
                     case "video.layout":
-                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                            if (remoteStream.id().equals(id)) {
-                                ((RemoteMixedStream) remoteStream).updateRegions(
-                                        updateInfo.getJSONArray("value"));
+                        synchronized (infoLock) {
+                            for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                                if (remoteStream.id().equals(id)) {
+                                    ((RemoteMixedStream) remoteStream).updateRegions(
+                                            updateInfo.getJSONArray("value"));
+                                }
                             }
                         }
                         break;
@@ -645,20 +656,24 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                             // For subscription id will be the RemoteStream id, for publication
                             // the id will be publication id which is pc.key.
                             if (pcChannel.stream.id().equals(id) || pcChannel.key.equals(id)) {
-                                if (pcChannel.muteEventObserver != null) {
-                                    TrackKind trackKind = field.equals("audio.status")
-                                            ? TrackKind.AUDIO : TrackKind.VIDEO;
-                                    boolean active = updateInfo.getString("value").equals("active");
-                                    pcChannel.muteEventObserver.onStatusUpdated(trackKind, active);
+                                TrackKind trackKind = field.equals("audio.status")
+                                        ? TrackKind.AUDIO : TrackKind.VIDEO;
+                                boolean active = updateInfo.getString("value").equals("active");
+                                if (pcChannel.publication != null) {
+                                    pcChannel.publication.onStatusUpdated(trackKind, active);
+                                } else {
+                                    pcChannel.subscription.onStatusUpdated(trackKind, active);
                                 }
                             }
                         }
                         break;
                     case "activeInput":
-                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                            if (remoteStream.id().equals(id)) {
-                                ((RemoteMixedStream) remoteStream).updateActiveInput(
-                                        updateInfo.getString("value"));
+                        synchronized (infoLock) {
+                            for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                                if (remoteStream.id().equals(id)) {
+                                    ((RemoteMixedStream) remoteStream).updateActiveInput(
+                                            updateInfo.getString("value"));
+                                }
                             }
                         }
                         break;
@@ -682,9 +697,11 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         callbackExecutor.execute(() -> {
             try {
                 Participant participant = new Participant(participantInfo);
-                conferenceInfo.participants.add(participant);
                 for (ConferenceClientObserver observer : observers) {
                     observer.onParticipantJoined(participant);
+                }
+                synchronized (infoLock) {
+                    conferenceInfo.participants.add(participant);
                 }
             } catch (JSONException e) {
                 DCHECK(false);
@@ -695,11 +712,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     @Override
     public void onParticipantLeft(final String participantId) {
         callbackExecutor.execute(() -> {
-            for (Participant participant : conferenceInfo.participants) {
-                if (participant.id.equals(participantId)) {
-                    participant.onLeft();
-                    conferenceInfo.participants.remove(participant);
-                    break;
+            synchronized (infoLock) {
+                for (Participant participant : conferenceInfo.participants) {
+                    if (participant.id.equals(participantId)) {
+                        participant.onLeft();
+                        conferenceInfo.participants.remove(participant);
+                        break;
+                    }
                 }
             }
         });

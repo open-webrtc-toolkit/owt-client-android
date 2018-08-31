@@ -22,7 +22,7 @@ import io.socket.client.Ack;
  * Subscription handles the actions on a RemoteStream subscribed by a ConferenceClient.
  */
 
-public final class Subscription implements MuteEventObserver {
+public final class Subscription {
 
     /**
      * Id of the Subscription
@@ -195,17 +195,18 @@ public final class Subscription implements MuteEventObserver {
     }
 
     void onEnded() {
-        ended = true;
-        if (observers != null) {
-            for (SubscriptionObserver observer : observers) {
-                observer.onEnded();
+        if (!ended) {
+            ended = true;
+            if (observers != null) {
+                for (SubscriptionObserver observer : observers) {
+                    observer.onEnded();
+                }
             }
         }
     }
 
     ///@cond
-    @Override
-    public void onStatusUpdated(TrackKind trackKind, boolean active) {
+    void onStatusUpdated(TrackKind trackKind, boolean active) {
         if (observers != null) {
             for (SubscriptionObserver observer : observers) {
                 if (active) {

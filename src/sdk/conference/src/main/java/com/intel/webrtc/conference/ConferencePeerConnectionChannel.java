@@ -24,7 +24,9 @@ import java.util.List;
 final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     private final List<IceCandidate> queuedLocalCandidates;
     Stream stream;
-    MuteEventObserver muteEventObserver;
+    // CPCC has either a publication or a subscription, cannot have them both.
+    Publication publication;
+    Subscription subscription;
     private boolean remoteSdpSet = false;
 
     ConferencePeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
@@ -80,6 +82,14 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
             removeStream(GetMediaStream(stream));
         }
         super.dispose();
+        if (publication != null) {
+            DCHECK(subscription == null);
+            publication.onEnded();
+        }
+        if (subscription != null) {
+            DCHECK(publication == null);
+            subscription.onEnded();
+        }
     }
 
     MediaStream getMediaStream() {

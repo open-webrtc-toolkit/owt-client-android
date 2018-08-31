@@ -3,6 +3,8 @@
  */
 package com.intel.webrtc.conference;
 
+import static com.intel.webrtc.base.CheckCondition.DCHECK;
+
 import com.intel.webrtc.base.ActionCallback;
 import com.intel.webrtc.base.IcsError;
 import com.intel.webrtc.base.MediaConstraints.TrackKind;
@@ -20,8 +22,7 @@ import io.socket.client.Ack;
 /**
  * Publication handles the actions on a LocalStream published by a ConferenceClient.
  */
-public final class Publication extends com.intel.webrtc.base.Publication
-        implements MuteEventObserver {
+public final class Publication extends com.intel.webrtc.base.Publication {
 
     private final ConferenceClient client;
     private List<PublicationObserver> observers;
@@ -153,17 +154,18 @@ public final class Publication extends com.intel.webrtc.base.Publication
     }
 
     void onEnded() {
-        ended = true;
-        if (observers != null) {
-            for (PublicationObserver observer : observers) {
-                observer.onEnded();
+        if (!ended) {
+            ended = true;
+            if (observers != null) {
+                for (PublicationObserver observer : observers) {
+                    observer.onEnded();
+                }
             }
         }
     }
 
     ///@cond
-    @Override
-    public void onStatusUpdated(TrackKind trackKind, boolean active) {
+    void onStatusUpdated(TrackKind trackKind, boolean active) {
         if (observers != null) {
             for (PublicationObserver observer : observers) {
                 if (active) {
