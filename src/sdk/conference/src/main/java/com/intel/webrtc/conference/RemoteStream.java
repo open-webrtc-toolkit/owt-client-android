@@ -20,13 +20,16 @@ import java.util.Iterator;
  * RemoteStream represent the stream published by other endpoints in the conference.
  */
 public class RemoteStream extends com.intel.webrtc.base.RemoteStream {
-    public final SubscriptionCapabilities subscriptionCapability;
-    public final PublicationSettings publicationSettings;
+    public SubscriptionCapabilities subscriptionCapability;
+    public PublicationSettings publicationSettings;
 
     RemoteStream(JSONObject streamInfo) throws JSONException {
         super(getString(streamInfo, "id"),
                 getString(streamInfo.getJSONObject("info"), "owner", "mixer"));
+        updateStreamInfo(streamInfo, false);
+    }
 
+    void updateStreamInfo(JSONObject streamInfo, boolean triggerEvent) throws JSONException {
         JSONObject mediaInfo = getObj(streamInfo, "media", true);
         publicationSettings = new PublicationSettings(mediaInfo);
         subscriptionCapability = new SubscriptionCapabilities(mediaInfo);
@@ -45,6 +48,10 @@ public class RemoteStream extends com.intel.webrtc.base.RemoteStream {
 
         setStreamSourceInfo(new StreamSourceInfo(videoSourceInfo, audioSourceInfo));
         setAttributes(getObj(getObj(streamInfo, "info"), "attributes"));
+
+        if (triggerEvent) {
+            triggerUpdatedEvent();
+        }
     }
 
     MediaStream getMediaStream() {

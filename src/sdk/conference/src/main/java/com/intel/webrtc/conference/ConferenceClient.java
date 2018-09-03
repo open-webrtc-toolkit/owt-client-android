@@ -662,6 +662,14 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                             }
                         }
                         break;
+                    case ".":
+                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                            if (remoteStream.id().equals(id)) {
+                                JSONObject streamInfo = updateInfo.getJSONObject("value");
+                                remoteStream.updateStreamInfo(streamInfo, true);
+                            }
+                        }
+                        break;
                 }
             } catch (JSONException e) {
                 DCHECK(e);

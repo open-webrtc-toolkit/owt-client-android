@@ -73,7 +73,15 @@ public abstract class RemoteStream extends Stream {
         ended = true;
         if (observers != null) {
             for (StreamObserver observer : observers) {
-                observer.onStreamEnded();
+                observer.onEnded();
+            }
+        }
+    }
+
+    protected void triggerUpdatedEvent() {
+        if (observers != null) {
+            for (StreamObserver observer : observers) {
+                observer.onUpdated();
             }
         }
     }
@@ -85,7 +93,13 @@ public abstract class RemoteStream extends Stream {
         /**
          * Called upon stream ended.
          */
-        void onStreamEnded();
+        void onEnded();
+
+        /**
+         * Called upon stream information has been updated.
+         * This is only available for conference mode.
+         */
+        void onUpdated();
     }
     ///@endcond
 }
