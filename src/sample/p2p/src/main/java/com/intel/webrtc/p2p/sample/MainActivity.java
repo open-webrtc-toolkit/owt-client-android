@@ -225,7 +225,17 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
     @Override
     public void onStreamAdded(final RemoteStream remoteStream) {
         this.remoteStream = remoteStream;
-        remoteStream.addObserver(() -> remoteStreamEnded = true);
+        remoteStream.addObserver(new RemoteStream.StreamObserver() {
+            @Override
+            public void onEnded() {
+                remoteStreamEnded = true;
+            }
+
+            @Override
+            public void onUpdated() {
+                // ignored in p2p.
+            }
+        });
         executor.execute(() -> {
             if (remoteRenderer != null) {
                 remoteStream.attach(remoteRenderer);
