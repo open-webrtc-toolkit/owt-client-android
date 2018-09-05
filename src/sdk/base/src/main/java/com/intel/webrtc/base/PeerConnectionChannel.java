@@ -66,8 +66,7 @@ public abstract class PeerConnectionChannel
     protected boolean onError = false;
 
     protected PeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
-            boolean enableVideo, boolean enableAudio,
-            PeerConnectionChannelObserver observer) {
+            boolean receiveVideo, boolean receiveAudio, PeerConnectionChannelObserver observer) {
         this.key = key;
         this.observer = observer;
 
@@ -75,9 +74,9 @@ public abstract class PeerConnectionChannel
         queuedMessage = new ArrayList<>();
         sdpConstraints = new MediaConstraints();
         sdpConstraints.mandatory.add(
-                new KeyValuePair("OfferToReceiveAudio", String.valueOf(enableAudio)));
+                new KeyValuePair("OfferToReceiveAudio", String.valueOf(receiveAudio)));
         sdpConstraints.mandatory.add(
-                new KeyValuePair("OfferToReceiveVideo", String.valueOf(enableVideo)));
+                new KeyValuePair("OfferToReceiveVideo", String.valueOf(receiveVideo)));
         peerConnection = PCFactoryProxy.instance().createPeerConnection(configuration, this);
         RCHECK(peerConnection);
     }

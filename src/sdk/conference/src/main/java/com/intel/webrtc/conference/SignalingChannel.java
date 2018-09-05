@@ -4,8 +4,11 @@
 package com.intel.webrtc.conference;
 
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
+import static com.intel.webrtc.base.CheckCondition.RCHECK;
+import static com.intel.webrtc.base.IcsConst.LOG_TAG;
 
 import android.util.Base64;
+import android.util.Log;
 
 import com.intel.webrtc.base.IcsConst;
 
@@ -25,21 +28,48 @@ import io.socket.emitter.Emitter.Listener;
 
 final class SignalingChannel {
 
+    interface SignalingChannelObserver {
+
+        void onRoomConnected(JSONObject info);
+
+        void onRoomConnectFailed(String errorMsg);
+
+        void onReconnecting();
+
+        void onRoomDisconnected();
+
+        void onProgressMessage(JSONObject message);
+
+        void onTextMessage(String participantId, String message);
+
+        void onStreamAdded(RemoteStream remoteStream);
+
+        void onStreamRemoved(String streamId);
+
+        void onStreamUpdated(String id, JSONObject updateInfo);
+
+        void onParticipantJoined(JSONObject participantInfo);
+
+        void onParticipantLeft(String participantId);
+    }
+
     private SignalingChannelObserver observer;
     // Base64 encoded token.
     private final String token;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
     private final int MAX_RECONNECT_ATTEMPTS = 5;
     private String reconnectionTicket;
     private int reconnectAttempts = 0;
-    // No lock is guarding loggedIn so void access and modify it on threads other than |executor|.
+    // No lock is guarding loggedIn so void access and modify it on threads other than
+    // |callbackExecutor|.
     private boolean loggedIn = false;
     private Socket socketClient;
     // [{'name': name, 'msg': message, 'ack': ack}]
     private final ArrayList<HashMap<String, Object>> cache = new ArrayList<>();
 
     // Socket.IO events.
-    private final Listener connectedCallback = args -> executor.execute(() -> {
+    private final Listener connectedCallback = args -> callbackExecutor.execute(() -> {
+        Log.d(LOG_TAG, "Socket connected.");
         if (loggedIn) {
             relogin();
         } else {
@@ -50,17 +80,20 @@ final class SignalingChannel {
             }
         }
     });
-    private final Listener connectErrorCallback = (Object... args) -> executor.execute(() -> {
-        String msg = extractMsg(0, args);
-        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            if (loggedIn) {
-                triggerDisconnected();
-            } else {
-                observer.onRoomConnectFailed("Socket.IO connected failed: " + msg);
-            }
-        }
-    });
-    private final Listener reconnectingCallback = args -> executor.execute(() -> {
+    private final Listener connectErrorCallback = (Object... args) -> callbackExecutor.execute(
+            () -> {
+                Log.d(LOG_TAG, "Socket connect error.");
+                String msg = extractMsg(0, args);
+                if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                    if (loggedIn) {
+                        triggerDisconnected();
+                    } else {
+                        observer.onRoomConnectFailed("Socket.IO connected failed: " + msg);
+                    }
+                }
+            });
+    private final Listener reconnectingCallback = args -> callbackExecutor.execute(() -> {
+        Log.d(LOG_TAG, "Socket reconnecting.");
         reconnectAttempts++;
         // trigger onReconnecting, ONLY when already logged in and first time to reconnect.
         if (loggedIn && reconnectAttempts == 1) {
@@ -68,31 +101,33 @@ final class SignalingChannel {
         }
     });
     // disconnectCallback will be bound ONLY when disconnect() is called actively.
-    private final Listener disconnectCallback = args -> triggerDisconnected();
+    private final Listener disconnectCallback = args -> callbackExecutor.execute(
+            this::triggerDisconnected);
 
     // MCU events.
-    private final Listener progressCallback = (Object... args) -> executor.execute(() -> {
+    private final Listener progressCallback = (Object... args) -> callbackExecutor.execute(() -> {
         JSONObject msg = (JSONObject) args[0];
         observer.onProgressMessage(msg);
     });
-    private final Listener participantCallback = (Object... args) -> executor.execute(() -> {
-        JSONObject msg = (JSONObject) args[0];
-        try {
-            switch (msg.getString("action")) {
-                case "join":
-                    observer.onParticipantJoined(msg.getJSONObject("data"));
-                    break;
-                case "leave":
-                    observer.onParticipantLeft(msg.getString("data"));
-                    break;
-                default:
-                    DCHECK(false);
-            }
-        } catch (JSONException e) {
-            DCHECK(e);
-        }
-    });
-    private final Listener streamCallback = (Object... args) -> executor.execute(() -> {
+    private final Listener participantCallback = (Object... args) -> callbackExecutor.execute(
+            () -> {
+                JSONObject msg = (JSONObject) args[0];
+                try {
+                    switch (msg.getString("action")) {
+                        case "join":
+                            observer.onParticipantJoined(msg.getJSONObject("data"));
+                            break;
+                        case "leave":
+                            observer.onParticipantLeft(msg.getString("data"));
+                            break;
+                        default:
+                            DCHECK(false);
+                    }
+                } catch (JSONException e) {
+                    DCHECK(e);
+                }
+            });
+    private final Listener streamCallback = (Object... args) -> callbackExecutor.execute(() -> {
         try {
             JSONObject msg = (JSONObject) args[0];
             String status = msg.getString("status");
@@ -117,7 +152,7 @@ final class SignalingChannel {
             DCHECK(e);
         }
     });
-    private final Listener textCallback = (Object... args) -> executor.execute(() -> {
+    private final Listener textCallback = (Object... args) -> callbackExecutor.execute(() -> {
         JSONObject data = (JSONObject) args[0];
         try {
             observer.onTextMessage(data.getString("from"), data.getString("message"));
@@ -135,48 +170,45 @@ final class SignalingChannel {
     }
 
     void connect(final ConferenceClientConfiguration configuration) {
-        DCHECK(executor);
-        executor.execute(() -> {
-            try {
-                DCHECK(token);
-                JSONObject jsonToken = new JSONObject(
-                        new String(Base64.decode(token, Base64.DEFAULT)));
+        try {
+            RCHECK(token);
+            JSONObject jsonToken = new JSONObject(
+                    new String(Base64.decode(token, Base64.DEFAULT)));
 
-                boolean isSecure = jsonToken.getBoolean("secure");
-                String host = jsonToken.getString("host");
-                final String url = (isSecure ? "https" : "http") + "://" + host;
+            boolean isSecure = jsonToken.getBoolean("secure");
+            String host = jsonToken.getString("host");
+            final String url = (isSecure ? "https" : "http") + "://" + host;
 
-                IO.Options opt = new IO.Options();
-                opt.forceNew = true;
-                opt.reconnection = true;
-                opt.reconnectionAttempts = MAX_RECONNECT_ATTEMPTS;
-                opt.secure = isSecure;
-                if (configuration.sslContext != null) {
-                    opt.sslContext = configuration.sslContext;
-                }
-                if (configuration.hostnameVerifier != null) {
-                    opt.hostnameVerifier = configuration.hostnameVerifier;
-                }
-
-                socketClient = IO.socket(url, opt);
-
-                // Do not listen EVENT_DISCONNECT event on this phase.
-                socketClient.on(Socket.EVENT_CONNECT, connectedCallback)
-                        .on(Socket.EVENT_CONNECT_ERROR, connectErrorCallback)
-                        .on(Socket.EVENT_RECONNECTING, reconnectingCallback)
-                        .on("progress", progressCallback)
-                        .on("participant", participantCallback)
-                        .on("stream", streamCallback)
-                        .on("text", textCallback)
-                        .on("drop", dropCallback);
-                socketClient.connect();
-
-            } catch (JSONException e) {
-                observer.onRoomConnectFailed(e.getMessage());
-            } catch (URISyntaxException e) {
-                observer.onRoomConnectFailed(e.getMessage());
+            IO.Options opt = new IO.Options();
+            opt.forceNew = true;
+            opt.reconnection = true;
+            opt.reconnectionAttempts = MAX_RECONNECT_ATTEMPTS;
+            opt.secure = isSecure;
+            if (configuration.sslContext != null) {
+                opt.sslContext = configuration.sslContext;
             }
-        });
+            if (configuration.hostnameVerifier != null) {
+                opt.hostnameVerifier = configuration.hostnameVerifier;
+            }
+
+            socketClient = IO.socket(url, opt);
+
+            // Do not listen EVENT_DISCONNECT event on this phase.
+            socketClient.on(Socket.EVENT_CONNECT, connectedCallback)
+                    .on(Socket.EVENT_CONNECT_ERROR, connectErrorCallback)
+                    .on(Socket.EVENT_RECONNECTING, reconnectingCallback)
+                    .on("progress", progressCallback)
+                    .on("participant", participantCallback)
+                    .on("stream", streamCallback)
+                    .on("text", textCallback)
+                    .on("drop", dropCallback);
+            socketClient.connect();
+
+        } catch (JSONException e) {
+            observer.onRoomConnectFailed(e.getMessage());
+        } catch (URISyntaxException e) {
+            observer.onRoomConnectFailed(e.getMessage());
+        }
     }
 
     void disconnect() {
@@ -203,25 +235,28 @@ final class SignalingChannel {
     }
 
     private void login() throws JSONException {
+        Log.d(LOG_TAG, "Logging in the conference room.");
         JSONObject loginInfo = new JSONObject();
         loginInfo.put("token", token);
         loginInfo.put("userAgent", new JSONObject(IcsConst.userAgent));
         loginInfo.put("protocol", IcsConst.PROTOCOL_VERSION);
 
-        socketClient.emit("login", loginInfo, (Ack) (Object... args) -> executor.execute(() -> {
-            if (extractMsg(0, args).equals("ok")) {
-                loggedIn = true;
-                try {
-                    reconnectionTicket = ((JSONObject) args[1]).getString("reconnectionTicket");
-                } catch (JSONException e) {
-                    DCHECK(e);
-                }
-                observer.onRoomConnected((JSONObject) args[1]);
-            } else {
-                observer.onRoomConnectFailed(extractMsg(1, args));
-            }
+        socketClient.emit("login", loginInfo,
+                (Ack) (Object... args) -> callbackExecutor.execute(() -> {
+                    if (extractMsg(0, args).equals("ok")) {
+                        loggedIn = true;
+                        try {
+                            reconnectionTicket = ((JSONObject) args[1]).getString(
+                                    "reconnectionTicket");
+                        } catch (JSONException e) {
+                            DCHECK(e);
+                        }
+                        observer.onRoomConnected((JSONObject) args[1]);
+                    } else {
+                        observer.onRoomConnectFailed(extractMsg(1, args));
+                    }
 
-        }));
+                }));
     }
 
     private void relogin() {
@@ -265,31 +300,5 @@ final class SignalingChannel {
         }
         return args[position].toString();
     }
-
-    interface SignalingChannelObserver {
-
-        void onRoomConnected(JSONObject info);
-
-        void onRoomConnectFailed(String errorMsg);
-
-        void onReconnecting();
-
-        void onRoomDisconnected();
-
-        void onProgressMessage(JSONObject message);
-
-        void onTextMessage(String participantId, String message);
-
-        void onStreamAdded(RemoteStream remoteStream);
-
-        void onStreamRemoved(String streamId);
-
-        void onStreamUpdated(String id, JSONObject updateInfo);
-
-        void onParticipantJoined(JSONObject participantInfo);
-
-        void onParticipantLeft(String participantId);
-    }
-
 }
 

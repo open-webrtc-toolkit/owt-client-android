@@ -5,6 +5,7 @@ package com.intel.webrtc.conference;
 
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
 import static com.intel.webrtc.base.CheckCondition.RCHECK;
+import static com.intel.webrtc.base.IcsConst.LOG_TAG;
 
 import android.util.Log;
 
@@ -36,23 +37,55 @@ import io.socket.client.Ack;
 public final class ConferenceClient implements SignalingChannel.SignalingChannelObserver,
         PeerConnectionChannel.PeerConnectionChannelObserver {
 
-    private static final String TAG = "ICS";
-    private final ConferenceClientConfiguration configuration;
-    private final ExecutorService signalingExecutor = Executors.newSingleThreadExecutor();
+    /**
+     * Interface for observing conference client events.
+     */
+    public interface ConferenceClientObserver {
+        /**
+         * Called upon a RemoteStream gets added to the conference.
+         *
+         * @param remoteStream RemoteStream added.
+         */
+        void onStreamAdded(RemoteStream remoteStream);
+
+        /**
+         * Called upon a Participant joins the conference.
+         *
+         * @param participant Participant joins the conference.
+         */
+        void onParticipantJoined(Participant participant);
+
+        /**
+         * Called upon receiving a message.
+         *
+         * @param participantId id of the message sender.
+         * @param message message received.
+         */
+        void onMessageReceived(String participantId, String message);
+
+        /**
+         * Called upon server disconnected.
+         */
+        void onServerDisconnected();
+    }
+
+    // All callbacks need to be triggered on |callbackExecutor|.
     private final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
-    //key: publication/subscription id.
+    // key: publication/subscription id.
     private final ConcurrentHashMap<String, ConferencePeerConnectionChannel> pcChannels;
-    //key: subscription id.
+    // key: subscription id.
     private final ConcurrentHashMap<String, ActionCallback<Subscription>> subCallbacks;
+    // key: publication id.
     private final ConcurrentHashMap<String, ActionCallback<Publication>> pubCallbacks;
-    private final Object statusLock = new Object();
+    private ActionCallback<ConferenceInfo> joinCallback;
+    private final ConferenceClientConfiguration configuration;
     private final List<ConferenceClientObserver> observers;
-    //signalingChannel will be created upon join() and will be destructed upon leave().
+    // signalingChannel will be created upon join() and will be destructed upon leave().
     private SignalingChannel signalingChannel;
     private ConferenceInfo conferenceInfo;
     private final Object infoLock = new Object();
-    private ActionCallback<ConferenceInfo> joinCallback;
     private RoomStates roomStates;
+    private final Object statesLock = new Object();
 
     /**
      * Constructor for ConferenceClient.
@@ -60,6 +93,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param configuration ConferenceClientConfiguration for ConferenceClient
      */
     public ConferenceClient(ConferenceClientConfiguration configuration) {
+        DCHECK(configuration);
         this.configuration = configuration;
         observers = Collections.synchronizedList(new ArrayList<ConferenceClientObserver>());
         pcChannels = new ConcurrentHashMap<>();
@@ -75,6 +109,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      */
     public void addObserver(ConferenceClientObserver observer) {
         RCHECK(observer);
+        if (observers.contains(observer)) {
+            Log.w(LOG_TAG, "Skipped adding a duplicated observer.");
+            return;
+        }
         observers.add(observer);
     }
 
@@ -94,6 +132,8 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @return current ConferenceInfo of this ConferenceClient.
      */
     public ConferenceInfo info() {
+        // ConferenceInfo is immutable for API users, so it is safe here just to return
+        // |conferenceInfo|.
         synchronized (infoLock) {
             return conferenceInfo;
         }
@@ -107,14 +147,16 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * succeeds to join the conference room. Otherwise when fails to do so, ActionCallback
      * .onFailure will be invoked with the corresponding IcsError.
      */
-    public void join(String token, ActionCallback<ConferenceInfo> callback) {
+    public synchronized void join(String token, ActionCallback<ConferenceInfo> callback) {
+        DCHECK(signalingChannel == null);
+        DCHECK(joinCallback == null);
         if (!checkRoomStatus(RoomStates.DISCONNECTED)) {
-            callback.onFailure(new IcsError("Wrong room status."));
+            triggerCallback(callback, new IcsError("Wrong room status."));
             return;
         }
-        DCHECK(signalingChannel == null);
         this.joinCallback = callback;
         signalingChannel = new SignalingChannel(token, this);
+        Log.d(LOG_TAG, "Connecting to the conference room.");
         changeRoomStatus(RoomStates.CONNECTING);
         signalingChannel.connect(configuration);
     }
@@ -122,13 +164,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     /**
      * Leave the conference.
      */
-    public void leave() {
+    public synchronized void leave() {
         if (checkRoomStatus(RoomStates.DISCONNECTED)) {
-            Log.w(TAG, "Wrong room status when leave.");
+            Log.w(LOG_TAG, "Wrong room status when leave.");
             return;
         }
-        DCHECK(signalingChannel);
         sendSignalingMessage("logout", null, args -> {
+            // Only care about the result in debug mode.
             DCHECK(extractMsg(0, args).equals("ok"));
             signalingChannel.disconnect();
         });
@@ -155,32 +197,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * succeeds to publish the LocalStream. Otherwise when fails to do so, ActionCallback
      * .onFailure will be invoked with the corresponding IcsError.
      */
-    public void publish(final LocalStream localStream, final PublishOptions options,
+    public synchronized void publish(final LocalStream localStream, final PublishOptions options,
             final ActionCallback<Publication> callback) {
+        RCHECK(localStream);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
             triggerCallback(callback, new IcsError("Wrong room status."));
             return;
         }
-        RCHECK(localStream);
-
-        Ack publishAck = args -> {
-            if (extractMsg(0, args).equals("ok")) {
-                try {
-                    JSONObject result = (JSONObject) args[1];
-                    ConferencePeerConnectionChannel pcChannel =
-                            getPeerConnection(result.getString("id"), false, false);
-                    if (callback != null) {
-                        pubCallbacks.put(result.getString("id"), callback);
-                    }
-                    pcChannel.publish(localStream, options);
-                } catch (JSONException e) {
-                    triggerCallback(callback, new IcsError(e.getMessage()));
-                }
-            } else {
-                triggerCallback(callback, new IcsError(extractMsg(1, args)));
-            }
-        };
-
         try {
             JSONObject mediaInfo = new JSONObject();
 
@@ -219,30 +242,52 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 publishMsg.put("attributes", attr);
             }
 
-            sendSignalingMessage("publish", publishMsg, publishAck);
+            sendSignalingMessage("publish", publishMsg, args -> {
+                if (extractMsg(0, args).equals("ok")) {
+                    try {
+                        JSONObject result = (JSONObject) args[1];
+                        // Do not receive video and audio for publication cpcc.
+                        ConferencePeerConnectionChannel pcChannel =
+                                getPeerConnection(result.getString("id"), false, false);
+                        if (callback != null) {
+                            pubCallbacks.put(result.getString("id"), callback);
+                        }
+                        pcChannel.publish(localStream, options);
+                    } catch (JSONException e) {
+                        DCHECK(e);
+                    }
+                } else {
+                    triggerCallback(callback, new IcsError(extractMsg(1, args)));
+                }
+            });
 
         } catch (JSONException e) {
             DCHECK(e);
         }
     }
 
-    void unpublish(final String publicationId, final Publication publication) {
+    // Not a public API.
+    synchronized void unpublish(final String publicationId, final Publication publication) {
+        DCHECK(publicationId);
+        DCHECK(publication);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
-            Log.w(TAG, "Wrong room status when unpublish.");
+            Log.w(LOG_TAG, "Wrong room status when unpublish.");
             return;
         }
-        RCHECK(publicationId);
-
         try {
             JSONObject unpubMsg = new JSONObject();
             unpubMsg.put("id", publicationId);
 
             sendSignalingMessage("unpublish", unpubMsg, args -> {
+                // Clean resources associated with this publication regardless of the result from
+                // MCU. But we monitor the result in debug mode.
                 DCHECK(extractMsg(0, args).equals("ok"));
-                ConferencePeerConnectionChannel pcChannel = getPeerConnection(publicationId);
-                pcChannel.dispose();
-                pcChannels.remove(publicationId);
-                publication.onEnded();
+                if (pcChannels.containsKey(publicationId)) {
+                    ConferencePeerConnectionChannel pcChannel = getPeerConnection(publicationId);
+                    pcChannel.dispose();
+                    pcChannels.remove(publicationId);
+                    publication.onEnded();
+                }
             });
 
         } catch (JSONException e) {
@@ -271,41 +316,16 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * succeeds to subscribe the RemoteStream. Otherwise when fails to do so, ActionCallback
      * .onFailure will be invoked with the corresponding IcsError.
      */
-    public void subscribe(final RemoteStream remoteStream, final SubscribeOptions options,
-            final ActionCallback<Subscription> callback) {
+    public synchronized void subscribe(final RemoteStream remoteStream,
+            final SubscribeOptions options, final ActionCallback<Subscription> callback) {
+        RCHECK(remoteStream);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
             triggerCallback(callback, new IcsError("Wrong room status."));
             return;
         }
-        RCHECK(remoteStream);
 
         final boolean subVideo = options == null || options.videoOption != null;
         final boolean subAudio = options == null || options.audioOption != null;
-
-        Ack subscribeAck = args -> {
-            if (extractMsg(0, args).equals("ok")) {
-                for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
-                    if (pcChannel.stream.id().equals(remoteStream.id())) {
-                        triggerCallback(callback,
-                                new IcsError("Remote stream has been subscribed."));
-                        return;
-                    }
-                }
-                JSONObject result = (JSONObject) args[1];
-                try {
-                    ConferencePeerConnectionChannel pcChannel =
-                            getPeerConnection(result.getString("id"), subVideo, subAudio);
-                    if (callback != null) {
-                        subCallbacks.put(result.getString("id"), callback);
-                    }
-                    pcChannel.subscribe(remoteStream, options);
-                } catch (JSONException e) {
-                    triggerCallback(callback, new IcsError(e.getMessage()));
-                }
-            } else {
-                triggerCallback(callback, new IcsError(extractMsg(1, args)));
-            }
-        };
 
         try {
             JSONObject media = new JSONObject();
@@ -330,25 +350,53 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             JSONObject subscribeMsg = new JSONObject();
             subscribeMsg.put("media", media);
 
-            sendSignalingMessage("subscribe", subscribeMsg, subscribeAck);
+            sendSignalingMessage("subscribe", subscribeMsg, args -> {
+                if (extractMsg(0, args).equals("ok")) {
+                    for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
+                        if (pcChannel.stream.id().equals(remoteStream.id())) {
+                            triggerCallback(callback,
+                                    new IcsError("Remote stream has been subscribed."));
+                            return;
+                        }
+                    }
+                    JSONObject result = (JSONObject) args[1];
+                    try {
+                        ConferencePeerConnectionChannel pcChannel =
+                                getPeerConnection(result.getString("id"), subVideo, subAudio);
+                        if (callback != null) {
+                            subCallbacks.put(result.getString("id"), callback);
+                        }
+                        pcChannel.subscribe(remoteStream, options);
+                    } catch (JSONException e) {
+                        DCHECK(e);
+                    }
+                } else {
+                    triggerCallback(callback, new IcsError(extractMsg(1, args)));
+                }
+            });
 
         } catch (JSONException e) {
             DCHECK(e);
         }
     }
 
-    void unsubscribe(final String subscriptionId, final Subscription subscription) {
+    // Not a public API.
+    synchronized void unsubscribe(final String subscriptionId, final Subscription subscription) {
+        DCHECK(subscriptionId);
+        DCHECK(subscription);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
-            Log.w(TAG, "Wrong room status when unsubscribe.");
+            Log.w(LOG_TAG, "Wrong room status when unsubscribe.");
             return;
         }
-        RCHECK(subscriptionId);
 
         try {
             JSONObject unpubMsg = new JSONObject();
             unpubMsg.put("id", subscriptionId);
 
             sendSignalingMessage("unsubscribe", unpubMsg, args -> {
+                // Clean resources associated with this subscription regardless of the result from
+                // MCU. But we monitor the result in debug mode.
+                DCHECK(extractMsg(0, args).equals("ok"));
                 if (pcChannels.containsKey(subscriptionId)) {
                     ConferencePeerConnectionChannel pcChannel = getPeerConnection(subscriptionId);
                     pcChannel.dispose();
@@ -383,12 +431,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * Otherwise when fails to do so, ActionCallback.onFailure will be invoked with the
      * corresponding IcsError.
      */
-    public void send(String participantId, String message, final ActionCallback<Void> callback) {
+    public synchronized void send(String participantId, String message,
+            final ActionCallback<Void> callback) {
+        RCHECK(message);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
             triggerCallback(callback, new IcsError(0, "Wrong status"));
             return;
         }
-        RCHECK(message);
 
         try {
             JSONObject sendMsg = new JSONObject();
@@ -412,7 +461,8 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         }
     }
 
-    void getStats(String id, final ActionCallback<RTCStatsReport> callback) {
+    // Not a public API.
+    synchronized void getStats(String id, final ActionCallback<RTCStatsReport> callback) {
         if (!pcChannels.containsKey(id)) {
             triggerCallback(callback, new IcsError(0, "Wrong state"));
             return;
@@ -438,30 +488,30 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     private boolean checkRoomStatus(RoomStates roomStates) {
-        synchronized (statusLock) {
+        synchronized (statesLock) {
             return this.roomStates == roomStates;
         }
     }
 
     private void changeRoomStatus(RoomStates roomStates) {
-        synchronized (statusLock) {
+        synchronized (statesLock) {
             this.roomStates = roomStates;
         }
     }
 
     private ConferencePeerConnectionChannel getPeerConnection(String id) {
         DCHECK(pcChannels.containsKey(id));
-        return getPeerConnection(id, true, true);
+        return getPeerConnection(id, true/*DoesNotMatter*/, true/*DoesNotMatter*/);
     }
 
-    private ConferencePeerConnectionChannel getPeerConnection(String id, boolean enableVideo,
-            boolean enableAudio) {
+    private ConferencePeerConnectionChannel getPeerConnection(String id, boolean receiveVideo,
+            boolean receiveAudio) {
         if (pcChannels.containsKey(id)) {
             return pcChannels.get(id);
         }
         ConferencePeerConnectionChannel pcChannel =
                 new ConferencePeerConnectionChannel(id, configuration.rtcConfiguration,
-                        enableVideo, enableAudio, this);
+                        receiveVideo, receiveAudio, this);
         pcChannels.put(id, pcChannel);
         return pcChannel;
     }
@@ -484,12 +534,12 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     void sendSignalingMessage(final String type, final JSONObject message, final Ack ack) {
-        DCHECK(signalingExecutor);
         DCHECK(signalingChannel);
-        signalingExecutor.execute(() -> signalingChannel.sendMsg(type, message, ack));
+        signalingChannel.sendMsg(type, message, ack);
     }
 
     private void processAck(final String id) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             if (pubCallbacks.containsKey(id)) {
                 ActionCallback<Publication> callback = pubCallbacks.get(id);
@@ -512,6 +562,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     private void processError(final String id, final String errorMsg) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             if (pubCallbacks.containsKey(id)) {
                 ActionCallback<Publication> callback = pubCallbacks.get(id);
@@ -526,12 +577,12 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     ///@cond
-    //SignalingChannelObserver
+    // SignalingChannelObserver
     @Override
     public void onRoomConnected(final JSONObject info) {
+        Log.d(LOG_TAG, "Room connected.");
         DCHECK(callbackExecutor);
         changeRoomStatus(RoomStates.CONNECTED);
-
         callbackExecutor.execute(() -> {
             ConferenceInfo conferenceInfo;
             try {
@@ -551,20 +602,23 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onRoomConnectFailed(final String errorMsg) {
+        Log.d(LOG_TAG, "Failed to connect to the conference room: " + errorMsg);
         DCHECK(callbackExecutor);
         changeRoomStatus(RoomStates.DISCONNECTED);
         signalingChannel = null;
 
         triggerCallback(joinCallback, new IcsError(errorMsg));
+        joinCallback = null;
     }
 
     @Override
     public void onReconnecting() {
-
+        // TODO: consider adding a new event for client.
     }
 
     @Override
     public void onRoomDisconnected() {
+        Log.d(LOG_TAG, "Room disconnected.");
         DCHECK(callbackExecutor);
         changeRoomStatus(RoomStates.DISCONNECTED);
         callbackExecutor.execute(() -> {
@@ -579,6 +633,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     public void onProgressMessage(JSONObject msg) {
         DCHECK(msg);
         try {
+            // Do not check pcChannels.contain(id) here. Let is throw exception in debug mode.
             ConferencePeerConnectionChannel pcChannel = getPeerConnection(msg.getString("id"));
             switch (msg.getString("status")) {
                 case "soac":
@@ -594,12 +649,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                     DCHECK(false);
             }
         } catch (JSONException e) {
-            DCHECK(false);
+            DCHECK(e);
         }
     }
 
     @Override
     public void onTextMessage(final String participantId, final String message) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             for (ConferenceClientObserver observer : observers) {
                 observer.onMessageReceived(participantId, message);
@@ -609,6 +665,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onStreamAdded(final RemoteStream remoteStream) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             for (ConferenceClientObserver observer : observers) {
                 observer.onStreamAdded(remoteStream);
@@ -621,6 +678,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onStreamRemoved(final String streamId) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             synchronized (infoLock) {
                 for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
@@ -636,6 +694,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onStreamUpdated(final String id, final JSONObject updateInfo) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             try {
                 String field = updateInfo.getString("field");
@@ -694,6 +753,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onParticipantJoined(final JSONObject participantInfo) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             try {
                 Participant participant = new Participant(participantInfo);
@@ -711,6 +771,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     @Override
     public void onParticipantLeft(final String participantId) {
+        DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             synchronized (infoLock) {
                 for (Participant participant : conferenceInfo.participants) {
@@ -724,54 +785,49 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         });
     }
 
-    //PeerConnectionChannelObserver
+    // PeerConnectionChannelObserver
     @Override
     public void onIceCandidate(final String id, final IceCandidate candidate) {
-        signalingExecutor.execute(() -> {
-            try {
-                JSONObject candidateObj = new JSONObject();
-                candidateObj.put("sdpMLineIndex", candidate.sdpMLineIndex);
-                candidateObj.put("sdpMid", candidate.sdpMid);
-                candidateObj.put("candidate",
-                        candidate.sdp.indexOf("a=") == 0 ? candidate.sdp : "a=" + candidate.sdp);
+        try {
+            JSONObject candidateObj = new JSONObject();
+            candidateObj.put("sdpMLineIndex", candidate.sdpMLineIndex);
+            candidateObj.put("sdpMid", candidate.sdpMid);
+            candidateObj.put("candidate",
+                    candidate.sdp.indexOf("a=") == 0 ? candidate.sdp : "a=" + candidate.sdp);
 
-                JSONObject candidateMsg = new JSONObject();
-                candidateMsg.put("type", "candidate");
-                candidateMsg.put("candidate", candidateObj);
+            JSONObject candidateMsg = new JSONObject();
+            candidateMsg.put("type", "candidate");
+            candidateMsg.put("candidate", candidateObj);
 
-                JSONObject msg = new JSONObject();
-                msg.put("id", id);
-                msg.put("signaling", candidateMsg);
+            JSONObject msg = new JSONObject();
+            msg.put("id", id);
+            msg.put("signaling", candidateMsg);
 
-                sendSignalingMessage("soac", msg, null);
-            } catch (JSONException e) {
-                DCHECK(e);
-            }
-        });
+            sendSignalingMessage("soac", msg, null);
+        } catch (JSONException e) {
+            DCHECK(e);
+        }
     }
 
     @Override
     public void onLocalDescription(final String id, final SessionDescription localSdp) {
-        signalingExecutor.execute(() -> {
-            try {
-                SessionDescription sdp =
-                        new SessionDescription(localSdp.type,
-                                localSdp.description.replaceAll(
-                                        "a=ice-options:google-ice\r\n", ""));
-                JSONObject sdpObj = new JSONObject();
-                sdpObj.put("type", sdp.type.toString().toLowerCase(Locale.US));
-                sdpObj.put("sdp", sdp.description);
+        try {
+            SessionDescription sdp =
+                    new SessionDescription(localSdp.type,
+                            localSdp.description.replaceAll(
+                                    "a=ice-options:google-ice\r\n", ""));
+            JSONObject sdpObj = new JSONObject();
+            sdpObj.put("type", sdp.type.toString().toLowerCase(Locale.US));
+            sdpObj.put("sdp", sdp.description);
 
-                JSONObject msg = new JSONObject();
-                msg.put("id", id);
-                msg.put("signaling", sdpObj);
+            JSONObject msg = new JSONObject();
+            msg.put("id", id);
+            msg.put("signaling", sdpObj);
 
-                sendSignalingMessage("soac", msg, null);
-            } catch (JSONException e) {
-                DCHECK(e);
-            }
-
-        });
+            sendSignalingMessage("soac", msg, null);
+        } catch (JSONException e) {
+            DCHECK(e);
+        }
     }
 
     @Override
@@ -812,38 +868,6 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         DISCONNECTED,
         CONNECTING,
         CONNECTED
-    }
-
-    /**
-     * Interface for observing conference client events.
-     */
-    public interface ConferenceClientObserver {
-        /**
-         * Called upon a RemoteStream gets added to the conference.
-         *
-         * @param remoteStream RemoteStream added.
-         */
-        void onStreamAdded(RemoteStream remoteStream);
-
-        /**
-         * Called upon a Participant joins the conference.
-         *
-         * @param participant Participant joins the conference.
-         */
-        void onParticipantJoined(Participant participant);
-
-        /**
-         * Called upon receiving a message.
-         *
-         * @param participantId id of the message sender.
-         * @param message message received.
-         */
-        void onMessageReceived(String participantId, String message);
-
-        /**
-         * Called upon server disconnected.
-         */
-        void onServerDisconnected();
     }
     ///@endcond
 }

@@ -30,9 +30,9 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     private boolean remoteSdpSet = false;
 
     ConferencePeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
-            boolean enableVideo, boolean enableAudio,
+            boolean receiveVideo, boolean receiveAudio,
             PeerConnectionChannelObserver observer) {
-        super(key, configuration, enableVideo, enableAudio, observer);
+        super(key, configuration, receiveVideo, receiveAudio, observer);
         queuedLocalCandidates = new LinkedList<>();
     }
 

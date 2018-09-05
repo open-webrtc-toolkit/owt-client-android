@@ -11,7 +11,7 @@ import static com.intel.webrtc.base.Stream.StreamSourceInfo.AudioSourceInfo;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo.VideoSourceInfo;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
-import static com.intel.webrtc.p2p.IcsP2PError.P2P_ICE_POLICY_UNSUPPORTED;
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_SDP;
 import static com.intel.webrtc.p2p.P2PClient.ServerConnectionStatus.CONNECTED;
 import static com.intel.webrtc.p2p.P2PClient.ServerConnectionStatus.CONNECTING;
@@ -59,17 +59,45 @@ import java.util.concurrent.Executors;
 public final class P2PClient implements PeerConnectionChannel.PeerConnectionChannelObserver,
         SignalingChannelInterface.SignalingChannelObserver {
 
+    /**
+     * Interface for observing client events.
+     */
+    public interface P2PClientObserver {
+        /**
+         * Called upon server disconnected.
+         */
+        void onServerDisconnected();
+
+        /**
+         * Called upon a RemoteStream gets added to the conference.
+         *
+         * @param remoteStream RemoteStream added.
+         */
+        void onStreamAdded(RemoteStream remoteStream);
+
+        /**
+         * Called upon receiving a message.
+         *
+         * @param peerId id of the message sender.
+         * @param message message received.
+         */
+        void onDataReceived(String peerId, String message);
+    }
+
     private final P2PClientConfiguration configuration;
     private final List<P2PClientObserver> observers;
     private final HashSet<String> allowedRemotePeers;
+    // key: peer id.
     private final ConcurrentHashMap<String, P2PPeerConnectionChannel> pcChannels;
-    private final ConcurrentHashMap<String, String> streamInfos;
-    private final Object statusLock = new Object();
     private final Object pcChannelsLock = new Object();
+    private final ConcurrentHashMap<String, String> streamInfos;
     private String id;
     private SignalingChannelInterface signalingChannel;
     private ServerConnectionStatus serverConnectionStatus;
+    private final Object statusLock = new Object();
+    // All callbacks need to be triggered on |callbackExecutor|.
     private ExecutorService callbackExecutor;
+    // All signaling works should be ran on signalingExecutor.
     private ExecutorService signalingExecutor;
 
     /**
@@ -101,6 +129,10 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      */
     public void addObserver(P2PClientObserver observer) {
         RCHECK(observer);
+        if (observers.contains(observer)) {
+            Log.d(LOG_TAG, "Skipped adding a duplicated observer.");
+            return;
+        }
         observers.add(observer);
     }
 
@@ -112,13 +144,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     public void removeObserver(P2PClientObserver observer) {
         RCHECK(observer);
         observers.remove(observer);
-    }
-
-    /**
-     * Remove all P2PClientObservers previously added.
-     */
-    public void removeObservers() {
-        observers.clear();
     }
 
     /**
@@ -141,7 +166,9 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * @param peerId id of P2PClient to be allowed.
      */
     public void addAllowedRemotePeer(String peerId) {
-        allowedRemotePeers.add(peerId);
+        if (!allowedRemotePeers.add(peerId)) {
+            Log.w(LOG_TAG, "Duplicated peer id.");
+        }
     }
 
     /**
@@ -151,10 +178,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      */
     public void removeAllowedRemotePeer(String peerId) {
         allowedRemotePeers.remove(peerId);
-    }
-
-    public void removeAllAllowedRemotePeers() {
-        allowedRemotePeers.clear();
     }
 
     /**
@@ -167,33 +190,36 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * the signaling server. Otherwise when fails to do so, ActionCallback.onFailure will be
      * invoked with the corresponding IcsError.
      */
-    public void connect(final String token, final ActionCallback<String> callback) {
+    public synchronized void connect(final String token, final ActionCallback<String> callback) {
+        // Format and content of |token| can be customized, so we do not assume any expectations.
+        DCHECK(signalingChannel);
+        DCHECK(signalingExecutor);
         if (!checkConnectionStatus(DISCONNECTED)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
             return;
         }
         changeConnectionStatus(CONNECTING);
-        DCHECK(signalingChannel);
-        signalingChannel.connect(token, new ActionCallback<String>() {
-            @Override
-            public void onSuccess(String result) {
-                try {
-                    JSONObject resultObj = new JSONObject(result);
-                    id = resultObj.getString("uid");
-                } catch (JSONException e) {
-                    RCHECK(e);
-                }
-                changeConnectionStatus(CONNECTED);
-                triggerCallback(callback, result);
-            }
+        signalingExecutor.execute(
+                () -> signalingChannel.connect(token, new ActionCallback<String>() {
+                    @Override
+                    public void onSuccess(String result) {
+                        try {
+                            JSONObject resultObj = new JSONObject(result);
+                            id = resultObj.getString("uid");
+                        } catch (JSONException e) {
+                            RCHECK(e);
+                        }
+                        changeConnectionStatus(CONNECTED);
+                        triggerCallback(callback, result);
+                    }
 
-            @Override
-            public void onFailure(IcsError error) {
-                changeConnectionStatus(DISCONNECTED);
-                triggerCallback(callback, error);
-            }
-        });
+                    @Override
+                    public void onFailure(IcsError error) {
+                        changeConnectionStatus(DISCONNECTED);
+                        triggerCallback(callback, error);
+                    }
+                }));
     }
 
     /**
@@ -217,7 +243,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * succeeds to publish the LocalStream. Otherwise when fails to do so, ActionCallback
      * .onFailure will be invoked with the corresponding IcsError.
      */
-    public void publish(final String peerId, final LocalStream localStream,
+    public synchronized void publish(final String peerId, final LocalStream localStream,
             final ActionCallback<Publication> callback) {
         RCHECK(localStream);
         if (!checkConnectionStatus(CONNECTED)) {
@@ -253,11 +279,11 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      *
      * @param peerId id of remote P2PClient.
      */
-    public void stop(String peerId) {
+    public synchronized void stop(String peerId) {
+        RCHECK(peerId);
         if (!checkConnectionStatus(CONNECTED)) {
             return;
         }
-        RCHECK(peerId);
         synchronized (pcChannelsLock) {
             if (!pcChannels.containsKey(peerId)) {
                 return;
@@ -276,7 +302,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure will be invoked
      * with the corresponding IcsError.
      */
-    public void getStats(String peerId, final ActionCallback<RTCStatsReport> callback) {
+    public synchronized void getStats(String peerId, final ActionCallback<RTCStatsReport> callback) {
         RCHECK(peerId);
         if (!containsPCChannel(peerId)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
@@ -296,7 +322,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * Otherwise when fails to do so, ActionCallback.onFailure will be invoked with the
      * corresponding IcsError.
      */
-    public void send(String peerId, String message, ActionCallback<Void> callback) {
+    public synchronized void send(String peerId, String message, ActionCallback<Void> callback) {
         if (!checkConnectionStatus(CONNECTED)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
@@ -595,7 +621,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         JSONObject errorMsg = new JSONObject();
         try {
             errorMsg.put("code",
-                    recoverable ? P2P_ICE_POLICY_UNSUPPORTED.value : P2P_WEBRTC_SDP.value);
+                    recoverable ? P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value : P2P_WEBRTC_SDP.value);
             errorMsg.put("message", error);
         } catch (JSONException e) {
             DCHECK(e);
@@ -729,7 +755,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                         }
                         P2PPeerConnectionChannel oldChannel = getPeerConnection(peerId);
                         pcChannels.remove(peerId);
-                        if (code == P2P_ICE_POLICY_UNSUPPORTED.value) {
+                        if (code == P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value) {
                             // re-create peerconnection and re-publish.
                             LocalStream localStream = null;
                             ActionCallback<Publication> callback = null;
@@ -828,29 +854,4 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         }
     }
     ///@endcond
-
-    /**
-     * Interface for observing client events.
-     */
-    public interface P2PClientObserver {
-        /**
-         * Called upon server disconnected.
-         */
-        void onServerDisconnected();
-
-        /**
-         * Called upon a RemoteStream gets added to the conference.
-         *
-         * @param remoteStream RemoteStream added.
-         */
-        void onStreamAdded(RemoteStream remoteStream);
-
-        /**
-         * Called upon receiving a message.
-         *
-         * @param peerId id of the message sender.
-         * @param message message received.
-         */
-        void onDataReceived(String peerId, String message);
-    }
 }
