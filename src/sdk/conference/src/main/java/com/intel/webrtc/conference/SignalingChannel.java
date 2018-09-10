@@ -228,12 +228,8 @@ final class SignalingChannel {
         DCHECK(reconnectionTicket);
         socketClient.emit("relogin", reconnectionTicket, (Ack) (Object... args) -> {
             if (extractMsg(0, args).equals("ok")) {
-                try {
-                    reconnectionTicket = ((JSONObject) args[1]).getString("reconnectionTicket");
-                    reconnectAttempts = 0;
-                } catch (JSONException e) {
-                    DCHECK(e);
-                }
+                reconnectionTicket = (String) args[1];
+                reconnectAttempts = 0;
                 flushCachedMsg();
             } else {
                 triggerDisconnected();
