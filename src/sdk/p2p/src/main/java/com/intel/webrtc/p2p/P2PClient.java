@@ -9,8 +9,10 @@ import static com.intel.webrtc.base.IcsConst.LOG_TAG;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo.AudioSourceInfo;
 import static com.intel.webrtc.base.Stream.StreamSourceInfo.VideoSourceInfo;
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_DENIED;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
+import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_NOT_ALLOWED;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_SDP;
 import static com.intel.webrtc.p2p.P2PClient.ServerConnectionStatus.CONNECTED;
@@ -356,7 +358,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         JSONObject errorMsg = new JSONObject();
         try {
             errorMsg.put("message", "Denied");
-            errorMsg.put("code", 0);
+            errorMsg.put("code", P2P_CLIENT_DENIED.value);
         } catch (JSONException e) {
             DCHECK(e);
         }
@@ -428,7 +430,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     private <T> boolean checkPermission(String peerId, ActionCallback<T> callback) {
         if (!allowedRemotePeers.contains(peerId)) {
             triggerCallback(callback,
-                    new IcsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Not allowed."));
+                    new IcsError(P2P_CLIENT_NOT_ALLOWED.value, "Not allowed."));
             return false;
         }
         return true;
@@ -774,7 +776,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             newChannel.publish(localStream, callback);
                         } else {
                             // trigger callbacks.
-                            getPeerConnection(peerId).processError(new IcsError(code, error));
+                            oldChannel.processError(new IcsError(code, error));
                         }
                         oldChannel.dispose();
                     }
