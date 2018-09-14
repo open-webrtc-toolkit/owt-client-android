@@ -304,15 +304,18 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure will be invoked
      * with the corresponding IcsError.
      */
-    public synchronized void getStats(String peerId, final ActionCallback<RTCStatsReport> callback) {
+    public synchronized void getStats(String peerId,
+            final ActionCallback<RTCStatsReport> callback) {
         RCHECK(peerId);
         if (!containsPCChannel(peerId)) {
             triggerCallback(callback, new IcsError(P2P_CLIENT_INVALID_STATE.value,
                     "No peerconnection established yet."));
             return;
         }
-        P2PPeerConnectionChannel pcChannel = getPeerConnection(peerId);
-        pcChannel.getConnectionStats(rtcStatsReport -> triggerCallback(callback, rtcStatsReport));
+        if (callback != null) {
+            P2PPeerConnectionChannel pcChannel = getPeerConnection(peerId);
+            pcChannel.getConnectionStats(callback);
+        }
     }
 
     /**

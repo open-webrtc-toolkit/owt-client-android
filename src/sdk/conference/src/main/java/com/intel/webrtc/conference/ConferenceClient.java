@@ -467,12 +467,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             triggerCallback(callback, new IcsError(0, "Wrong state"));
             return;
         }
-        ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
-        pcChannel.getConnectionStats(rtcStatsReport -> {
-            if (callback != null) {
-                callback.onSuccess(rtcStatsReport);
-            }
-        });
+        if (callback != null) {
+            ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
+            pcChannel.getConnectionStats(callback);
+        }
     }
 
     private void closeInternal() {

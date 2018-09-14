@@ -20,6 +20,7 @@ import org.webrtc.MediaConstraints.KeyValuePair;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.RTCStatsCollectorCallback;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
@@ -217,13 +218,14 @@ public abstract class PeerConnectionChannel
         });
     }
 
-    public void getConnectionStats(final RTCStatsCollectorCallback callback) {
+    public void getConnectionStats(final ActionCallback<RTCStatsReport> callback) {
         DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
+                callback.onFailure(new IcsError("Invalid stats."));
                 return;
             }
-            peerConnection.getStats(callback);
+            peerConnection.getStats(callback::onSuccess);
         });
     }
 
