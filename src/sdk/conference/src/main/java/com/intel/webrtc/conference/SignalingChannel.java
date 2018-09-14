@@ -40,7 +40,7 @@ final class SignalingChannel {
 
         void onProgressMessage(JSONObject message);
 
-        void onTextMessage(String participantId, String message);
+        void onTextMessage(String message, String from, String to);
 
         void onStreamAdded(RemoteStream remoteStream);
 
@@ -155,7 +155,8 @@ final class SignalingChannel {
     private final Listener textCallback = (Object... args) -> callbackExecutor.execute(() -> {
         JSONObject data = (JSONObject) args[0];
         try {
-            observer.onTextMessage(data.getString("from"), data.getString("message"));
+            observer.onTextMessage(data.getString("message"), data.getString("from"),
+                    data.has("to") ? data.getString("to") : "");
         } catch (JSONException e) {
             DCHECK(false);
         }

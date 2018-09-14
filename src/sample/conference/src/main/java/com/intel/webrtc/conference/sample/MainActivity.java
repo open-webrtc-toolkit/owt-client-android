@@ -604,7 +604,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onMessageReceived(String participantId, String message) {
+    public void onMessageReceived(String message, String from, String to) {
 
     }
 

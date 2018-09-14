@@ -58,10 +58,11 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         /**
          * Called upon receiving a message.
          *
-         * @param participantId id of the message sender.
          * @param message message received.
+         * @param from id of the message sender.
+         * @param to receiver of this message, values: 'all', 'me'.
          */
-        void onMessageReceived(String participantId, String message);
+        void onMessageReceived(String message, String from, String to);
 
         /**
          * Called upon server disconnected.
@@ -652,11 +653,11 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     @Override
-    public void onTextMessage(final String participantId, final String message) {
+    public void onTextMessage(final String message, final String from, String to) {
         DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             for (ConferenceClientObserver observer : observers) {
-                observer.onMessageReceived(participantId, message);
+                observer.onMessageReceived(message, from, to);
             }
         });
     }
