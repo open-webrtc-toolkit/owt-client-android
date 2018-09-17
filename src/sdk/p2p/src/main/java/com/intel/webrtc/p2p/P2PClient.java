@@ -431,7 +431,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     private <T> boolean checkPermission(String peerId, ActionCallback<T> callback) {
-        if (!allowedRemotePeers.contains(peerId)) {
+        if (!allowedRemotePeers.contains(peerId) || peerId.equals(id)) {
             triggerCallback(callback,
                     new IcsError(P2P_CLIENT_NOT_ALLOWED.value, "Not allowed."));
             return false;
