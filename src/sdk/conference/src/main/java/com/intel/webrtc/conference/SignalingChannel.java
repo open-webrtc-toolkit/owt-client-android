@@ -161,9 +161,7 @@ final class SignalingChannel {
             DCHECK(false);
         }
     });
-    private final Listener dropCallback = args -> {
-        // TODO: currently left empty.
-    };
+    private final Listener dropCallback = args -> triggerDisconnected();
 
     SignalingChannel(String token, SignalingChannelObserver observer) {
         this.token = token;
