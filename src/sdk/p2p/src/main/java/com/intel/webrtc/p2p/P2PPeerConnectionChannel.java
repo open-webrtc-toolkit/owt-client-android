@@ -5,6 +5,7 @@ package com.intel.webrtc.p2p;
 
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
 import static com.intel.webrtc.base.CheckCondition.RCHECK;
+import static com.intel.webrtc.base.IcsConst.LOG_TAG;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_CLIENT_INVALID_STATE;
 import static com.intel.webrtc.p2p.IcsP2PError.P2P_WEBRTC_SDP;
 
@@ -264,7 +265,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     @Override
     public void onSignalingChange(final PeerConnection.SignalingState signalingState) {
         callbackExecutor.execute(() -> {
-            Log.d(TAG, "onSignalingChange " + signalingState);
+            Log.d(LOG_TAG, "onSignalingChange " + signalingState);
             P2PPeerConnectionChannel.this.signalingState = signalingState;
             if (signalingState == STABLE) {
                 synchronized (negLock) {
@@ -278,7 +279,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     @Override
     public void onIceConnectionChange(final PeerConnection.IceConnectionState iceConnectionState) {
         callbackExecutor.execute(() -> {
-            Log.d(TAG, "onIceConnectionChange " + iceConnectionState);
+            Log.d(LOG_TAG, "onIceConnectionChange " + iceConnectionState);
             P2PPeerConnectionChannel.this.iceConnectionState = iceConnectionState;
             if (iceConnectionState == CONNECTED || iceConnectionState == COMPLETED) {
                 checkWaitingList();
@@ -299,7 +300,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     @Override
     public void onIceCandidate(final IceCandidate iceCandidate) {
         callbackExecutor.execute(() -> {
-            Log.d(TAG, "onIceCandidate");
+            Log.d(LOG_TAG, "onIceCandidate");
             observer.onIceCandidate(key, iceCandidate);
         });
     }
@@ -307,7 +308,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     @Override
     public void onAddStream(final MediaStream mediaStream) {
         callbackExecutor.execute(() -> {
-            Log.d(TAG, "onAddStream");
+            Log.d(LOG_TAG, "onAddStream");
             RemoteStream remoteStream = new RemoteStream(key, mediaStream);
             remoteStreams.put(mediaStream, remoteStream);
             if (iceConnectionState == CONNECTED || iceConnectionState == COMPLETED) {
@@ -321,7 +322,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     @Override
     public void onRemoveStream(final MediaStream mediaStream) {
         callbackExecutor.execute(() -> {
-            Log.d(TAG, "onRemoveStream");
+            Log.d(LOG_TAG, "onRemoveStream");
             if (remoteStreams.containsKey(mediaStream)) {
                 RemoteStream remoteStream = remoteStreams.get(mediaStream);
                 remoteStream.onEnded();
@@ -336,7 +337,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             if (disposed()) {
                 return;
             }
-            Log.d(TAG, "onRenegotiationNeeded");
+            Log.d(LOG_TAG, "onRenegotiationNeeded");
             processNegotiationRequest();
         });
     }
@@ -347,7 +348,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             if (disposed()) {
                 return;
             }
-            Log.d(TAG, "onSetSuccess ");
+            Log.d(LOG_TAG, "onSetSuccess ");
             if (signalingState == PeerConnection.SignalingState.HAVE_REMOTE_OFFER
                     || peerConnection.getLocalDescription() == null) {
                 isCaller = false;

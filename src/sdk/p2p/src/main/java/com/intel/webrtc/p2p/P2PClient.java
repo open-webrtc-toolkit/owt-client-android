@@ -538,8 +538,8 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         sendSignalingMessage(peerId, TRACK_ADD_ACK, tracks, null);
     }
 
-    private void processSignalingMsg(String peerId, JSONObject message) {
-        try {
+    private void processSignalingMsg(String peerId, JSONObject message) throws JSONException {
+        synchronized (pcChannelsLock) {
             if (pcChannels.containsKey(peerId)
                     && message.getString("type").equals("offer")
                     && pcChannels.get(peerId).getSignalingState() == HAVE_LOCAL_OFFER) {
@@ -568,8 +568,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
             } else {
                 getPeerConnection(peerId).processSignalingMessage(message);
             }
-        } catch (JSONException e) {
-            DCHECK(e);
         }
     }
 
@@ -605,10 +603,12 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
                 @Override
                 public void onFailure(IcsError error) {
-                    //failed to send sdp, trigger callbacks.
-                    getPeerConnection(peerId).processError(error);
-                    getPeerConnection(peerId).dispose();
-                    pcChannels.remove(peerId);
+                    synchronized (pcChannelsLock) {
+                        //failed to send sdp, trigger callbacks.
+                        getPeerConnection(peerId).processError(error);
+                        getPeerConnection(peerId).dispose();
+                        pcChannels.remove(peerId);
+                    }
                 }
             });
         } catch (JSONException e) {
@@ -618,9 +618,11 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
     @Override
     public void onError(String peerId, String error, boolean recoverable) {
-        if (!recoverable && pcChannels.containsKey(peerId)) {
-            pcChannels.get(peerId).dispose();
-            pcChannels.remove(peerId);
+        synchronized (pcChannelsLock) {
+            if (!recoverable && pcChannels.containsKey(peerId)) {
+                pcChannels.get(peerId).dispose();
+                pcChannels.remove(peerId);
+            }
         }
 
         JSONObject errorMsg = new JSONObject();
@@ -700,65 +702,75 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     @Override
     public void onMessage(String peerId, String message) {
         try {
-            JSONObject messageObject = new JSONObject(message);
+            JSONObject msgObj = new JSONObject(message);
             SignalingMessageType messageType =
-                    SignalingMessageType.get(messageObject.getString("type"));
+                    SignalingMessageType.get(msgObj.getString("type"));
 
             if (!checkPermission(peerId, null) && messageType != CHAT_CLOSED) {
                 permissionDenied(peerId);
                 return;
             }
-
             switch (messageType) {
                 case SIGNALING_MESSAGE:
-                    processSignalingMsg(peerId, messageObject.getJSONObject("data"));
+                    processSignalingMsg(peerId, msgObj.getJSONObject("data"));
                     break;
                 case TRACK_INFO:
-                    JSONArray data = messageObject.getJSONArray("data");
+                    JSONArray data = msgObj.getJSONArray("data");
                     for (int i = 0; i < data.length(); i++) {
                         JSONObject trackInfo = data.getJSONObject(i);
                         streamInfos.put(trackInfo.getString("id"), trackInfo.getString("source"));
                     }
                     break;
                 case TRACK_ADD_ACK:
-                    if (pcChannels.containsKey(peerId)) {
-                        getPeerConnection(peerId)
-                                .processTrackAck(messageObject.getJSONArray("data"));
+                    synchronized (pcChannelsLock) {
+                        if (pcChannels.containsKey(peerId)) {
+                            getPeerConnection(peerId).processTrackAck(msgObj.getJSONArray("data"));
+                        }
                     }
                     break;
                 case NEGOTIATION_REQUEST:
-                    if (pcChannels.containsKey(peerId)) {
-                        getPeerConnection(peerId).processNegotiationRequest();
+                    synchronized (pcChannelsLock) {
+                        if (pcChannels.containsKey(peerId)) {
+                            getPeerConnection(peerId).processNegotiationRequest();
+                        }
                     }
                     break;
                 case CHAT_UA:
                     P2PPeerConnectionChannel pcChannel;
-                    if (!pcChannels.containsKey(peerId)) {
-                        sendUserInfo(peerId);
-                        boolean hasCap = messageObject.getJSONObject("data").has("capabilities");
-                        JSONObject cap = hasCap ? messageObject.getJSONObject("data").getJSONObject(
-                                "capabilities") : null;
-                        boolean continualIceGathering = cap != null && cap.getBoolean(
-                                "continualIceGathering");
-                        configuration.rtcConfiguration.continualGatheringPolicy =
-                                continualIceGathering ? GATHER_CONTINUALLY : GATHER_ONCE;
-                        pcChannel = getPeerConnection(peerId, configuration);
-                    } else {
-                        pcChannel = getPeerConnection(peerId);
+                    synchronized (pcChannelsLock) {
+                        if (!pcChannels.containsKey(peerId)) {
+                            sendUserInfo(peerId);
+                            boolean hasCap = msgObj.getJSONObject("data").has("capabilities");
+                            JSONObject cap = hasCap ?
+                                    msgObj.getJSONObject("data").getJSONObject("capabilities")
+                                    : null;
+                            boolean cont = cap != null && cap.getBoolean("continualIceGathering");
+                            configuration.rtcConfiguration.continualGatheringPolicy =
+                                    cont ? GATHER_CONTINUALLY : GATHER_ONCE;
+                            pcChannel = getPeerConnection(peerId, configuration);
+                        } else {
+                            pcChannel = getPeerConnection(peerId);
+                        }
                     }
-                    pcChannel.processUserInfo(messageObject.getJSONObject("data"));
+                    pcChannel.processUserInfo(msgObj.getJSONObject("data"));
                     break;
                 case CHAT_CLOSED:
-                    if (pcChannels.containsKey(peerId)) {
+                    if (containsPCChannel(peerId)) {
+                        P2PPeerConnectionChannel oldChannel = getPeerConnection(peerId);
+                        if (oldChannel.getSignalingState() == null
+                                || oldChannel.getSignalingState() == HAVE_LOCAL_OFFER) {
+                            // Having reached here, we need to deal with the case in which the
+                            // peer client and me publish at the same time.
+                            return;
+                        }
                         JSONObject dataObj;
                         int code = 0;
                         String error = null;
-                        if (messageObject.has("data")) {
-                            dataObj = new JSONObject(messageObject.getString("data"));
+                        if (msgObj.has("data")) {
+                            dataObj = new JSONObject(msgObj.getString("data"));
                             code = dataObj.has("code") ? dataObj.getInt("code") : 0;
                             error = dataObj.has("message") ? dataObj.getString("message") : "";
                         }
-                        P2PPeerConnectionChannel oldChannel = getPeerConnection(peerId);
                         pcChannels.remove(peerId);
                         if (code == P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value) {
                             // re-create peerconnection and re-publish.
@@ -785,8 +797,10 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                     }
                     break;
                 case CHAT_DATA_ACK:
-                    if (pcChannels.containsKey(peerId)) {
-                        getPeerConnection(peerId).processDataAck(messageObject.getLong("data"));
+                    synchronized (pcChannelsLock) {
+                        if (pcChannels.containsKey(peerId)) {
+                            getPeerConnection(peerId).processDataAck(msgObj.getLong("data"));
+                        }
                     }
                     break;
             }

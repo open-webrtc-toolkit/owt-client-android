@@ -5,6 +5,7 @@ package com.intel.webrtc.base;
 
 import static com.intel.webrtc.base.CheckCondition.DCHECK;
 import static com.intel.webrtc.base.CheckCondition.RCHECK;
+import static com.intel.webrtc.base.IcsConst.LOG_TAG;
 
 import android.util.Log;
 
@@ -44,7 +45,6 @@ import java.util.concurrent.Executors;
 public abstract class PeerConnectionChannel
         implements PeerConnection.Observer, SdpObserver, DataChannel.Observer {
 
-    protected static final String TAG = "ICS";
     //For P2P, key is peer id, for conference, key is Publication/Subscription id.
     public final String key;
     protected final PeerConnectionChannelObserver observer;
@@ -99,7 +99,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(TAG, "create offer");
+            Log.d(LOG_TAG, "create offer");
             peerConnection.createOffer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
@@ -110,7 +110,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(TAG, "creating answer");
+            Log.d(LOG_TAG, "creating answer");
             peerConnection.createAnswer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
@@ -145,11 +145,11 @@ public abstract class PeerConnectionChannel
         DCHECK(pcExecutor);
         DCHECK(iceCandidate);
         if (peerConnection.getRemoteDescription() != null) {
-            Log.d(TAG, "add ice candidate");
+            Log.d(LOG_TAG, "add ice candidate");
             peerConnection.addIceCandidate(iceCandidate);
         } else {
             synchronized (remoteIceLock) {
-                Log.d(TAG, "queue ice candidate");
+                Log.d(LOG_TAG, "queue ice candidate");
                 queuedRemoteCandidates.add(iceCandidate);
             }
         }
@@ -159,13 +159,13 @@ public abstract class PeerConnectionChannel
         DCHECK(pcExecutor);
         DCHECK(queuedRemoteCandidates);
         synchronized (remoteIceLock) {
-            Log.d(TAG, "drain candidates ");
+            Log.d(LOG_TAG, "drain candidates ");
             for (final IceCandidate candidate : queuedRemoteCandidates) {
                 pcExecutor.execute(() -> {
                     if (disposed()) {
                         return;
                     }
-                    Log.d(TAG, "add ice candidate");
+                    Log.d(LOG_TAG, "add ice candidate");
                     peerConnection.addIceCandidate(candidate);
                     queuedRemoteCandidates.remove(candidate);
                 });
@@ -189,7 +189,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(TAG, "add stream.");
+            Log.d(LOG_TAG, "add stream.");
             peerConnection.addStream(mediaStream);
         });
     }
@@ -200,7 +200,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(TAG, "remove stream");
+            Log.d(LOG_TAG, "remove stream");
             peerConnection.removeStream(mediaStream);
         });
     }
@@ -366,14 +366,14 @@ public abstract class PeerConnectionChannel
         }
         RtpParameters rtpParameters = sender.getParameters();
         if (rtpParameters == null) {
-            Log.e(TAG, "Null rtp paramters");
+            Log.e(LOG_TAG, "Null rtp paramters");
             return;
         }
         for (RtpParameters.Encoding encoding : rtpParameters.encodings) {
             encoding.maxBitrateBps = bitrate == null ? null : bitrate * 1000;
         }
         if (!sender.setParameters(rtpParameters)) {
-            Log.e(TAG, "Failed to configure max video bitrate");
+            Log.e(LOG_TAG, "Failed to configure max video bitrate");
         }
     }
 
