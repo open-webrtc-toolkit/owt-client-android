@@ -757,12 +757,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                 case CHAT_CLOSED:
                     if (containsPCChannel(peerId)) {
                         P2PPeerConnectionChannel oldChannel = getPeerConnection(peerId);
-                        if (oldChannel.getSignalingState() == null
-                                || oldChannel.getSignalingState() == HAVE_LOCAL_OFFER) {
-                            // Having reached here, we need to deal with the case in which the
-                            // peer client and me publish at the same time.
-                            return;
-                        }
                         JSONObject dataObj;
                         int code = 0;
                         String error = null;
@@ -770,6 +764,14 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             dataObj = new JSONObject(msgObj.getString("data"));
                             code = dataObj.has("code") ? dataObj.getInt("code") : 0;
                             error = dataObj.has("message") ? dataObj.getString("message") : "";
+                        }
+                        if (code == 0) {
+                            if (oldChannel.getSignalingState() == null
+                                    || oldChannel.getSignalingState() == HAVE_LOCAL_OFFER) {
+                                // Having reached here, we need to deal with the case in which the
+                                // peer client and me publish at the same time.
+                                return;
+                            }
                         }
                         pcChannels.remove(peerId);
                         if (code == P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value) {
