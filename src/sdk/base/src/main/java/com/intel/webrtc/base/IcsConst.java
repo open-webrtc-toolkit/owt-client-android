@@ -8,8 +8,7 @@ import android.os.Build;
 ///@cond
 public class IcsConst {
     public static final String LOG_TAG = "ICS";
-    // TODO: upgrade to 4.1 once PeerServer is updated.
-    public static final String CLIENT_VERSION = "4.0.1";
+    public static final String CLIENT_VERSION = "4.1";
     public static final String userAgent = "{" +
             "'runtime':{'name':'webrtc','version':'67'}," +
             "'sdk':{'type':'Android','version':" + CLIENT_VERSION + "}," +
