@@ -563,7 +563,9 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                     DCHECK(!pcChannels.containsKey(peerId));
                     P2PPeerConnectionChannel newChannel = getPeerConnection(peerId);
                     newChannel.processSignalingMessage(message);
-                    newChannel.publish(localStream, callback);
+                    if (localStream != null) {
+                        newChannel.publish(localStream, callback);
+                    }
                 }
             } else {
                 getPeerConnection(peerId).processSignalingMessage(message);
