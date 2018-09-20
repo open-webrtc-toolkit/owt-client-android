@@ -144,22 +144,26 @@ public abstract class PeerConnectionChannel
         }
         DCHECK(pcExecutor);
         DCHECK(iceCandidate);
-        if (peerConnection.getRemoteDescription() != null) {
-            Log.d(LOG_TAG, "add ice candidate");
-            peerConnection.addIceCandidate(iceCandidate);
-        } else {
-            synchronized (remoteIceLock) {
-                Log.d(LOG_TAG, "queue ice candidate");
-                queuedRemoteCandidates.add(iceCandidate);
+        pcExecutor.execute(() -> {
+            if (disposed()) {
+                return;
             }
-        }
+            if (peerConnection.signalingState() == PeerConnection.SignalingState.STABLE) {
+                Log.d(LOG_TAG, "add ice candidate");
+                peerConnection.addIceCandidate(iceCandidate);
+            }else {
+                synchronized (remoteIceLock) {
+                    Log.d(LOG_TAG, "queue ice candidate");
+                    queuedRemoteCandidates.add(iceCandidate);
+                }
+            }
+        });
     }
 
     protected void drainRemoteCandidates() {
         DCHECK(pcExecutor);
         DCHECK(queuedRemoteCandidates);
         synchronized (remoteIceLock) {
-            Log.d(LOG_TAG, "drain candidates ");
             for (final IceCandidate candidate : queuedRemoteCandidates) {
                 pcExecutor.execute(() -> {
                     if (disposed()) {
@@ -178,7 +182,15 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteDescription);
+            SessionDescription remoteSdp = remoteDescription;
+            if (audioCodecs != null) {
+                remoteSdp = preferCodecs(remoteSdp, false);
+            }
+
+            if (videoCodecs != null) {
+                remoteSdp = preferCodecs(remoteSdp, true);
+            }
+            peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteSdp);
         });
     }
 
