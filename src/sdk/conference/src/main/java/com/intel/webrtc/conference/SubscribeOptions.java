@@ -225,7 +225,6 @@ public final class SubscribeOptions {
              * @return VideoSubscriptionConstraints
              */
             public VideoSubscriptionConstraints build() {
-                RCHECK(resolutionWidth != 0 && resolutionHeight != 0);
                 VideoSubscriptionConstraints constraints = new VideoSubscriptionConstraints(codecs);
                 constraints.resolutionWidth = resolutionWidth;
                 constraints.resolutionHeight = resolutionHeight;
