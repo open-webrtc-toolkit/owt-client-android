@@ -126,7 +126,7 @@ public final class RemoteMixedStream extends RemoteStream {
         public final HashMap<String, String> parameters = new HashMap<>();
 
         Region(JSONObject regionObj) {
-            streamId = getString(regionObj, "stream");
+            streamId = getString(regionObj, "stream", "");
             JSONObject region = getObj(regionObj, "region");
             if (region != null) {
                 regionId = getString(region, "id");
