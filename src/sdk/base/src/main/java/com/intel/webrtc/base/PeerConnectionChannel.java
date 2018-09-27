@@ -262,7 +262,7 @@ public abstract class PeerConnectionChannel
 
     private SessionDescription preferCodec(SessionDescription originalSdp,
             LinkedHashSet<String> preferredCodecs, boolean video) {
-        String[] lines = originalSdp.description.split("\r\n");
+        String[] lines = originalSdp.description.split("(\r\n|\n)");
         ArrayList<String> newLines = new ArrayList<>();
 
         int audioMLineIndex = -1;
