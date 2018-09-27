@@ -86,10 +86,12 @@ public final class Publication extends com.intel.webrtc.base.Publication {
     }
 
     void onEnded() {
-        ended = true;
-        if (observers != null) {
-            for (PublicationObserver observer : observers) {
-                observer.onEnded();
+        if (!ended) {
+            ended = true;
+            if (observers != null) {
+                for (PublicationObserver observer : observers) {
+                    observer.onEnded();
+                }
             }
         }
     }
