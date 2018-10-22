@@ -1,0 +1,45 @@
+# Intel Collaboration Suite for WebRTC Android Samples
+
+## Run samples with Android Studio IDE
+
+    1.  Open Android Studio
+    2.  Import sample project by "Open an existing Android Studio project"
+    3.  Build and run samples
+
+## Run samples with Gradle in the console
+
+    > cd /path/to/dist/samples/folder
+    > ./gradlew assembleRelease
+
+You will get the apk file in build/outputs/apk folder.
+**NOTE** sample/libs that samples depend on are using Linux format softlinks, please change them when building on Windows.
+
+## Conference Sample
+
+Conference sample sends HTTP post requests to basic example server to fetch the token, then connects to Conference Server. After connecting to the Conference Server, it will be able to publish streams captured from a camera or subscribe streams from remote sides. By default, the sample subscribes mixed stream from conference server.
+
+### SSL/TLS
+
+By default, conference sample trusts all certificates and doesn't verify hostname of the server, which is INSECURE yet easy for debugging. 
+Please don't include conference sample default behavior in the production code. To set up a secure environment, follow steps below.
+
+##### Server side uses a self-signed certificate
+    1. Substitute conferenceSample/src/res/raw/democert.crt with the cert that server uses.
+    2. Use getTokenSSLSelfsigned() to fetch the token from server in WooGeenActivity.
+    3. Pass the SSLContext to join() by setting the ConnectionOptions.
+
+##### Server side uses a certificate issued by a well-known CA
+    1. Use getToken() to fetch the token from server in WooGeenActivity.
+    2. No need to set up SSLContext or passing it to join().
+
+##### Trust all certificates (WARNING: INSECURE)
+This is the default behavior in conference sample. For easily debugging without configuring any certificates, conferenceSample can be set to trust all certificates, which means the Android app will not verify the certificate and hostname from server.
+
+    1. Use getTokenSSLINSECURE() to fetch the token from server in WooGeenActivity.
+    2. Pass the SSLContext and HostnameVerifier to join() by setting the ConnectionOptions.
+
+Otherwise if you wouldn't like to use HTTPS/SSL, you should disable the ssl at the server side.
+
+## P2P Sample
+
+P2P sample connects to PeerServer and then it can start a session with other clients connected to the PeerServer with Intel CS for WebRTC client SDK.

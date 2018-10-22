@@ -1,0 +1,6 @@
+include ':src:sdk:base'
+include ':src:sdk:p2p'
+include ':src:sdk:conference'
+include ':src:sample:utils'
+include ':src:sample:p2p'
+include ':src:sample:conference'

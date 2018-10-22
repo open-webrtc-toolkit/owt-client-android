@@ -1,0 +1,55 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:tools="http://schemas.android.com/tools"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             tools:context="com.intel.webrtc.conference.sample.VideoFragment">
+
+    <FrameLayout
+        android:id="@+id/video_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="150dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="right|center_vertical"
+            android:orientation="vertical"
+            android:elevation="1dp">
+
+            <TextView
+                android:id="@+id/stats_in"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_gravity="right|center_vertical"
+                android:background="@color/black_overlay"
+                android:gravity="top"
+                android:textColor="@color/colorPrimary"/>
+
+            <TextView
+                android:id="@+id/stats_out"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_gravity="right|center_vertical"
+                android:background="@color/black_overlay"
+                android:gravity="top"
+                android:textColor="@color/colorPrimary"/>
+
+        </LinearLayout>
+
+
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/small_renderer"
+            android:layout_width="160dp"
+            android:layout_height="120dp"/>
+
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/full_renderer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+
+    </FrameLayout>
+
+</FrameLayout>

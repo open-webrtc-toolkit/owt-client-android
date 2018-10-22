@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">ICS_CONF</string>
+    <string name="ics_conf">ICS CONFERENCE</string>
+    <string name="server_url">server url</string>
+    <string name="connect">connect</string>
+    <string name="connecting">connecting</string>
+    <string name="disconnect">disconnect</string>
+    <string name="settings">settings</string>
+    <string name="publish">publish</string>
+    <string name="unpublish">Unpublish</string>
+    <string name="room_id">Room Id</string>
+    <string name="default_room">default room</string>
+    <string name="camera_facing">Camera Facing</string>
+    <string name="front">FRONT</string>
+    <string name="back">BACK</string>
+    <string name="camera_resolution">Camera Resolution</string>
+    <string name="sharescreen">ShareScreen</string>
+    <string name="share_screen">ShareScreen</string>
+    <string name="stop_screen">StopSharing</string>
+</resources>

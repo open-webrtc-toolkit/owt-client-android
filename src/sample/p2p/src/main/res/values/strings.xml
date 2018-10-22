@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">ICS_P2P</string>
+    <string name="title_home">Home</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_chat">Message</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="connecting">Connecting</string>
+    <string name="user_id">User Id</string>
+    <string name="please_input_user_id">Please input user id</string>
+    <string name="please_input_server_url">Please input server url</string>
+    <string name="peer_id">Peer Id</string>
+    <string name="please_input_peer_id">Please input peer id</string>
+    <string name="call">call</string>
+    <string name="back">back</string>
+    <string name="publish">Publish</string>
+    <string name="unpublish">Unpublish</string>
+    <string name="camera_facing">Camera Facing</string>
+    <string name="camera_front">FRONT</string>
+    <string name="camera_back">BACK</string>
+    <string name="camera_resolution">Camera Resolution</string>
+    <string name="send">send</string>
+    <string name="ics_p2p">ICS P2P</string>
+</resources>
