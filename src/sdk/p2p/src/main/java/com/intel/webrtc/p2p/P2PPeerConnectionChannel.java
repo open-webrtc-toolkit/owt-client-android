@@ -306,6 +306,10 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     }
 
     @Override
+    public void onIceCandidatesRemoved(IceCandidate[] iceCandidates) {
+    }
+
+    @Override
     public void onAddStream(final MediaStream mediaStream) {
         callbackExecutor.execute(() -> {
             Log.d(LOG_TAG, "onAddStream");

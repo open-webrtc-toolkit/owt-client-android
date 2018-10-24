@@ -15,6 +15,7 @@ import com.intel.webrtc.base.LocalStream;
 import com.intel.webrtc.base.MediaConstraints.TrackKind;
 import com.intel.webrtc.base.PeerConnectionChannel;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
@@ -802,6 +803,32 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             msg.put("id", id);
             msg.put("signaling", candidateMsg);
 
+            sendSignalingMessage("soac", msg, null);
+        } catch (JSONException e) {
+            DCHECK(e);
+        }
+    }
+
+    @Override
+    public void onIceCandidatesRemoved(final String id, final IceCandidate[] candidates) {
+        try {
+            JSONArray removedCandidates = new JSONArray();
+            for (IceCandidate candidate : candidates) {
+                JSONObject candidateObj = new JSONObject();
+                candidateObj.put("sdpMLineIndex", candidate.sdpMLineIndex);
+                candidateObj.put("sdpMid", candidate.sdpMid);
+                candidateObj.put("candidate",
+                        candidate.sdp.indexOf("a=") == 0 ? candidate.sdp : "a=" + candidate.sdp);
+                removedCandidates.put(candidateObj);
+            }
+
+            JSONObject rmCanMsg = new JSONObject();
+            rmCanMsg.put("type", "removed-candidates");
+            rmCanMsg.put("candidates", removedCandidates);
+
+            JSONObject msg = new JSONObject();
+            msg.put("id", id);
+            msg.put("signaling", rmCanMsg);
             sendSignalingMessage("soac", msg, null);
         } catch (JSONException e) {
             DCHECK(e);
