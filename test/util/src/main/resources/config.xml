@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mcu>
+    <roomId>place_holder</roomId>
+    <basicServer>place_holder</basicServer>
+    <basicServerHttps>place_holder</basicServerHttps>
+    <mixedStreamSize>place_holder</mixedStreamSize>
+    <p2pServer>place_holder</p2pServer>
+    <rawStreamFile>place_holder</rawStreamFile>
+</mcu>
