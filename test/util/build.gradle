@@ -1,0 +1,34 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 21
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+repositories {
+    flatDir {
+        dirs '../libs'
+    }
+}
+dependencies {
+    implementation 'org.dom4j:dom4j:2.0.2'
+    api(name: 'ics_base', ext: 'aar')
+    api(name: 'ics_p2p', ext: 'aar')
+    api(name: 'ics_conference', ext: 'aar')
+    api(name: 'libwebrtc', ext: 'jar')
+}
