@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('startMCU') {
+            agent{
+                node {
+                    label 'webrtc151'
+                }
+            }
+      
+            steps {
+                script{
+                    withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
+                        sh '/home/webrtc/workspace/script/killserver.sh'
+                        sh '/home/webrtc/workspace/script/startmcu.sh'
+                        sh '/home/webrtc/workspace/script/checkmcustatus.sh'
+                    }
+                }
+            }
+        }
+        stage('start') {
+            agent{
+                node {
+                    label '155'
+                    customWorkspace "/home/webrtctest3/workspace/Test/CISource/oms-android"
+                }
+            }
+            steps {
+                echo "commitId:$GIT_COMMIT"
+            }
+        }
+    }
+}
