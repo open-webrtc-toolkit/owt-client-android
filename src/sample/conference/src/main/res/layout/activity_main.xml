@@ -3,7 +3,7 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:background="@android:color/background_light"
-             tools:context="com.intel.webrtc.conference.sample.MainActivity">
+             tools:context="oms.sample.conference.MainActivity">
 
     <LinearLayout
         android:id="@+id/fragment_container"

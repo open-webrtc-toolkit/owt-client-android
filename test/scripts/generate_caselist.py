@@ -6,10 +6,10 @@ import sys
 
 HOME_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 TEST_PATH = os.path.join(HOME_PATH, 'test')
-BASE_CASES = os.path.join(TEST_PATH, 'base/src/main/java/com/intel/webrtc/test/base')
+BASE_CASES = os.path.join(TEST_PATH, 'base/src/main/java/oms/test/base')
 CONF_CASES = os.path.join(TEST_PATH,
-                          'conference/apiTest/src/main/java/com/intel/webrtc/test/conference/apitest')
-P2P_CASES = os.path.join(TEST_PATH, 'p2p/apiTest/src/main/java/com/intel/webrtc/test/p2p/apitest')
+                          'conference/apiTest/src/main/java/oms/test/conference/apitest')
+P2P_CASES = os.path.join(TEST_PATH, 'p2p/apiTest/src/main/java/oms/test/p2p/apitest')
 
 CASE_PATTERN = ".*?public void (test.*?)\(\)"
 

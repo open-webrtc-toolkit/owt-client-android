@@ -3,8 +3,8 @@ import static junit.framework.Assert.fail;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
-import com.intel.webrtc.base.ContextInitialization;
-import com.intel.webrtc.conference.ConferenceClient;
+import oms.base.ContextInitialization;
+import oms.conference.ConferenceClient;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

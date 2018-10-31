@@ -1,8 +1,8 @@
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
-import com.intel.webrtc.base.ContextInitialization;
-import com.intel.webrtc.base.LocalStream;
+import oms.base.ContextInitialization;
+import oms.base.LocalStream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

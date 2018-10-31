@@ -1,2 +1,2 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.intel.webrtc.test.p2p.util"/>
+          package="oms.test.p2p.util"/>
