@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('startMcuAndp2pServer'){
+            parallel {
+                stage('startMCU') {
+                    agent{
+                        node {
+                            label "${env.mcuServer}"
+                        }
+                    }
+      
+                    steps {
+                        script{
+                            withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
+                                sh "${env.mcuScriptPath}/startmcu.sh"
+                            }
+                        }
+                    }
+                }
+                
+                stage('startp2pServer'){
+                    agent{
+                        node {
+                            label "${env.p2pServer}"
+                            customWorkspace "${env.androidSourcePath}"
+                        }
+                    }
+                    steps{
+                        script{
+                            withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
+                                sh "${env.androidCIScriptPath}/updateAndStartP2PServer.sh"
+                                }    
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('runAndroidCICase'){
+            agent{
+                node {
+                    label "${env.androidRunCaseServer}"
+                    customWorkspace "${env.androidSourcePath}"
+                }
+            }
+            steps {
+                sh "python ${env.androidCIScriptPath}/androidCI.py -m ci -l ${GIT_COMMIT}"
+            }
+        }
+    }
+}
