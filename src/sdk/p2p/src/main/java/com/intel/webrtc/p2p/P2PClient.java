@@ -591,6 +591,11 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     @Override
+    public void onIceCandidatesRemoved(String key, IceCandidate[] candidates) {
+
+    }
+
+    @Override
     public void onLocalDescription(final String peerId, SessionDescription localSdp) {
         try {
             JSONObject sdpObject = new JSONObject();
