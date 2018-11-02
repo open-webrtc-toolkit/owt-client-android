@@ -148,6 +148,11 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     }
 
     @Override
+    public void onIceCandidatesRemoved(IceCandidate[] iceCandidates) {
+        observer.onIceCandidatesRemoved(key, iceCandidates);
+    }
+
+    @Override
     public void onAddStream(final MediaStream mediaStream) {
         DCHECK(stream);
         callbackExecutor.execute(() -> {

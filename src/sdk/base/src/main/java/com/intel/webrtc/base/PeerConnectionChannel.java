@@ -480,8 +480,7 @@ public abstract class PeerConnectionChannel
     abstract public void onIceCandidate(IceCandidate iceCandidate);
 
     @Override
-    public void onIceCandidatesRemoved(IceCandidate[] iceCandidates) {
-    }
+    abstract public void onIceCandidatesRemoved(IceCandidate[] iceCandidates);
 
     @Override
     abstract public void onAddStream(MediaStream mediaStream);
@@ -546,6 +545,8 @@ public abstract class PeerConnectionChannel
 
     public interface PeerConnectionChannelObserver {
         void onIceCandidate(String key, IceCandidate candidate);
+
+        void onIceCandidatesRemoved(String key, IceCandidate[] candidates);
 
         void onLocalDescription(String key, SessionDescription localSdp);
 
