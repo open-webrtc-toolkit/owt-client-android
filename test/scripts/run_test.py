@@ -16,6 +16,9 @@ CONF_TARGET_PACKAGE = "com.intel.webrtc.test.conference.apitest"
 P2P_TARGET_PACKAGE = "com.intel.webrtc.test.p2p.apitest"
 BASE_TARGET_PACKAGE = "com.intel.webrtc.test.base"
 
+TEST_MODULES = ["':test:util'", "':test:base'", "':test:p2p:util'", "':test:p2p:apiTest'",
+                "':test:conference:util'", "':test:conference:apiTest'"]
+
 
 def install_test(module, device):
     print '> building test module', module
@@ -88,11 +91,11 @@ def run_cases(case_list, device, log_dir):
 def change_config():
     shutil.copyfile(os.path.join(HOME_PATH, 'settings.gradle'),
                     os.path.join(HOME_PATH, 'settings.gradle.bk'))
+    text2Add = ''
+    for module in TEST_MODULES:
+        text2Add += '\ninclude ' + module
     with open(os.path.join(HOME_PATH, 'settings.gradle'), "a") as settings_file:
-        settings_file.write("\ninclude ':test:util',"
-                            "':test:base',"
-                            "':test:p2p:util', ':test:p2p:apiTest',"
-                            "':test:conference:util', ':test:conference:apiTest'")
+        settings_file.write(text2Add)
 
 
 def recover_config():
