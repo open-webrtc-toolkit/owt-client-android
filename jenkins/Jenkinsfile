@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+     stages {
+        stage('startMCU'){
+            agent{
+                node {
+                    label "${env.mcuServer}"
+                }
+            }
+            steps {
+                script{
+                    withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
+                        sh "${env.mcuScriptPath}/startmcu.sh"
+                    }
+                }
+            }
+        }
+        stage('startp2pServer'){
+            agent{
+                node {
+                    label "${env.p2pServer}"
+                }
+            }
+            steps{
+                script{
+                    withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
+                        sh "${env.p2pScriptPath}/startP2PServer.sh"
+                        }    
+                }
+            }
+        }
+        stage('runAndroidCICase'){
+            agent{
+                node {
+                    label "${env.androidRunCaseServer}"
+                    customWorkspace "${env.androidSourcePath}"
+                }
+            }
+            steps {
+                sh "python ${env.androidCIScriptPath}/androidRunTest.py --log-dir ${env.androidSourcePath}/test/log/${GIT_COMMIT} --source-path ${env.androidSourcePath} --p2p-server http://${env.p2pServer}:8095 --conference-server http://${env.mcuServer}:3001"
+                sh "cd test/log/${GIT_COMMIT} && ls -rt | grep -v logcat | tail -2 |xargs cat"
+            }
+        }
+    }
+}
