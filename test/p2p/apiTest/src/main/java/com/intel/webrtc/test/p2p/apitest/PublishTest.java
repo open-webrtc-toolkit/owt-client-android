@@ -22,7 +22,7 @@ import com.intel.webrtc.p2p.P2PClient;
 import com.intel.webrtc.p2p.Publication;
 import com.intel.webrtc.test.p2p.util.P2PClientObserver;
 import com.intel.webrtc.test.util.Config;
-import com.intel.webrtc.test.util.IcsFileVideoCapturer;
+import com.intel.webrtc.test.util.RawCapturerForTest;
 import com.intel.webrtc.test.util.TestCallback;
 
 import org.webrtc.RTCStatsReport;
@@ -295,7 +295,7 @@ public class PublishTest extends TestBase {
         connect(user1, USER1_NAME, P2P_SERVER, true);
         connect(user2, USER2_NAME, P2P_SERVER, true);
         try {
-            capturer1 = new IcsFileVideoCapturer(RAW_STREAM_FILE);
+            capturer1 = new RawCapturerForTest(RAW_STREAM_FILE);
         } catch (IOException e) {
             fail(e.getMessage());
         }
