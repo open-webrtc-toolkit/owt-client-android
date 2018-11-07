@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from xml.dom import minidom
 
 # path variables
@@ -30,12 +31,14 @@ def recover_variable():
               os.path.join(ICS_DEBUG_PATH, 'CheckCondition.java'))
 
 
-def zip_package():
+def zip_package(package_name):
     print '\n> zipping up dist'
-    os.chdir(DIST_PATH)
-    cmd = ['zip', '-q', '-ry', 'android-sdk.zip', 'samples', 'libs', 'apks',
-         'ThirdpartyLicenses.txt']
-    subprocess.call(cmd)
+    package_file = os.path.join(DIST_PATH, package_name)
+    with zipfile.ZipFile(package_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, _, filenames in os.walk(DIST_PATH):
+            for name in filenames:
+                if name != package_name:
+                    zf.write(os.path.relpath(os.path.join(root, name)))
     print '> done.'
 
 
@@ -159,7 +162,7 @@ def run_lint():
                 break
 
     if has_error:
-        sys.exit()
+        sys.exit(1)
 
 
 def clean():
@@ -181,6 +184,8 @@ if __name__ == '__main__':
                         help="Indicates if to skip building and packing the samples.")
     parser.add_argument("--skip-zip", dest="skip_zip", action="store_true", default=False,
                         help="Indicates if to skip zipping up the package.")
+    parser.add_argument("--package-name", dest="package_name", default="android-sdk.zip",
+                        help="Set the release package name.")
 
     args = parser.parse_args()
 
@@ -213,6 +218,6 @@ if __name__ == '__main__':
 
     # zip up
     if not args.skip_zip:
-        zip_package()
+        zip_package(args.package_name)
 
     recover_variable()
