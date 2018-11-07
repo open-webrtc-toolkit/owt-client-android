@@ -38,7 +38,7 @@ import com.intel.webrtc.conference.Publication;
 import com.intel.webrtc.conference.PublishOptions;
 import com.intel.webrtc.conference.RemoteStream;
 import com.intel.webrtc.test.conference.util.ConferenceClientObserver;
-import com.intel.webrtc.test.util.IcsFileVideoCapturer;
+import com.intel.webrtc.test.util.RawCapturerForTest;
 import com.intel.webrtc.test.util.TestCallback;
 
 import org.webrtc.RTCStatsReport;
@@ -211,7 +211,7 @@ public class PublishTest extends TestBase {
         publish(client1, localStream1, null, observer1, true);
         capturer2 = null;
         try {
-            capturer2 = new IcsFileVideoCapturer(RAW_STREAM_FILE);
+            capturer2 = new RawCapturerForTest(RAW_STREAM_FILE);
         } catch (IOException e) {
             fail(e.getMessage());
         }
@@ -332,7 +332,7 @@ public class PublishTest extends TestBase {
         localStream1 = createLocalStream(true, capturer1);
         capturer2 = null;
         try {
-            capturer2 = new IcsFileVideoCapturer(RAW_STREAM_FILE);
+            capturer2 = new RawCapturerForTest(RAW_STREAM_FILE);
         } catch (IOException e) {
             fail(e.getMessage());
         }
