@@ -1,4 +1,4 @@
-# Intel® Collaboration Suite for WebRTC Android SDK
+# Open Media Streamer Android SDK
 
 ## Prerequisites
 
