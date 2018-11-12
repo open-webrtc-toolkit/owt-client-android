@@ -5,7 +5,7 @@
               android:layout_marginBottom="60dp"
               android:background="@android:color/darker_gray"
               android:orientation="vertical"
-              tools:context="com.intel.webrtc.p2p.sample.ChatFragment">
+              tools:context="oms.sample.p2p.ChatFragment">
 
     <LinearLayout
         android:layout_width="match_parent"

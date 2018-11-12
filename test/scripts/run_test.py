@@ -12,9 +12,9 @@ BASE_TEST_PATH = os.path.join(TEST_PATH, 'base')
 CONF_TEST_PATH = os.path.join(TEST_PATH, 'conference/apiTest')
 P2P_TEST_PATH = os.path.join(TEST_PATH, 'p2p/apiTest')
 
-CONF_TARGET_PACKAGE = 'com.intel.webrtc.test.conference.apitest'
-P2P_TARGET_PACKAGE = 'com.intel.webrtc.test.p2p.apitest'
-BASE_TARGET_PACKAGE = 'com.intel.webrtc.test.base'
+CONF_TARGET_PACKAGE = 'oms.test.conference.apitest'
+P2P_TARGET_PACKAGE = 'oms.test.p2p.apitest'
+BASE_TARGET_PACKAGE = 'oms.test.base'
 
 TEST_MODULES = ["':test:util'", "':test:base'", "':test:p2p:util'", "':test:p2p:apiTest'",
                 "':test:conference:util'", "':test:conference:apiTest'"]

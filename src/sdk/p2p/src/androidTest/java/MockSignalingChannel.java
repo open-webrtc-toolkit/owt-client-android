@@ -1,12 +1,12 @@
-import static com.intel.webrtc.p2p.IcsP2PError.P2P_MESSAGING_TARGET_UNREACHABLE;
+import static oms.p2p.OMSP2PError.P2P_MESSAGING_TARGET_UNREACHABLE;
 
 import static junit.framework.Assert.fail;
 
 import android.util.Log;
 
-import com.intel.webrtc.base.ActionCallback;
-import com.intel.webrtc.base.IcsError;
-import com.intel.webrtc.p2p.SignalingChannelInterface;
+import oms.base.ActionCallback;
+import oms.base.OMSError;
+import oms.p2p.SignalingChannelInterface;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,7 +33,7 @@ class MockSignalingChannel implements SignalingChannelInterface {
             synchronized (lock) {
                 if (observers.containsKey(tokenId)) {
                     Log.e(TAG, "Duplicated uid.");
-                    callback.onFailure(new IcsError("Duplicated uid."));
+                    callback.onFailure(new OMSError("Duplicated uid."));
                     return;
                 }
                 observers.put(tokenId, observer);
@@ -60,7 +60,7 @@ class MockSignalingChannel implements SignalingChannelInterface {
     public void sendMessage(String peerId, String message, ActionCallback<Void> callback) {
         synchronized (lock) {
             if (!observers.containsKey(peerId)) {
-                callback.onFailure(new IcsError(P2P_MESSAGING_TARGET_UNREACHABLE.value, ""));
+                callback.onFailure(new OMSError(P2P_MESSAGING_TARGET_UNREACHABLE.value, ""));
                 return;
             }
         }

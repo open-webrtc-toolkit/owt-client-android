@@ -3,8 +3,8 @@ import static junit.framework.Assert.assertTrue;
 
 import android.util.Log;
 
-import com.intel.webrtc.base.ActionCallback;
-import com.intel.webrtc.base.IcsError;
+import oms.base.ActionCallback;
+import oms.base.OMSError;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +24,7 @@ public class Callback<T> implements ActionCallback<T> {
     }
 
     @Override
-    public void onFailure(IcsError error) {
+    public void onFailure(OMSError error) {
         Log.v(TAG, "Callback.onFailure: " + error.errorMessage);
         onFailureTriggered = true;
         onResult();

@@ -4,9 +4,9 @@ import static junit.framework.Assert.fail;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
-import com.intel.webrtc.base.ContextInitialization;
-import com.intel.webrtc.p2p.P2PClient;
-import com.intel.webrtc.p2p.P2PClientConfiguration;
+import oms.base.ContextInitialization;
+import oms.p2p.P2PClient;
+import oms.p2p.P2PClientConfiguration;
 
 import org.junit.Before;
 import org.junit.Test;

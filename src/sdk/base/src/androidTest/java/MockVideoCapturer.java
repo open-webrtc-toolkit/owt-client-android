@@ -1,7 +1,7 @@
 import android.content.Context;
 
-import com.intel.webrtc.base.Stream;
-import com.intel.webrtc.base.VideoCapturer;
+import oms.base.Stream;
+import oms.base.VideoCapturer;
 
 import org.webrtc.SurfaceTextureHelper;
 

@@ -16,7 +16,7 @@ DEPS_PATH = os.path.join(HOME_PATH, 'dependencies')
 CODE_PATH = os.path.join(HOME_PATH, 'src')
 SDK_PATH = os.path.join(CODE_PATH, 'sdk')
 SAMPLE_PATH = os.path.join(CODE_PATH, 'sample')
-ICS_DEBUG_PATH = os.path.join(SDK_PATH, 'base/src/main/java/com/intel/webrtc/base')
+ICS_DEBUG_PATH = os.path.join(SDK_PATH, 'base/src/main/java/oms/base')
 
 #distribution path
 DIST_PATH = os.path.join(HOME_PATH, 'dist')
