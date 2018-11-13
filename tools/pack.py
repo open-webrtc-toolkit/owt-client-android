@@ -1,5 +1,7 @@
 import argparse
+import commands
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -176,6 +178,57 @@ def clean():
     print '> done.'
 
 
+def download_artifact(name, version):
+    jar_name = name + '-' + version + '.jar'
+    print 'downloading ' + jar_name
+    counter = 0
+    os.chdir(DEPS_PATH)
+    while counter < 3:
+        #nexus maven artifact info
+        SERVER_URL = 'http://webrtc-checkin.sh.intel.com:60000/nexus/content/repositories'
+        REPOSITORY = 'thirdparty'
+        GROUP_ID = 'woogeen'
+        ARTIFACT_URL =  SERVER_URL + '/' + REPOSITORY + '/' + GROUP_ID + '/'
+        cmd = 'wget ' + ARTIFACT_URL + name + '/' + version + '/' + jar_name
+        (status, output) = commands.getstatusoutput(cmd)
+        if 'saved' in output:
+            print 'succeeded in downloading artifact.'
+            break
+        else:
+            counter += 1
+
+    if counter == 3:
+        print 'failed to download artifact. Please check nexus maven server.\n'
+        sys.exit()
+
+
+def fetch_libs():
+    #retrieve the stack version
+    with open(os.path.join(HOME_PATH, 'build.gradle'), 'r+') as replace_file:
+        file_content = replace_file.read()
+        version = re.findall(r'stackVersion = \"([\.\d]+)\"', file_content)[0]
+
+    # back up dependencies/libwebrtc
+    cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc'), os.path.join(DEPS_PATH, 'libwebrtc.bk')]
+    subprocess.call(cmd, cwd=DEPS_PATH)
+
+    #download .so dependency
+    download_artifact('libjingle-so-release', version)
+    cmd = ['jar', 'xvf', 'libjingle-so-release' + '-' + version + '.jar']
+    subprocess.call(cmd, cwd=DEPS_PATH)
+    cmd = ['mv', 'lib', 'webrtc']
+    subprocess.call(cmd, cwd=DEPS_PATH)
+    os.remove('libjingle-so-release' + '-' + version + '.jar')
+
+    #download .jar dependency
+    download_artifact('libjingle-jar-release', version)
+    cmd = ['cp', 'libjingle-jar-release' + '-' + version + '.jar', 'webrtc/libwebrtc.jar']
+    subprocess.call(cmd, cwd=DEPS_PATH)
+    os.remove('libjingle-jar-release' + '-' + version + '.jar')
+
+    cmd = ['mv', os.path.join(DEPS_PATH, 'webrtc'), os.path.join(DEPS_PATH, 'libwebrtc')]
+    subprocess.call(cmd, cwd=DEPS_PATH)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pack release package for android sdk.')
     parser.add_argument("--skip-lint", dest="skip_lint", action="store_true", default=False,
@@ -186,11 +239,17 @@ if __name__ == '__main__':
                         help="Indicates if to skip zipping up the package.")
     parser.add_argument("--package-name", dest="package_name", default="android-sdk.zip",
                         help="Set the release package name.")
+    # TODO(hank): remove after QA finishes setting up environment for building libwebrtc.
+    parser.add_argument("--skip-fetch", dest="skip_fetch", action="store_true",
+                        help="For test only, this arg will be removed later.")
 
     args = parser.parse_args()
 
     # clean environment
     clean()
+
+    if not args.skip_fetch:
+        fetch_libs()
 
     if not args.skip_lint:
         run_lint()
