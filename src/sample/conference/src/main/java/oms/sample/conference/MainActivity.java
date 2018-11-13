@@ -58,8 +58,7 @@ import android.widget.Toast;
 import oms.base.ActionCallback;
 import oms.base.AudioCodecParameters;
 import oms.base.ContextInitialization;
-import oms.base.OMSError;
-import oms.base.OMSVideoCapturer;
+import oms.base.OmsError;
 import oms.base.LocalStream;
 import oms.base.MediaConstraints;
 import oms.base.MediaConstraints.VideoTrackConstraints;
@@ -78,7 +77,8 @@ import oms.conference.SubscribeOptions.AudioSubscriptionConstraints;
 import oms.conference.SubscribeOptions.VideoSubscriptionConstraints;
 import oms.conference.Subscription;
 
-import oms.sample.utils.OMSScreenCapturer;
+import oms.sample.utils.OmsScreenCapturer;
+import oms.sample.utils.OmsVideoCapturer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -118,9 +118,9 @@ public class MainActivity extends AppCompatActivity
     private Subscription subscription;
     private LocalStream localStream;
     private RemoteStream stream2Sub;
-    private OMSVideoCapturer capturer;
+    private OmsVideoCapturer capturer;
     private LocalStream screenStream;
-    private OMSScreenCapturer screenCapturer;
+    private OmsScreenCapturer screenCapturer;
     private Publication screenPublication;
     private SurfaceViewRenderer localRenderer, remoteRenderer;
 
@@ -202,7 +202,7 @@ public class MainActivity extends AppCompatActivity
                         VideoTrackConstraints.create(true)
                                 .setCameraFacing(cameraFacing)
                                 .setResolution(vga ? 640 : 1280, vga ? 480 : 720);
-                capturer = new OMSVideoCapturer(vmc);
+                capturer = new OmsVideoCapturer(vmc);
                 localStream = new LocalStream(capturer,
                         new MediaConstraints.AudioTrackConstraints());
                 localStream.attach(localRenderer);
@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity
                     }
 
                     @Override
-                    public void onFailure(final OMSError error) {
+                    public void onFailure(final OmsError error) {
                         runOnUiThread(() -> {
                             rightBtn.setEnabled(true);
                             rightBtn.setTextColor(Color.WHITE);
@@ -298,7 +298,7 @@ public class MainActivity extends AppCompatActivity
                     }
 
                     @Override
-                    public void onFailure(OMSError e) {
+                    public void onFailure(OmsError e) {
                         runOnUiThread(() -> {
                             leftBtn.setEnabled(true);
                             leftBtn.setTextColor(Color.WHITE);
@@ -392,7 +392,6 @@ public class MainActivity extends AppCompatActivity
         if (!contextHasInitialized) {
             ContextInitialization.create()
                     .setApplicationContext(this)
-                    .setCodecHardwareAccelerationEnabled(true)
                     .setVideoHardwareAccelerationOptions(
                             rootEglBase.getEglBaseContext(),
                             rootEglBase.getEglBaseContext())
@@ -508,7 +507,7 @@ public class MainActivity extends AppCompatActivity
                         }
 
                         @Override
-                        public void onFailure(OMSError error) {
+                        public void onFailure(OmsError error) {
                             Log.e(TAG, "Failed to subscribe "
                                     + error.errorMessage);
                         }
@@ -519,7 +518,7 @@ public class MainActivity extends AppCompatActivity
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        screenCapturer = new OMSScreenCapturer(data, 1280, 720);
+        screenCapturer = new OmsScreenCapturer(data, 1280, 720);
         screenStream = new LocalStream(screenCapturer);
         executor.execute(() -> conferenceClient.publish(screenStream, new ActionCallback<Publication>() {
             @Override
@@ -533,7 +532,7 @@ public class MainActivity extends AppCompatActivity
             }
 
             @Override
-            public void onFailure(OMSError error) {
+            public void onFailure(OmsError error) {
                 runOnUiThread(() -> {
                     middleBtn.setEnabled(true);
                     middleBtn.setTextColor(Color.WHITE);
@@ -557,7 +556,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 @Override
-                public void onFailure(OMSError error) {
+                public void onFailure(OmsError error) {
 
                 }
             });
@@ -570,7 +569,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 @Override
-                public void onFailure(OMSError error) {
+                public void onFailure(OmsError error) {
 
                 }
             });

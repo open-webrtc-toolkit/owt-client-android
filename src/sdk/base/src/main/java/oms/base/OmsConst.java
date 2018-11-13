@@ -6,7 +6,7 @@ package oms.base;
 import android.os.Build;
 
 ///@cond
-public class OMSConst {
+public class OmsConst {
     public static final String LOG_TAG = "ICS";
     public static final String CLIENT_VERSION = "4.1";
     public static final String userAgent = "{" +

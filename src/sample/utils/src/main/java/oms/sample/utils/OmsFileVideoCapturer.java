@@ -7,9 +7,9 @@ import oms.base.VideoCapturer;
 
 import java.io.IOException;
 
-public class OMSFileVideoCapturer extends FileVideoCapturer implements VideoCapturer {
+public class OmsFileVideoCapturer extends FileVideoCapturer implements VideoCapturer {
 
-    public OMSFileVideoCapturer(String inputFile) throws IOException {
+    public OmsFileVideoCapturer(String inputFile) throws IOException {
         super(inputFile);
     }
 

@@ -49,8 +49,8 @@ import android.view.WindowManager;
 
 import oms.base.ActionCallback;
 import oms.base.ContextInitialization;
-import oms.base.OMSError;
-import oms.base.OMSVideoCapturer;
+import oms.base.OmsError;
+import oms.sample.utils.OmsVideoCapturer;
 import oms.base.LocalStream;
 import oms.base.MediaConstraints;
 import oms.base.VideoEncodingParameters;
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
     private LocalStream localStream;
     private RemoteStream remoteStream;
     private boolean remoteStreamEnded = false;
-    private OMSVideoCapturer capturer;
+    private OmsVideoCapturer capturer;
 
     private Timer statsTimer;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -148,7 +148,6 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
 
         ContextInitialization.create()
                 .setApplicationContext(this)
-                .setCodecHardwareAccelerationEnabled(true)
                 .setVideoHardwareAccelerationOptions(
                         rootEglBase.getEglBaseContext(),
                         rootEglBase.getEglBaseContext())
@@ -269,7 +268,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                 }
 
                 @Override
-                public void onFailure(OMSError error) {
+                public void onFailure(OmsError error) {
                     loginFragment.onConnectFailed(error.errorMessage);
                 }
             });
@@ -310,7 +309,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                     .setResolution(1280, 720)
                     .setFramerate(30);
             if (capturer == null) {
-                capturer = new OMSVideoCapturer(vmc);
+                capturer = new OmsVideoCapturer(vmc);
                 localStream = new LocalStream(capturer,
                         new MediaConstraints.AudioTrackConstraints());
             }
@@ -345,7 +344,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                     }
 
                     @Override
-                    public void onFailure(OMSError error) {
+                    public void onFailure(OmsError error) {
                         callFragment.onPublished(false);
                     }
                 }));
@@ -360,7 +359,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                 }
 
                 @Override
-                public void onFailure(OMSError error) {
+                public void onFailure(OmsError error) {
 
                 }
             });
@@ -399,7 +398,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
             }
 
             @Override
-            public void onFailure(OMSError error) {
+            public void onFailure(OmsError error) {
 
             }
         }));

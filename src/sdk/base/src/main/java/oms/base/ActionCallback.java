@@ -20,5 +20,5 @@ public interface ActionCallback<T> {
      *
      * @param error error occurred when executes this action.
      */
-    void onFailure(final OMSError error);
+    void onFailure(final OmsError error);
 }

@@ -5,6 +5,7 @@ package oms.base;
 
 import static oms.base.CheckCondition.RCHECK;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 
 import org.webrtc.EglBase;
@@ -19,7 +20,11 @@ import org.webrtc.audio.AudioDeviceModule;
 public class ContextInitialization {
 
     private static boolean initialized = false;
+    @SuppressLint("StaticFieldLeak")
     private static ContextInitialization instance = null;
+    @SuppressLint("StaticFieldLeak")
+    static Context context = null;
+    static EglBase.Context localCtx = null, remoteCtx = null;
 
     private ContextInitialization() {
     }
@@ -58,21 +63,7 @@ public class ContextInitialization {
      */
     public ContextInitialization setApplicationContext(Context ctx) {
         CheckCondition.RCHECK(!initialized);
-        PCFactoryProxy.context = ctx;
-        return this;
-    }
-
-    /**
-     * Set a flag to indicate whether video codec hardware acceleration should be enabled.
-     * By default, VP8 hardware acceleration is enabled. H.264 only has hardware accelerated
-     * codecs. Actual result depends on platform and hardware support.
-     *
-     * @param enabled a flag to indicate whether codec hardware acceleration is enabled.
-     * @return ContextInitialization
-     */
-    public ContextInitialization setCodecHardwareAccelerationEnabled(boolean enabled) {
-        CheckCondition.RCHECK(!initialized);
-        PCFactoryProxy.hwAcc = enabled;
+        context = ctx;
         return this;
     }
 
@@ -87,8 +78,8 @@ public class ContextInitialization {
     public ContextInitialization setVideoHardwareAccelerationOptions(EglBase.Context localEglCtx,
             EglBase.Context remoteEglCtx) {
         CheckCondition.RCHECK(!initialized);
-        PCFactoryProxy.localCtx = localEglCtx;
-        PCFactoryProxy.remoteCtx = remoteEglCtx;
+        localCtx = localEglCtx;
+        remoteCtx = remoteEglCtx;
         return this;
     }
 

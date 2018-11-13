@@ -8,9 +8,9 @@ import android.test.ActivityInstrumentationTestCase2;
 
 import oms.base.LocalStream;
 import oms.base.MediaConstraints;
-import oms.base.OMSVideoCapturer;
 import oms.base.VideoCapturer;
 import oms.test.util.FakeRenderer;
+import oms.test.util.VideoCapturerForTest;
 
 public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivity> {
     private TestActivity act = null;
@@ -73,7 +73,7 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
         vmc.setResolution(1280, 720);
         vmc.setFramerate(20);
         vmc.setCameraFacing(MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT);
-        VideoCapturer videoCapturer = new OMSVideoCapturer(vmc);
+        VideoCapturer videoCapturer = new VideoCapturerForTest(vmc);
         LocalStream localStream = createLocalStream(true, videoCapturer);
         localStream.disableVideo();
         FakeRenderer fakeRenderer = new FakeRenderer();
@@ -116,7 +116,7 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
             vmc.setResolution(width, height);
             vmc.setFramerate(20);
             vmc.setCameraFacing(MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT);
-            VideoCapturer videoCapturer = new OMSVideoCapturer(vmc);
+            VideoCapturer videoCapturer = new VideoCapturerForTest(vmc);
             LocalStream localStream = createLocalStream(true, videoCapturer);
             FakeRenderer fakeRenderer = new FakeRenderer();
             localStream.attach(fakeRenderer);

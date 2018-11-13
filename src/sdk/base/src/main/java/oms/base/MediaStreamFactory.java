@@ -5,15 +5,18 @@ package oms.base;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-
-import oms.base.MediaConstraints.AudioTrackConstraints;
+import static oms.base.ContextInitialization.localCtx;
 
 import org.webrtc.AudioSource;
 import org.webrtc.MediaStream;
+import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
 
 import java.util.HashMap;
 import java.util.UUID;
+
+import oms.base.MediaConstraints.AudioTrackConstraints;
 
 final class MediaStreamFactory {
 
@@ -40,12 +43,18 @@ final class MediaStreamFactory {
         MediaStream mediaStream = PCFactoryProxy.instance().createLocalMediaStream(label);
 
         if (videoCapturer != null) {
-            VideoSource videoSource = PCFactoryProxy.instance().createVideoSource(videoCapturer);
+            VideoSource videoSource = PCFactoryProxy.instance().createVideoSource(
+                    videoCapturer.isScreencast());
+            SurfaceTextureHelper helper = SurfaceTextureHelper.create("CT", localCtx);
+            videoCapturer.initialize(helper, ContextInitialization.context,
+                    videoSource.getCapturerObserver());
             videoCapturer.startCapture(videoCapturer.getWidth(),
                     videoCapturer.getHeight(),
                     videoCapturer.getFps());
-            mediaStream.addTrack(
-                    PCFactoryProxy.instance().createVideoTrack(label + "v0", videoSource));
+            VideoTrack videoTrack = PCFactoryProxy.instance().createVideoTrack(label + "v0",
+                    videoSource);
+            videoTrack.setEnabled(true);
+            mediaStream.addTrack(videoTrack);
             unsharedVideoSources.put(label, videoSource);
         }
 

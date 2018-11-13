@@ -58,7 +58,7 @@ public abstract class MediaConstraints {
             return this;
         }
 
-        String getDeviceName() {
+        public String getDeviceName() {
             CameraEnumerator enumerator = new Camera1Enumerator(captureToTexture);
 
             String deviceName = null;

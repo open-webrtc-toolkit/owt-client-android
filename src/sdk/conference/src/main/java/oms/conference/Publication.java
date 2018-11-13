@@ -6,7 +6,7 @@ package oms.conference;
 import static oms.base.CheckCondition.DCHECK;
 
 import oms.base.ActionCallback;
-import oms.base.OMSError;
+import oms.base.OmsError;
 import oms.base.MediaConstraints.TrackKind;
 
 import org.json.JSONException;
@@ -61,11 +61,11 @@ public final class Publication extends oms.base.Publication {
      * @param trackKind TrackKind of the media to be stopped.
      * @param callback ActionCallback.onSuccess will be invoked when succeeds to mute. Otherwise
      * when fails to do so, ActionCallback.onFailure will be invoked with the
-     * corresponding OMSError.
+     * corresponding OmsError.
      */
     public void mute(final TrackKind trackKind, final ActionCallback<Void> callback) {
         if (ended) {
-            client.triggerCallback(callback, new OMSError("Wrong state"));
+            client.triggerCallback(callback, new OmsError("Wrong state"));
             return;
         }
         Ack ack = args -> {
@@ -74,7 +74,7 @@ public final class Publication extends oms.base.Publication {
                     callback.onSuccess(null);
                 }
             } else {
-                client.triggerCallback(callback, new OMSError(args[1].toString()));
+                client.triggerCallback(callback, new OmsError(args[1].toString()));
             }
         };
 
@@ -83,7 +83,7 @@ public final class Publication extends oms.base.Publication {
                     generateMsg(trackKind, true),
                     ack);
         } catch (JSONException e) {
-            callback.onFailure(new OMSError(e.getMessage()));
+            callback.onFailure(new OmsError(e.getMessage()));
         }
     }
 
@@ -93,11 +93,11 @@ public final class Publication extends oms.base.Publication {
      * @param trackKind TrackKind of the media to be started.
      * @param callback ActionCallback.onSuccess will be invoked when succeeds to unmute. Otherwise
      * when fails to do so, ActionCallback.onFailure will be invoked with the
-     * corresponding OMSError.
+     * corresponding OmsError.
      */
     public void unmute(final TrackKind trackKind, final ActionCallback<Void> callback) {
         if (ended) {
-            client.triggerCallback(callback, new OMSError("Wrong state"));
+            client.triggerCallback(callback, new OmsError("Wrong state"));
             return;
         }
         Ack ack = args -> {
@@ -106,7 +106,7 @@ public final class Publication extends oms.base.Publication {
                     callback.onSuccess(null);
                 }
             } else {
-                client.triggerCallback(callback, new OMSError(args[1].toString()));
+                client.triggerCallback(callback, new OmsError(args[1].toString()));
             }
         };
 
@@ -115,7 +115,7 @@ public final class Publication extends oms.base.Publication {
                     generateMsg(trackKind, false),
                     ack);
         } catch (JSONException e) {
-            callback.onFailure(new OMSError(e.getMessage()));
+            callback.onFailure(new OmsError(e.getMessage()));
         }
     }
 
@@ -132,12 +132,12 @@ public final class Publication extends oms.base.Publication {
      *
      * @param callback ActionCallback.onSuccess will be invoked with RTCStatsReport when succeeds
      * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure
-     * will be invoked with the corresponding OMSError.
+     * will be invoked with the corresponding OmsError.
      */
     @Override
     public void getStats(final ActionCallback<RTCStatsReport> callback) {
         if (ended) {
-            client.triggerCallback(callback, new OMSError("Publication has stopped."));
+            client.triggerCallback(callback, new OmsError("Publication has stopped."));
             return;
         }
         client.getStats(id, callback);

@@ -25,15 +25,15 @@
  */
 package oms.test.p2p.util;
 
-import static oms.p2p.OMSP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT;
-import static oms.p2p.OMSP2PError.P2P_CONN_SERVER_UNKNOWN;
+import static oms.p2p.OmsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT;
+import static oms.p2p.OmsP2PError.P2P_CONN_SERVER_UNKNOWN;
 
 import android.util.Log;
 
 import oms.base.ActionCallback;
-import oms.base.OMSConst;
-import oms.base.OMSError;
-import oms.p2p.OMSP2PError;
+import oms.base.OmsConst;
+import oms.base.OmsError;
+import oms.p2p.OmsP2PError;
 import oms.p2p.SignalingChannelInterface;
 
 import org.json.JSONException;
@@ -64,7 +64,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
     private final String CLIENT_TYPE = "&clientType=";
     private final String CLIENT_TYPE_VALUE = "Android";
     private final String CLIENT_VERSION = "&clientVersion=";
-    private final String CLIENT_VERSION_VALUE = OMSConst.CLIENT_VERSION;
+    private final String CLIENT_VERSION_VALUE = OmsConst.CLIENT_VERSION;
     private Socket socketIOClient;
     private List<SignalingChannelObserver> signalingChannelObservers;
     private ActionCallback<String> connectCallback;
@@ -73,7 +73,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
     private Listener onConnectErrorCallback = args -> {
         if (connectCallback != null) {
             connectCallback.onFailure(
-                    new OMSError(P2P_CONN_SERVER_UNKNOWN.value, "connect failed"));
+                    new OmsError(P2P_CONN_SERVER_UNKNOWN.value, "connect failed"));
             connectCallback = null;
         } else {
             for (SignalingChannelObserver observer : signalingChannelObservers) {
@@ -87,10 +87,10 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
             Pattern pattern = Pattern.compile("[0-9]*");
             if (pattern.matcher(args[0].toString()).matches()) {
                 connectCallback.onFailure(
-                        new OMSError(OMSP2PError.get(Integer.parseInt((String) args[0])).value,
+                        new OmsError(OmsP2PError.get(Integer.parseInt((String) args[0])).value,
                                 "Server error"));
             } else {
-                connectCallback.onFailure(new OMSError(args[0].toString()));
+                connectCallback.onFailure(new OmsError(args[0].toString()));
             }
         }
     };
@@ -155,7 +155,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
             url += "?token=" + token + CLIENT_TYPE + CLIENT_TYPE_VALUE + CLIENT_VERSION
                     + CLIENT_VERSION_VALUE;
             if (!isValid(url)) {
-                callback.onFailure(new OMSError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Invalid URL"));
+                callback.onFailure(new OmsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Invalid URL"));
                 return;
             }
             IO.Options opt = new IO.Options();
@@ -176,15 +176,15 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
 
         } catch (JSONException e) {
             if (callback != null) {
-                callback.onFailure(new OMSError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
+                callback.onFailure(new OmsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
             }
         } catch (URISyntaxException e) {
             if (callback != null) {
-                callback.onFailure(new OMSError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
+                callback.onFailure(new OmsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
             }
         } catch (UnsupportedEncodingException e) {
             if (callback != null) {
-                callback.onFailure(new OMSError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
+                callback.onFailure(new OmsError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
             }
         }
     }
@@ -221,7 +221,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
             socketIOClient.emit(CLIENT_CHAT_TYPE, jsonObject, (Ack) args -> {
                 if (args == null || args.length != 0) {
                     if (callback != null) {
-                        callback.onFailure(new OMSError("Failed to send message."));
+                        callback.onFailure(new OmsError("Failed to send message."));
                     }
                 } else {
                     if (callback != null) {

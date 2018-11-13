@@ -31,7 +31,11 @@ import static oms.test.util.Config.USER1_NAME;
 import static oms.test.util.Config.VIDEO_ONLY_VIEWER_ROLE;
 import static oms.test.util.Config.VIEWER_ROLE;
 
-import oms.base.OMSVideoCapturer;
+import org.webrtc.RTCStatsReport;
+
+import java.io.IOException;
+import java.util.HashMap;
+
 import oms.base.MediaCodecs.AudioCodec;
 import oms.base.MediaCodecs.VideoCodec;
 import oms.conference.Publication;
@@ -40,11 +44,7 @@ import oms.conference.RemoteStream;
 import oms.test.conference.util.ConferenceClientObserver;
 import oms.test.util.RawCapturerForTest;
 import oms.test.util.TestCallback;
-
-import org.webrtc.RTCStatsReport;
-
-import java.io.IOException;
-import java.util.HashMap;
+import oms.test.util.VideoCapturerForTest;
 
 public class PublishTest extends TestBase {
 
@@ -174,7 +174,7 @@ public class PublishTest extends TestBase {
             vmc.setResolution(width, height);
             vmc.setFramerate(30);
             vmc.setCameraFacing(FRONT);
-            capturer1 = new OMSVideoCapturer(vmc);
+            capturer1 = new VideoCapturerForTest(vmc);
             localStream1 = createLocalStream(true, capturer1);
             PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
                     new VideoCodec[]{});

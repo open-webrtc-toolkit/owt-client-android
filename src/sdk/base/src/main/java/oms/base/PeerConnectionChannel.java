@@ -97,7 +97,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(OMSConst.LOG_TAG, "create offer");
+            Log.d(OmsConst.LOG_TAG, "create offer");
             peerConnection.createOffer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
@@ -108,7 +108,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(OMSConst.LOG_TAG, "creating answer");
+            Log.d(OmsConst.LOG_TAG, "creating answer");
             peerConnection.createAnswer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
@@ -147,11 +147,11 @@ public abstract class PeerConnectionChannel
                 return;
             }
             if (peerConnection.signalingState() == PeerConnection.SignalingState.STABLE) {
-                Log.d(OMSConst.LOG_TAG, "add ice candidate");
+                Log.d(OmsConst.LOG_TAG, "add ice candidate");
                 peerConnection.addIceCandidate(iceCandidate);
             }else {
                 synchronized (remoteIceLock) {
-                    Log.d(OMSConst.LOG_TAG, "queue ice candidate");
+                    Log.d(OmsConst.LOG_TAG, "queue ice candidate");
                     queuedRemoteCandidates.add(iceCandidate);
                 }
             }
@@ -167,7 +167,7 @@ public abstract class PeerConnectionChannel
                     if (disposed()) {
                         return;
                     }
-                    Log.d(OMSConst.LOG_TAG, "add ice candidate");
+                    Log.d(OmsConst.LOG_TAG, "add ice candidate");
                     peerConnection.addIceCandidate(candidate);
                     queuedRemoteCandidates.remove(candidate);
                 });
@@ -199,7 +199,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(OMSConst.LOG_TAG, "add stream.");
+            Log.d(OmsConst.LOG_TAG, "add stream.");
             peerConnection.addStream(mediaStream);
         });
     }
@@ -210,7 +210,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(OMSConst.LOG_TAG, "remove stream");
+            Log.d(OmsConst.LOG_TAG, "remove stream");
             peerConnection.removeStream(mediaStream);
         });
     }
@@ -232,7 +232,7 @@ public abstract class PeerConnectionChannel
         CheckCondition.DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
-                callback.onFailure(new OMSError("Invalid stats."));
+                callback.onFailure(new OmsError("Invalid stats."));
                 return;
             }
             peerConnection.getStats(callback::onSuccess);
@@ -376,14 +376,14 @@ public abstract class PeerConnectionChannel
         }
         RtpParameters rtpParameters = sender.getParameters();
         if (rtpParameters == null) {
-            Log.e(OMSConst.LOG_TAG, "Null rtp paramters");
+            Log.e(OmsConst.LOG_TAG, "Null rtp paramters");
             return;
         }
         for (RtpParameters.Encoding encoding : rtpParameters.encodings) {
             encoding.maxBitrateBps = bitrate == null ? null : bitrate * 1000;
         }
         if (!sender.setParameters(rtpParameters)) {
-            Log.e(OMSConst.LOG_TAG, "Failed to configure max video bitrate");
+            Log.e(OmsConst.LOG_TAG, "Failed to configure max video bitrate");
         }
     }
 

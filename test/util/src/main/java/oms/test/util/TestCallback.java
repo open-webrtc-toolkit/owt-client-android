@@ -3,7 +3,7 @@ package oms.test.util;
 import android.util.Log;
 
 import oms.base.ActionCallback;
-import oms.base.OMSError;
+import oms.base.OmsError;
 
 public class TestCallback<T> extends Resultable implements ActionCallback<T> {
     private final String TAG = "ics_test_util";
@@ -29,7 +29,7 @@ public class TestCallback<T> extends Resultable implements ActionCallback<T> {
     }
 
     @Override
-    public void onFailure(OMSError error) {
+    public void onFailure(OmsError error) {
         Log.d(TAG, "onFailure: " + error.errorMessage);
         onFailureTriggered = true;
         onResult();

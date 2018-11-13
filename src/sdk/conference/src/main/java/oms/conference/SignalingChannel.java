@@ -5,12 +5,12 @@ package oms.conference;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.OMSConst.LOG_TAG;
+import static oms.base.OmsConst.LOG_TAG;
 
 import android.util.Base64;
 import android.util.Log;
 
-import oms.base.OMSConst;
+import oms.base.OmsConst;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -237,8 +237,8 @@ final class SignalingChannel {
         Log.d(LOG_TAG, "Logging in the conference room.");
         JSONObject loginInfo = new JSONObject();
         loginInfo.put("token", token);
-        loginInfo.put("userAgent", new JSONObject(OMSConst.userAgent));
-        loginInfo.put("protocol", OMSConst.PROTOCOL_VERSION);
+        loginInfo.put("userAgent", new JSONObject(OmsConst.userAgent));
+        loginInfo.put("protocol", OmsConst.PROTOCOL_VERSION);
 
         socketClient.emit("login", loginInfo,
                 (Ack) (Object... args) -> callbackExecutor.execute(() -> {

@@ -1,14 +1,15 @@
-/*
- * Intel License Header Holder
- */
-package oms.base;
+package oms.test.util;
 
 import org.webrtc.Camera1Capturer;
 
-public final class OMSVideoCapturer extends Camera1Capturer implements VideoCapturer {
+import oms.base.MediaConstraints;
+import oms.base.Stream;
+import oms.base.VideoCapturer;
+
+public final class VideoCapturerForTest extends Camera1Capturer implements VideoCapturer {
     private MediaConstraints.VideoTrackConstraints videoTrackConstraints;
 
-    public OMSVideoCapturer(MediaConstraints.VideoTrackConstraints constraints) {
+    public VideoCapturerForTest(MediaConstraints.VideoTrackConstraints constraints) {
         super(constraints.getDeviceName(), null, constraints.captureToTexture);
         videoTrackConstraints = constraints;
     }
@@ -35,10 +36,6 @@ public final class OMSVideoCapturer extends Camera1Capturer implements VideoCapt
 
     public void switchCamera() {
         super.switchCamera(null);
-    }
-
-    public void setFilter() {
-
     }
 
     public void dispose() {

@@ -5,9 +5,9 @@ import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
 
-import oms.base.ContextInitialization;
-
 import org.webrtc.EglBase;
+
+import oms.base.ContextInitialization;
 
 public class TestActivity extends Activity {
     private final static String TAG = "ics_p2p_test";
@@ -24,7 +24,6 @@ public class TestActivity extends Activity {
         // Initialization work.
         EglBase rootEglBase = EglBase.create();
         ContextInitialization.create().setApplicationContext(this)
-                .setCodecHardwareAccelerationEnabled(true)
                 .setVideoHardwareAccelerationOptions(rootEglBase.getEglBaseContext(),
                         rootEglBase.getEglBaseContext())
                 .initialize();
