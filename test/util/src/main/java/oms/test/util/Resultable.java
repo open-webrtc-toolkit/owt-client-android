@@ -1,8 +1,11 @@
 package oms.test.util;
 
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 
 import android.util.Log;
+
+import junit.framework.AssertionFailedError;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
