@@ -1,7 +1,7 @@
 import argparse
 import json
-import shutil
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -11,6 +11,7 @@ TEST_PATH = os.path.join(HOME_PATH, 'test')
 BASE_TEST_PATH = os.path.join(TEST_PATH, 'base')
 CONF_TEST_PATH = os.path.join(TEST_PATH, 'conference/apiTest')
 P2P_TEST_PATH = os.path.join(TEST_PATH, 'p2p/apiTest')
+DEPS_PATH = os.path.join(HOME_PATH, 'dependencies')
 
 CONF_TARGET_PACKAGE = 'oms.test.conference.apitest'
 P2P_TARGET_PACKAGE = 'oms.test.p2p.apitest'
@@ -19,116 +20,95 @@ BASE_TARGET_PACKAGE = 'oms.test.base'
 TEST_MODULES = ["':test:util'", "':test:base'", "':test:p2p:util'", "':test:p2p:apiTest'",
                 "':test:conference:util'", "':test:conference:apiTest'"]
 
+LOGCAT_SUFFIX = str(int(time.time())) + '.log'
+
+
+def analyse_result(result):
+    # Return numbers of succeed cases
+    ok_num = 0
+    with open(result, 'r') as f:
+        for line in f:
+            if 'OK (1 test)' in line:
+                ok_num += 1
+    return ok_num
+
+
+def run_cases(module, cases, log_dir, device):
+    print '\n> running cases on device', device
+    result_file = os.path.join(log_dir, module + '-result-' + LOGCAT_SUFFIX)
+    logcat_file = os.path.join(log_dir, module + '-logcat-' + LOGCAT_SUFFIX)
+    for case in cases:
+        adb = ['adb'] if device == None else ['adb', '-s', device]
+        if module == 'base':
+            target_package = BASE_TARGET_PACKAGE
+        elif module == 'conference':
+            target_package = CONF_TARGET_PACKAGE
+        elif module == 'p2p':
+            target_package = P2P_TARGET_PACKAGE
+        clean_logcat = ['logcat', '-c']
+        subprocess.call(adb + clean_logcat)
+        am_cmd = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'debug', 'false', '-e',
+                  'class', target_package + '.' + case,
+                  target_package + '.test/android.test.InstrumentationTestRunner']
+        with open(result_file, 'a+') as rf:
+            subprocess.call(adb + am_cmd, stdout=rf)
+        logcat_cmd = ['logcat', '-d', target_package]
+        with open(logcat_file, 'a+') as lf:
+            subprocess.call(adb + logcat_cmd, stdout=lf)
+    print '> done.'
+    print '  Result file: <LOG_DIR>/' + module + '-result-' + LOGCAT_SUFFIX
+    print '  Log file: <LOG_DIR>/' + module + '-logcat-' + LOGCAT_SUFFIX
+    return analyse_result(result_file)
+
 
 def install_test(module, device):
-    print '> building test module', module
+    print '\n> building and installing test module', module
     if module == 'base':
         test_path = BASE_TEST_PATH
     elif module == 'conference':
         test_path = CONF_TEST_PATH
     elif module == 'p2p':
         test_path = P2P_TEST_PATH
-    os.chdir(test_path)
     cmd = [HOME_PATH + '/gradlew', '-q', 'assembleDebug']
-    subprocess.call(cmd)
+    subprocess.call(cmd, cwd=test_path)
     cmd = [HOME_PATH + '/gradlew', '-q', 'assembleDebugAndroidTest']
-    subprocess.call(cmd)
-    print '> done.'
-    print '> installing test module', module, 'on device:', device
+    subprocess.call(cmd, cwd=test_path)
 
-    os.chdir(test_path)
     cmd = [HOME_PATH + '/gradlew', '-q', 'uninstallAll']
-    subprocess.call(cmd)
+    subprocess.call(cmd, cwd=test_path)
     cmd = [HOME_PATH + '/gradlew', '-q', 'installDebug']
-    subprocess.call(cmd)
+    subprocess.call(cmd, cwd=test_path)
     cmd = [HOME_PATH + '/gradlew', '-q', 'installDebugAndroidTest']
-    subprocess.call(cmd)
+    subprocess.call(cmd, cwd=test_path)
     print '> done.'
 
 
-def analyse_result(log_list):
-    result = True
-    for log in log_list:
-        ok_num = 0
-        test_num = log['test_num']
-        with open(log['path'], 'a+') as f:
-            for line in f:
-                print line
-                if 'OK (1 test)' in line:
-                    ok_num = ok_num + 1
-            fail_num = test_num - ok_num
-            result_msg = 'All: ' + str(test_num) + ', OK: ' + str(ok_num) + ', Fail: ' + str(fail_num)
-            f.write('Test Result:\n' + result_msg + '\n')
-            print log['module'] + ' result:'
-            print result_msg
-        result = result and (test_num == ok_num)
-    return result
-
-
-# return process about write logcat message into file
-def prepare_test(module, device, log_dir):
-    logcat_name = module + '-test-result-' + str(int(time.time())) + '-logcat.log'
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    if module == 'p2p':
-        target_package = P2P_TARGET_PACKAGE
-    elif module == 'conference':
-        target_package = CONF_TARGET_PACKAGE
-    elif module == 'base':
-        target_package = BASE_TARGET_PACKAGE
-
-    install_test(module, device)
-    result_logcat = os.path.join(log_dir, logcat_name)
-    adb = ['adb'] if device == None else ['adb', '-s', device]
-    clean_cmd = ['logcat', '-c']
-    write_log_cmd = ['logcat', target_package]
-    subprocess.call(adb + clean_cmd)
-    with open(result_logcat, 'a') as log_file:
-        return subprocess.Popen(adb + write_log_cmd, stdout=log_file)
-
-
-# return [conference_result_path, p2p_result_path]
-def run_cases(case_list, device, log_dir):
-    log_list = []
+def run_test(case_list, log_dir, device):
     # load test cases.
     # [ {'module': '<module>', 'cases': ['case']} ]
     with open(case_list, 'r') as case_file:
         objs = json.loads(case_file.read())
 
+    result = True
     for obj in objs:
-        # specific works for modules.
-        result_log = os.path.join(log_dir, obj['module'] + '-test-result-' + str(int(time.time())) + '.log')
-        log_list.append({'path': result_log, 'test_num': len(obj['cases']), 'module': obj['module']})
-        logcat_pid = prepare_test(obj['module'], device, log_dir)
-        for case in obj['cases']:
-            adb = ['adb'] if device == None else ['adb', '-s', device]
-            if obj['module'] == 'base':
-                target_package = BASE_TARGET_PACKAGE
-            elif obj['module'] == 'conference':
-                target_package = CONF_TARGET_PACKAGE
-            elif obj['module'] == 'p2p':
-                target_package = P2P_TARGET_PACKAGE
-            shell_cmd = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'debug', 'false', '-e',
-                         'class', target_package + '.' + case,
-                         target_package + '.test/android.test.InstrumentationTestRunner']
-            print '> running cases on device', device
-            with open(result_log, 'a') as log_file:
-                subprocess.call(adb + shell_cmd, stdout=log_file)
-            print '> done.'
-        print 'Logcat path', os.path.abspath(result_log)
-        logcat_pid.kill()
-    return log_list
+        install_test(obj['module'], device)
+        succeed = run_cases(obj['module'], obj['cases'], log_dir, device)
+        total = len(obj['cases'])
+        result = result and (succeed == total)
+        print '\n>', obj['module'] + ' result: All:', total, \
+            'Succeed:', succeed, 'Failed:', total - succeed
+
+    return result
 
 
 def change_config():
     shutil.copyfile(os.path.join(HOME_PATH, 'settings.gradle'),
                     os.path.join(HOME_PATH, 'settings.gradle.bk'))
-    text2Add = ''
+    modules_included = ''
     for module in TEST_MODULES:
-        text2Add += '\ninclude ' + module
+        modules_included += '\ninclude ' + module
     with open(os.path.join(HOME_PATH, 'settings.gradle'), 'a') as settings_file:
-        settings_file.write(text2Add)
+        settings_file.write(modules_included)
 
 
 def recover_config():
@@ -141,7 +121,6 @@ def build_libs():
     cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip-zip']
     if subprocess.call(cmd):
         sys.exit(1)
-    print '> done.'
 
 
 def copy_libs():
@@ -168,6 +147,12 @@ def validate_caselist(case_list):
         print 'Failed to load json:', e
         return False
     return True
+
+
+def recover_deps():
+    shutil.rmtree(os.path.join(DEPS_PATH, 'libwebrtc'))
+    cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc.bk'), os.path.join(DEPS_PATH, 'libwebrtc')]
+    subprocess.call(cmd)
 
 
 if __name__ == '__main__':
@@ -197,10 +182,13 @@ if __name__ == '__main__':
     # change settings.gradle to include test modules.
     change_config()
 
-    log_list = run_cases(args.caselist, args.device, args.log_dir)
+    result = run_test(args.caselist, args.log_dir, args.device)
 
     # recover the settings.gradle
     recover_config()
 
+    # TODO: remove this
+    recover_deps()
+
     # collect test results
-    sys.exit(not analyse_result(log_list))
+    sys.exit(not result)
