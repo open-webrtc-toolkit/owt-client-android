@@ -24,11 +24,8 @@ android {
 }
 
 dependencies {
-    debugApi 'woogeen:libjingle-jar-debug:' + rootProject.ext.stackVersion
-    releaseApi 'woogeen:libjingle-jar-release:' + rootProject.ext.stackVersion
-
     androidTestImplementation 'com.android.support:support-annotations:28.0.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
-    androidTestImplementation 'woogeen:libjingle-so-debug:' + rootProject.ext.stackVersion
+    api files('libs/libwebrtc.jar')
 }

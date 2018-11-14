@@ -138,7 +138,7 @@ def recover_config():
 
 def build_libs():
     print '> building sdk libraries...'
-    cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip_zip']
+    cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip-zip']
     if subprocess.call(cmd):
         sys.exit(1)
     print '> done.'

@@ -24,6 +24,5 @@ android {
 }
 
 dependencies {
-    api 'woogeen:libjingle-so-debug:' + rootProject.ext.stackVersion
     api project(':src:sdk:base')
 }
