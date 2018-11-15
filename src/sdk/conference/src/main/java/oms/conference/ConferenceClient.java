@@ -150,12 +150,12 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * .onFailure will be invoked with the corresponding OMSError.
      */
     public synchronized void join(String token, ActionCallback<ConferenceInfo> callback) {
-        DCHECK(signalingChannel == null);
-        DCHECK(joinCallback == null);
         if (!checkRoomStatus(RoomStates.DISCONNECTED)) {
             triggerCallback(callback, new OMSError("Wrong room status."));
             return;
         }
+        DCHECK(signalingChannel == null);
+        DCHECK(joinCallback == null);
         this.joinCallback = callback;
         signalingChannel = new SignalingChannel(token, this);
         Log.d(LOG_TAG, "Connecting to the conference room.");
