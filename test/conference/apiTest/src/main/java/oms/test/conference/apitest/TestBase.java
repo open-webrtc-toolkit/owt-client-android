@@ -1,12 +1,13 @@
 package oms.test.conference.apitest;
 
+import static oms.test.conference.util.ConferenceAction.leave;
+
 import android.test.ActivityInstrumentationTestCase2;
 
 import oms.base.LocalStream;
 import oms.base.VideoCapturer;
 import oms.conference.ConferenceClient;
 import oms.test.conference.util.ConferenceClientObserver;
-import oms.test.util.Config;
 
 public class TestBase extends ActivityInstrumentationTestCase2<TestActivity> {
     ConferenceClient client1 = null;
@@ -19,7 +20,6 @@ public class TestBase extends ActivityInstrumentationTestCase2<TestActivity> {
     VideoCapturer capturer2 = null;
     LocalStream localStream1 = null;
     LocalStream localStream2 = null;
-    TestActivity act = null;
 
     public TestBase() {
         super(TestActivity.class);
@@ -28,18 +28,13 @@ public class TestBase extends ActivityInstrumentationTestCase2<TestActivity> {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        act = getActivity();
+        getActivity();
     }
 
     @Override
     public void tearDown() throws Exception {
-        try {
-            finishTest();
-        } catch (Exception e) {
-            fail(e.getMessage());
-        } finally {
-            super.tearDown();
-        }
+        finishTest();
+        super.tearDown();
     }
 
     private void finishTest() {
@@ -49,26 +44,17 @@ public class TestBase extends ActivityInstrumentationTestCase2<TestActivity> {
         if (observer2 != null) {
             observer2.clearStatus(1);
         }
-        if (observer3 != null) {
-            observer3.clearStatus(1);
+        if (observer2 != null) {
+            observer2.clearStatus(1);
         }
         if (client1 != null) {
-            client1.leave();
-            if (observer1 != null) {
-                observer1.getResultForLeave(Config.TIMEOUT);
-            }
+            leave(client1, observer1, null);
         }
         if (client2 != null) {
-            client2.leave();
-            if (observer2 != null) {
-                observer2.getResultForLeave(Config.TIMEOUT);
-            }
+            leave(client2, observer2, null);
         }
         if (client3 != null) {
-            client3.leave();
-            if (observer3 != null) {
-                observer3.getResultForLeave(Config.TIMEOUT);
-            }
+            leave(client3, observer3, null);
         }
         try {
             if (capturer1 != null) {
@@ -95,7 +81,5 @@ public class TestBase extends ActivityInstrumentationTestCase2<TestActivity> {
         client3 = null;
         localStream1 = null;
         localStream2 = null;
-        assertFalse(act.isExceptionCaught());
     }
-
 }

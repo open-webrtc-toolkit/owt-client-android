@@ -31,9 +31,6 @@ import static oms.test.util.Config.USER1_NAME;
 import static oms.test.util.Config.VIDEO_ONLY_VIEWER_ROLE;
 import static oms.test.util.Config.VIEWER_ROLE;
 
-import android.test.suitebuilder.annotation.LargeTest;
-import android.test.suitebuilder.annotation.SmallTest;
-
 import oms.base.OMSVideoCapturer;
 import oms.base.MediaCodecs.AudioCodec;
 import oms.base.MediaCodecs.VideoCodec;
@@ -50,449 +47,333 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class PublishTest extends TestBase {
-    @LargeTest
+
     public void testPublish_beforeJoin_shouldFail() {
-        try {
-            client1 = createClient(null);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            publish(client1, localStream1, null, null, false);
-            client1 = null;
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        client1 = createClient(null);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(client1, localStream1, null, null, false);
+        client1 = null;
     }
 
-    @LargeTest
     public void testPublish_withoutOption_shouldSucceed() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            Publication publication = publish(client1, localStream1, null, observer1, true);
-            RTCStatsReport statsReport = getStats(publication, true);
-            HashMap<String, String> expectation = new HashMap<>();
-            expectation.put("videoCodec", "vp8");
-            checkRTCStats(statsReport, expectation, true, true, true);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        Publication publication = publish(client1, localStream1, null, observer1, true);
+        RTCStatsReport statsReport = getStats(publication, true);
+        HashMap<String, String> expectation = new HashMap<>();
+        expectation.put("videoCodec", "vp8");
+        checkRTCStats(statsReport, expectation, true, true, true);
     }
 
-    @LargeTest
     public void testPublish_withDefaultOption_shouldSucceed() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            PublishOptions publishOptions = createPublishOptions(null, null);
-            publish(client1, localStream1, publishOptions, observer1, true);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        PublishOptions publishOptions = createPublishOptions(null, null);
+        publish(client1, localStream1, publishOptions, observer1, true);
     }
 
-    @LargeTest
     public void testPublish_withAudioCodec_shouldSucceed() {
-        try {
-            AudioCodec[] audioCodecs = new AudioCodec[]{OPUS, PCMU, PCMA, G722, ISAC, ILBC};
-            String[] checkCodecs = new String[]{"opus", "pcmu", "pcma", "g722", "isac", "ilbc"};
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            for (int i = 0; i < audioCodecs.length; i++) {
-                PublishOptions publishOptions = createPublishOptions(
-                        new AudioCodec[]{audioCodecs[i]},
-                        0,
-                        new VideoCodec[]{}, 0);
-                Publication publication = publish(client1, localStream1, publishOptions, observer1,
-                        true);
-                assertTrue(observer1.remoteStreams.get(
-                        i).publicationSettings.audioPublicationSettings.codec.name.name()
-                        .equalsIgnoreCase(
-                                checkCodecs[i]));
-                RTCStatsReport sendStats = getStats(publication, true);
-                HashMap<String, String> expectation = new HashMap<>();
-                expectation.put("audioCodec", checkCodecs[i]);
-                checkRTCStats(sendStats, expectation, true, true, true);
-                stop(publication, observer1, true);
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
+        AudioCodec[] audioCodecs = new AudioCodec[]{OPUS, PCMU, PCMA, G722, ISAC, ILBC};
+        String[] checkCodecs = new String[]{"opus", "pcmu", "pcma", "g722", "isac", "ilbc"};
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        for (int i = 0; i < audioCodecs.length; i++) {
+            PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{audioCodecs[i]},
+                    0,
+                    new VideoCodec[]{}, 0);
+            Publication publication = publish(client1, localStream1, publishOptions, observer1,
+                    true);
+            assertTrue(observer1.remoteStreams.get(
+                    i).publicationSettings.audioPublicationSettings.codec.name.name()
+                    .equalsIgnoreCase(
+                            checkCodecs[i]));
+            RTCStatsReport sendStats = getStats(publication, true);
+            HashMap<String, String> expectation = new HashMap<>();
+            expectation.put("audioCodec", checkCodecs[i]);
+            checkRTCStats(sendStats, expectation, true, true, true);
+            stop(publication, observer1, true);
         }
     }
 
-    @LargeTest
     public void testPublish_withVideoCodec_shouldSucceed() {
-        try {
-            VideoCodec[] videoCodecs = new VideoCodec[]{VP8, VP9, H264};
-            String[] checkCodecs = new String[]{"vp8", "vp9", "h264"};
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            for (int i = 0; i < videoCodecs.length; i++) {
-                PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
-                        new VideoCodec[]{videoCodecs[i]});
-                Publication publication = publish(client1, localStream1, publishOptions, observer1,
-                        true);
-                assertTrue(observer1.remoteStreams.get(
-                        i).publicationSettings.videoPublicationSettings.codec.name.name()
-                        .equalsIgnoreCase(
-                                checkCodecs[i]));
-                RTCStatsReport sendStats = getStats(publication, true);
-                HashMap<String, String> expectation = new HashMap<>();
-                expectation.put("videoCodec", checkCodecs[i]);
-                checkRTCStats(sendStats, expectation, true, true, true);
-                stop(publication, observer1, true);
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
+        VideoCodec[] videoCodecs = new VideoCodec[]{VP8, VP9, H264};
+        String[] checkCodecs = new String[]{"vp8", "vp9", "h264"};
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        for (int i = 0; i < videoCodecs.length; i++) {
+            PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
+                    new VideoCodec[]{videoCodecs[i]});
+            Publication publication = publish(client1, localStream1, publishOptions, observer1,
+                    true);
+            assertTrue(observer1.remoteStreams.get(
+                    i).publicationSettings.videoPublicationSettings.codec.name.name()
+                    .equalsIgnoreCase(
+                            checkCodecs[i]));
+            RTCStatsReport sendStats = getStats(publication, true);
+            HashMap<String, String> expectation = new HashMap<>();
+            expectation.put("videoCodec", checkCodecs[i]);
+            checkRTCStats(sendStats, expectation, true, true, true);
+            stop(publication, observer1, true);
         }
     }
 
-    @LargeTest
     public void testPublish_withAudioBitrate_shouldSucceed() {
-        try {
-            int[] bitrate = new int[]{-1, 30, 60};
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            for (int i = 0; i < bitrate.length; i++) {
-                PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{}, bitrate[i],
-                        new VideoCodec[]{}, 0);
-                Publication publication = publish(client1, localStream1, publishOptions, observer1,
-                        true);
-                stop(publication, observer1, true);
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
+        int[] bitrate = new int[]{-1, 30, 60};
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        for (int i = 0; i < bitrate.length; i++) {
+            PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{}, bitrate[i],
+                    new VideoCodec[]{}, 0);
+            Publication publication = publish(client1, localStream1, publishOptions, observer1,
+                    true);
+            stop(publication, observer1, true);
         }
     }
 
-    @LargeTest
     public void testPublish_withVideoBitrate_shouldSucceed() {
-        try {
-            int[] bitrate = new int[]{-1, 300, 2000};
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            for (int i = 0; i < bitrate.length; i++) {
-                PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{}, 60,
-                        new VideoCodec[]{}, bitrate[i]);
-                Publication publication = publish(client1, localStream1, publishOptions, observer1,
-                        true);
-                stop(publication, observer1, true);
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
+        int[] bitrate = new int[]{-1, 300, 2000};
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        for (int i = 0; i < bitrate.length; i++) {
+            PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{}, 60,
+                    new VideoCodec[]{}, bitrate[i]);
+            Publication publication = publish(client1, localStream1, publishOptions, observer1,
+                    true);
+            stop(publication, observer1, true);
         }
     }
 
-    @LargeTest
     public void testPublish_withResolution_shouldSucceed() {
-        try {
-            String[] resolutions = new String[]{"1920x1280", "1280x720", "640x480"};
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            for (int i = 0; i < resolutions.length; i++) {
-                int width = Integer.valueOf(resolutions[i].split("x")[0]);
-                int height = Integer.valueOf(resolutions[i].split("x")[1]);
-                VideoTrackConstraints vmc = VideoTrackConstraints.create(true);
-                vmc.setResolution(width, height);
-                vmc.setFramerate(30);
-                vmc.setCameraFacing(FRONT);
-                capturer1 = new OMSVideoCapturer(vmc);
-                localStream1 = createLocalStream(true, capturer1);
-                PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
-                        new VideoCodec[]{});
-                Publication publication = publish(client1, localStream1, publishOptions, observer1,
-                        true);
-                assertTrue(observer1.remoteStreams.get(
-                        i).publicationSettings.videoPublicationSettings.resolutionWidth == width);
-                assertTrue(observer1.remoteStreams.get(
-                        i).publicationSettings.videoPublicationSettings.resolutionHeight == height);
-                stop(publication, observer1, true);
-                capturer1.dispose();
-                localStream1.dispose();
-            }
-            capturer1 = null;
-            localStream1 = null;
-        } catch (Exception e) {
-            fail(e.getMessage());
+        String[] resolutions = new String[]{"1920x1280", "1280x720", "640x480"};
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        for (int i = 0; i < resolutions.length; i++) {
+            int width = Integer.valueOf(resolutions[i].split("x")[0]);
+            int height = Integer.valueOf(resolutions[i].split("x")[1]);
+            VideoTrackConstraints vmc = VideoTrackConstraints.create(true);
+            vmc.setResolution(width, height);
+            vmc.setFramerate(30);
+            vmc.setCameraFacing(FRONT);
+            capturer1 = new OMSVideoCapturer(vmc);
+            localStream1 = createLocalStream(true, capturer1);
+            PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
+                    new VideoCodec[]{});
+            Publication publication = publish(client1, localStream1, publishOptions, observer1,
+                    true);
+            assertTrue(observer1.remoteStreams.get(
+                    i).publicationSettings.videoPublicationSettings.resolutionWidth == width);
+            assertTrue(observer1.remoteStreams.get(
+                    i).publicationSettings.videoPublicationSettings.resolutionHeight == height);
+            stop(publication, observer1, true);
+            capturer1.dispose();
+            localStream1.dispose();
         }
+        capturer1 = null;
+        localStream1 = null;
     }
 
-    @LargeTest
     public void testPublish_twiceWithSameStream_shouldSuccessAt2nd() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            publish(client1, localStream1, null, observer1, true);
-            publish(client1, localStream1, null, observer1, true);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(client1, localStream1, null, observer1, true);
+        publish(client1, localStream1, null, observer1, true);
     }
 
-    @LargeTest
     public void testPublish_twiceWithDifferentStream_shouldSucceed() {
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(client1, localStream1, null, observer1, true);
+        capturer2 = null;
         try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            publish(client1, localStream1, null, observer1, true);
-            capturer2 = null;
-            try {
-                capturer2 = new RawCapturerForTest(RAW_STREAM_FILE);
-            } catch (IOException e) {
-                fail(e.getMessage());
-            }
-            localStream2 = createLocalStream(true, capturer2);
-            publish(client1, localStream2, null, observer1, true);
-        } catch (Exception e) {
+            capturer2 = new RawCapturerForTest(RAW_STREAM_FILE);
+        } catch (IOException e) {
             fail(e.getMessage());
         }
+        localStream2 = createLocalStream(true, capturer2);
+        publish(client1, localStream2, null, observer1, true);
     }
 
-    @LargeTest
     public void testPublish_withAudioOnly_shouldSucceed() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            localStream1 = createLocalStream(true, null);
-            publish(client1, localStream1, null, observer1, true);
-            assertNull(observer1.remoteStreams.get(
-                    0).subscriptionCapability.videoSubscriptionCapabilities);
-            assertNotNull(observer1.remoteStreams.get(
-                    0).subscriptionCapability.audioSubscriptionCapabilities);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        localStream1 = createLocalStream(true, null);
+        publish(client1, localStream1, null, observer1, true);
+        assertNull(observer1.remoteStreams.get(
+                0).subscriptionCapability.videoSubscriptionCapabilities);
+        assertNotNull(observer1.remoteStreams.get(
+                0).subscriptionCapability.audioSubscriptionCapabilities);
     }
 
-    @LargeTest
     public void testPublish_withVideoOnly_shouldSucceed() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(false, capturer1);
-            publish(client1, localStream1, null, observer1, true);
-            assertNotNull(observer1.remoteStreams.get(
-                    0).subscriptionCapability.videoSubscriptionCapabilities);
-            assertNull(observer1.remoteStreams.get(
-                    0).subscriptionCapability.audioSubscriptionCapabilities);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(false, capturer1);
+        publish(client1, localStream1, null, observer1, true);
+        assertNotNull(observer1.remoteStreams.get(
+                0).subscriptionCapability.videoSubscriptionCapabilities);
+        assertNull(observer1.remoteStreams.get(
+                0).subscriptionCapability.audioSubscriptionCapabilities);
     }
 
-    @LargeTest
     public void testPublish_withNullStream_shouldThrowException() {
+        client1 = createClient(null);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
         try {
-            client1 = createClient(null);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            try {
-                publish(client1, null, null, null, false);
-                fail("RuntimeException expected.");
-            } catch (RuntimeException ignored) {
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
+            publish(client1, null, null, null, false);
+            fail("RuntimeException expected.");
+        } catch (RuntimeException ignored) {
         }
     }
 
-    @LargeTest
     public void testPublish_withViewerRole_shouldFail() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(VIEWER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            publish(client1, localStream1, null, null, false);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(VIEWER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(client1, localStream1, null, null, false);
     }
 
-    @LargeTest
     public void testPublish_videoStreamWithVideoOnlyViewer_shouldFail() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(VIDEO_ONLY_VIEWER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(false, capturer1);
-            publish(client1, localStream1, null, null, false);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(VIDEO_ONLY_VIEWER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(false, capturer1);
+        publish(client1, localStream1, null, null, false);
     }
 
-    @LargeTest
     public void testPublish_videoStreamWithAudioOnlyPresenterRole_shouldFail() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(AUDIO_ONLY_PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            publish(client1, localStream1, null, null, false);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(AUDIO_ONLY_PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(client1, localStream1, null, null, false);
     }
 
-    @LargeTest
     public void testPublish_audioOnlyStreamWithAudioOnlyPresenterRole_shouldSucceed() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(AUDIO_ONLY_PRESENTER_ROLE, USER1_NAME), null, null, true);
-            localStream1 = createLocalStream(true, null);
-            publish(client1, localStream1, null, observer1, true);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(AUDIO_ONLY_PRESENTER_ROLE, USER1_NAME), null, null, true);
+        localStream1 = createLocalStream(true, null);
+        publish(client1, localStream1, null, observer1, true);
     }
 
-    @LargeTest
     public void testPublish_videoOnlyStreamWithVideoOnlyViewer_shouldFail() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(AUDIO_ONLY_PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(false, capturer1);
-            publish(client1, localStream1, null, null, false);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(AUDIO_ONLY_PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(false, capturer1);
+        publish(client1, localStream1, null, null, false);
     }
 
-    @SmallTest
-    @LargeTest
     public void testPublish_afterPublicationStop_shouldSucceed() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            Publication publication1 = publish(client1, localStream1, null, observer1, true);
-            stop(publication1, observer1, true);
-            publish(client1, localStream1, null, observer1, true);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        Publication publication1 = publish(client1, localStream1, null, observer1, true);
+        stop(publication1, observer1, true);
+        publish(client1, localStream1, null, observer1, true);
     }
 
-    @LargeTest
     public void testPublish_sameStreamTwiceWithoutCallBack_shouldSucceedTwice() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 2);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            TestCallback<Publication> callback1 = new TestCallback<>();
-            TestCallback<Publication> callback2 = new TestCallback<>();
-            client1.publish(localStream1, callback1);
-            client1.publish(localStream1, callback2);
-            assertTrue(callback1.getResult(true, TIMEOUT));
-            assertTrue(callback2.getResult(true, TIMEOUT));
-            assertTrue(observer1.getResultForPublish(TIMEOUT));
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 2);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        TestCallback<Publication> callback1 = new TestCallback<>();
+        TestCallback<Publication> callback2 = new TestCallback<>();
+        client1.publish(localStream1, callback1);
+        client1.publish(localStream1, callback2);
+        assertTrue(callback1.getResult(true, TIMEOUT));
+        assertTrue(callback2.getResult(true, TIMEOUT));
+        assertTrue(observer1.getResultForPublish(TIMEOUT));
     }
 
-    @LargeTest
     public void testPublish_differentStreamWithoutWaitCallBack_shouldSucceedOnce() {
+        observer1 = new ConferenceClientObserver(USER1_NAME, 2);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        capturer2 = null;
         try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 2);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            capturer2 = null;
-            try {
-                capturer2 = new RawCapturerForTest(RAW_STREAM_FILE);
-            } catch (IOException e) {
-                fail(e.getMessage());
-            }
-            localStream2 = createLocalStream(true, capturer2);
-            TestCallback<Publication> callback1 = new TestCallback<>();
-            TestCallback<Publication> callback2 = new TestCallback<>();
-            client1.publish(localStream1, callback1);
-            client1.publish(localStream2, callback2);
-            assertTrue(callback1.getResult(true, TIMEOUT));
-            assertTrue(callback2.getResult(true, TIMEOUT));
-            assertTrue(observer1.getResultForPublish(TIMEOUT));
-        } catch (Exception e) {
+            capturer2 = new RawCapturerForTest(RAW_STREAM_FILE);
+        } catch (IOException e) {
             fail(e.getMessage());
         }
+        localStream2 = createLocalStream(true, capturer2);
+        TestCallback<Publication> callback1 = new TestCallback<>();
+        TestCallback<Publication> callback2 = new TestCallback<>();
+        client1.publish(localStream1, callback1);
+        client1.publish(localStream2, callback2);
+        assertTrue(callback1.getResult(true, TIMEOUT));
+        assertTrue(callback2.getResult(true, TIMEOUT));
+        assertTrue(observer1.getResultForPublish(TIMEOUT));
     }
 
-    @LargeTest
     public void testPublish_checkAttributes() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            HashMap<String, String> attr = new HashMap<>();
-            attr.put("attribute_key", "attribute_value");
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            localStream1.setAttributes(attr);
-            publish(client1, localStream1, null, observer1, true);
-            int localStream1sN = client1.info().getRemoteStreams().size() - MIXED_STREAM_SIZE;
-            RemoteStream forwardStream1 = getRemoteForwardStream(client1, localStream1sN - 1);
-            assertTrue(forwardStream1.getAttributes() != null);
-            assertTrue(forwardStream1.getAttributes().size() == attr.size());
-            for (String key : attr.keySet()) {
-                assertTrue(attr.get(key).equals(forwardStream1.getAttributes().get(key)));
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        HashMap<String, String> attr = new HashMap<>();
+        attr.put("attribute_key", "attribute_value");
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        localStream1.setAttributes(attr);
+        publish(client1, localStream1, null, observer1, true);
+        int localStream1sN = client1.info().getRemoteStreams().size() - MIXED_STREAM_SIZE;
+        RemoteStream forwardStream1 = getRemoteForwardStream(client1, localStream1sN - 1);
+        assertTrue(forwardStream1.getAttributes() != null);
+        assertTrue(forwardStream1.getAttributes().size() == attr.size());
+        for (String key : attr.keySet()) {
+            assertTrue(attr.get(key).equals(forwardStream1.getAttributes().get(key)));
         }
     }
 
-    @LargeTest
     public void testPublish_checkNullAttributes() {
-        try {
-            observer1 = new ConferenceClientObserver(USER1_NAME, 1);
-            client1 = createClient(observer1);
-            join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
-            capturer1 = createDefaultCapturer();
-            localStream1 = createLocalStream(true, capturer1);
-            publish(client1, localStream1, null, observer1, true);
-            int localStream1sN = client1.info().getRemoteStreams().size() - MIXED_STREAM_SIZE;
-            RemoteStream forwardStream1 = getRemoteForwardStream(client1, localStream1sN - 1);
-            assertTrue(forwardStream1.getAttributes() == null);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        observer1 = new ConferenceClientObserver(USER1_NAME, 1);
+        client1 = createClient(observer1);
+        join(client1, getToken(PRESENTER_ROLE, USER1_NAME), null, null, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(client1, localStream1, null, observer1, true);
+        int localStream1sN = client1.info().getRemoteStreams().size() - MIXED_STREAM_SIZE;
+        RemoteStream forwardStream1 = getRemoteForwardStream(client1, localStream1sN - 1);
+        assertTrue(forwardStream1.getAttributes() == null);
     }
 }

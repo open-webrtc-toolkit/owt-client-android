@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -18,46 +19,42 @@ BASE_TARGET_PACKAGE = 'oms.test.base'
 
 TEST_MODULES = ["':test:util'", "':test:base'", "':test:p2p:util'", "':test:p2p:apiTest'",
                 "':test:conference:util'", "':test:conference:apiTest'"]
-MODULES_LIST = ['base', 'conference', 'p2p']
 
 LOGCAT_SUFFIX = str(int(time.time())) + '.log'
 
 
-def analyse_result(result_file):
-    start = False
-    result_line = ""
-    with open(result_file, 'r') as f:
+def analyse_result(result):
+    # Return numbers of succeed cases
+    ok_num = 0
+    with open(result, 'r') as f:
         for line in f:
-            if line.find('Test results for InstrumentationTestRunner') == 0:
-                start = True
-            elif line.find('Time:') == 0:
-                break
-            if start:
-                result_line = result_line + line
-    print result_line
-    return (result_line != "" and result_line.find('F') == -1)
+            if 'OK (1 test)' in line:
+                ok_num += 1
+    return ok_num
 
 
-def run_cases(module, mode, log_dir, device):
+def run_cases(module, cases, log_dir, device):
     print '\n> running cases on device', device
     result_file = os.path.join(log_dir, module + '-result-' + LOGCAT_SUFFIX)
     logcat_file = os.path.join(log_dir, module + '-logcat-' + LOGCAT_SUFFIX)
-    adb = ['adb'] if device == None else ['adb', '-s', device]
-    if module == 'base':
-        target_package = BASE_TARGET_PACKAGE
-    elif module == 'conference':
-        target_package = CONF_TARGET_PACKAGE
-    elif module == 'p2p':
-        target_package = P2P_TARGET_PACKAGE
-    clean_logcat = ['logcat', '-c']
-    subprocess.call(adb + clean_logcat)
-    am_cmd = ['shell', 'am', 'instrument', '-w', '-e', 'debug', 'false', '-e',
-              'size', mode, target_package + '.test/android.test.InstrumentationTestRunner']
-    with open(result_file, 'a+') as rf:
-        subprocess.call(adb + am_cmd, stdout=rf)
-    logcat_cmd = ['logcat', '-d', target_package]
-    with open(logcat_file, 'a+') as lf:
-        subprocess.call(adb + logcat_cmd, stdout=lf)
+    for case in cases:
+        adb = ['adb'] if device == None else ['adb', '-s', device]
+        if module == 'base':
+            target_package = BASE_TARGET_PACKAGE
+        elif module == 'conference':
+            target_package = CONF_TARGET_PACKAGE
+        elif module == 'p2p':
+            target_package = P2P_TARGET_PACKAGE
+        clean_logcat = ['logcat', '-c']
+        subprocess.call(adb + clean_logcat)
+        am_cmd = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'debug', 'false', '-e',
+                  'class', target_package + '.' + case,
+                  target_package + '.test/android.test.InstrumentationTestRunner']
+        with open(result_file, 'a+') as rf:
+            subprocess.call(adb + am_cmd, stdout=rf)
+        logcat_cmd = ['logcat', '-d', target_package]
+        with open(logcat_file, 'a+') as lf:
+            subprocess.call(adb + logcat_cmd, stdout=lf)
     print '> done.'
     print '  Result file: <LOG_DIR>/' + module + '-result-' + LOGCAT_SUFFIX
     print '  Log file: <LOG_DIR>/' + module + '-logcat-' + LOGCAT_SUFFIX
@@ -77,18 +74,30 @@ def install_test(module, device):
     cmd = [HOME_PATH + '/gradlew', '-q', 'assembleDebugAndroidTest']
     subprocess.call(cmd, cwd=test_path)
 
-    cmd = 'ANDROID_SERIAL=' + device + ' ' + HOME_PATH + '/gradlew' + ' -q '
-    subprocess.call(cmd + 'uninstallAll', cwd=test_path, shell=True)
-    subprocess.call(cmd + 'installDebug', cwd=test_path, shell=True)
-    subprocess.call(cmd + 'installDebugAndroidTest', cwd=test_path, shell=True)
+    cmd = [HOME_PATH + '/gradlew', '-q', 'uninstallAll']
+    subprocess.call(cmd, cwd=test_path)
+    cmd = [HOME_PATH + '/gradlew', '-q', 'installDebug']
+    subprocess.call(cmd, cwd=test_path)
+    cmd = [HOME_PATH + '/gradlew', '-q', 'installDebugAndroidTest']
+    subprocess.call(cmd, cwd=test_path)
     print '> done.'
 
 
-def run_test(mode, log_dir, device):
+def run_test(case_list, log_dir, device):
+    # load test cases.
+    # [ {'module': '<module>', 'cases': ['case']} ]
+    with open(case_list, 'r') as case_file:
+        objs = json.loads(case_file.read())
+
     result = True
-    for module in MODULES_LIST:
-        install_test(module, device)
-        result = run_cases(module, mode, log_dir, device) and result
+    for obj in objs:
+        install_test(obj['module'], device)
+        succeed = run_cases(obj['module'], obj['cases'], log_dir, device)
+        total = len(obj['cases'])
+        result = result and (succeed == total)
+        print '\n>', obj['module'] + ' result: All:', total, \
+            'Succeed:', succeed, 'Failed:', total - succeed
+
     return result
 
 
@@ -124,6 +133,22 @@ def copy_libs():
     print '> done.'
 
 
+def validate_caselist(case_list):
+    # check the existence of case list file.
+    if not os.path.exists(case_list):
+        print 'No case list file found:', case_list
+        return False
+
+    # check the format of case list file.
+    try:
+        with open(case_list, 'r') as case_file:
+            json.load(case_file)
+    except ValueError as e:
+        print 'Failed to load json:', e
+        return False
+    return True
+
+
 def recover_deps():
     shutil.rmtree(os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc.bk'), os.path.join(DEPS_PATH, 'libwebrtc')]
@@ -134,8 +159,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run android instrumentation tests.')
     parser.add_argument('--build-deps', dest='build', action='store_true', default=False,
                         help='Indicates if to build sdk libraries.')
-    parser.add_argument("--mode", dest="mode", required=True, choices=('small', 'large', 'medium'),
-                        help="Indicate which kind of test cases will be tested.")
+    parser.add_argument('--caselist', dest='caselist',
+                        default=os.path.join(TEST_PATH, 'case_list.json'),
+                        help='Location of the case list json file.')
     parser.add_argument('--device', dest='device',
                         help='Id of the android device on which the test will run.'
                              'If there are multiple devices on the test host machine,'
@@ -145,6 +171,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    if not validate_caselist(args.caselist):
+        sys.exit(1)
+
     # generate sdk libraries.
     if args.build:
         build_libs()
@@ -153,7 +182,7 @@ if __name__ == '__main__':
     # change settings.gradle to include test modules.
     change_config()
 
-    result = run_test(args.mode, args.log_dir, args.device)
+    result = run_test(args.caselist, args.log_dir, args.device)
 
     # recover the settings.gradle
     recover_config()

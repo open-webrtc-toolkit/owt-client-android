@@ -38,7 +38,7 @@ pipeline {
             }
             steps {
                 sh "python ${env.androidCIScriptPath}/runTest.py --log-dir ${env.androidCILogPath}/${GIT_COMMIT} \
-                --source-path ${env.androidSourcePath} --mode small \
+                --source-path ${env.androidSourcePath} --caselist-path ${env.androidCIScriptPath}/caselist.json \
                 --p2p-server http://${env.p2pServer}:8095 --conference-server-http http://${env.mcuServer}:3001"
             }
         }
