@@ -5,6 +5,7 @@ import static oms.test.util.CommonAction.createLocalStream;
 import static oms.test.util.Config.TIMEOUT;
 
 import android.test.ActivityInstrumentationTestCase2;
+import android.test.suitebuilder.annotation.LargeTest;
 
 import oms.base.LocalStream;
 import oms.base.MediaConstraints;
@@ -27,10 +28,17 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
 
     @Override
     public void tearDown() throws Exception {
-        super.tearDown();
-        act = null;
+        try {
+            assertFalse(act.isExceptionCaught());
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            super.tearDown();
+            act = null;
+        }
     }
 
+    @LargeTest
     public void testStream_createStreamWithOMSCameraCapturer_shouldSucceed() {
         VideoCapturer videoCapturer = createDefaultCapturer();
         LocalStream localStream = createLocalStream(true, videoCapturer);
@@ -43,6 +51,7 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
         localStream.dispose();
     }
 
+    @LargeTest
     public void testStream_createVideoOnlyStream_shouldSucceed() {
         VideoCapturer videoCapturer = createDefaultCapturer();
         LocalStream localStream = createLocalStream(false, videoCapturer);
@@ -55,10 +64,12 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
         localStream.dispose();
     }
 
+    @LargeTest
     public void testStream_createAudioOnlyStream_shouldSucceed() {
         createLocalStream(true, null);
     }
 
+    @LargeTest
     public void testStream_createStreamWithoutVideoOrAudio_shouldThrowException() {
         try {
             createLocalStream(false, null);
@@ -67,6 +78,7 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
         }
     }
 
+    @LargeTest
     public void testStream_disableVideoOnStreamWithVideo_shouldSucceed() {
         MediaConstraints.VideoTrackConstraints vmc
                 = MediaConstraints.VideoTrackConstraints.create(false);
@@ -84,6 +96,7 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
         localStream.dispose();
     }
 
+    @LargeTest
     public void testStream_disableVideoOnStreamWithoutVideo_shouldBePeaceful() {
         LocalStream localStream = createLocalStream(true, null);
         localStream.disableVideo();
@@ -98,6 +111,7 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
         localStream.dispose();
     }
 
+    @LargeTest
     public void testStream_disableAudioOnStreamWithoutAudio_shouldBePeaceful() {
         VideoCapturer videoCapturer = createDefaultCapturer();
         LocalStream localStream = createLocalStream(false, videoCapturer);
@@ -106,6 +120,7 @@ public class LocalStreamTest extends ActivityInstrumentationTestCase2<TestActivi
         localStream.dispose();
     }
 
+    @LargeTest
     public void testStream_createStreamWithDifferentResolution_shouldSucceed() {
         String[] resolutions = new String[]{"1920x1080", "1280x720", "640x480", "352x288"};
         for (String resolution : resolutions) {
