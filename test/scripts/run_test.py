@@ -35,6 +35,7 @@ def analyse_result(result):
 
 def run_cases(module, cases, log_dir, device):
     print '\n> running cases on device', device
+    total = len(cases)
     result_file = os.path.join(log_dir, module + '-result-' + LOGCAT_SUFFIX)
     logcat_file = os.path.join(log_dir, module + '-logcat-' + LOGCAT_SUFFIX)
     for case in cases:
@@ -55,10 +56,17 @@ def run_cases(module, cases, log_dir, device):
         logcat_cmd = ['logcat', '-d', target_package]
         with open(logcat_file, 'a+') as lf:
             subprocess.call(adb + logcat_cmd, stdout=lf)
+    succeed = analyse_result(result_file)
+    failure = total - succeed
+    result_msg =  module + ' result: All:' + str(total) + ' Succeed:' + str(succeed) \
+                  + ' Failed:' + str(failure)
     print '> done.'
     print '  Result file: <LOG_DIR>/' + module + '-result-' + LOGCAT_SUFFIX
     print '  Log file: <LOG_DIR>/' + module + '-logcat-' + LOGCAT_SUFFIX
-    return analyse_result(result_file)
+    print '\n>', result_msg
+    with open(result_file, 'a+') as f:
+        f.write(result_msg)
+    return succeed
 
 
 def install_test(module, device):
@@ -95,9 +103,6 @@ def run_test(case_list, log_dir, device):
         succeed = run_cases(obj['module'], obj['cases'], log_dir, device)
         total = len(obj['cases'])
         result = result and (succeed == total)
-        print '\n>', obj['module'] + ' result: All:', total, \
-            'Succeed:', succeed, 'Failed:', total - succeed
-
     return result
 
 
