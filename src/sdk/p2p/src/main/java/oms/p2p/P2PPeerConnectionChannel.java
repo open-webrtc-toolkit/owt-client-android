@@ -3,25 +3,18 @@
  */
 package oms.p2p;
 
+import static org.webrtc.DataChannel.State.OPEN;
+import static org.webrtc.PeerConnection.IceConnectionState.COMPLETED;
+import static org.webrtc.PeerConnection.IceConnectionState.CONNECTED;
+import static org.webrtc.PeerConnection.SignalingState.STABLE;
+
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
 import static oms.base.Const.LOG_TAG;
 import static oms.p2p.OmsP2PError.P2P_CLIENT_INVALID_STATE;
 import static oms.p2p.OmsP2PError.P2P_WEBRTC_SDP;
 
-import static org.webrtc.DataChannel.State.OPEN;
-import static org.webrtc.PeerConnection.IceConnectionState.COMPLETED;
-import static org.webrtc.PeerConnection.IceConnectionState.CONNECTED;
-import static org.webrtc.PeerConnection.SignalingState.STABLE;
-
 import android.util.Log;
-
-import oms.base.ActionCallback;
-import oms.base.AudioEncodingParameters;
-import oms.base.OmsError;
-import oms.base.LocalStream;
-import oms.base.PeerConnectionChannel;
-import oms.base.VideoEncodingParameters;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,28 +27,40 @@ import org.webrtc.PeerConnection;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import oms.base.ActionCallback;
+import oms.base.AudioEncodingParameters;
+import oms.base.LocalStream;
+import oms.base.OmsError;
+import oms.base.PeerConnectionChannel;
+import oms.base.VideoEncodingParameters;
 
 final class P2PPeerConnectionChannel extends PeerConnectionChannel {
 
-    private final Object negLock = new Object();
-    //key: trackId
+    // <MediaStreamId, CallbackInfo>
     ConcurrentHashMap<String, CallbackInfo> publishCallbacks;
-    //key: localstream id
-    ConcurrentHashMap<String, LocalStream> localStreams;
+    private Long messageId = 0L;
+    // <MessageId, Callback>
+    private ConcurrentHashMap<Long, ActionCallback<Void>> sendMsgCallbacks;
+    // <LocalStream>
+    ArrayList<LocalStream> publishedStreams;
+    private String currentMediaStreamId;
+    // <MediaStreamId, RemoteStream>
+    private ConcurrentHashMap<String, RemoteStream> remoteStreams;
+    // <MediaStreamId>
+    private ArrayList<String> pendingAckRemoteStreams;
+    private ArrayList<Publication> publications;
+
+    private final Object negLock = new Object();
     private boolean renegotiationNeeded = false;
     private boolean negotiating = false;
-    private ConcurrentHashMap<MediaStream, RemoteStream> remoteStreams;
-    private List<RemoteStream> pendingAckRemoteStreams;
-    private ConcurrentHashMap<Long, ActionCallback<Void>> sendMsgCallbacks;
-    private List<Publication> publications;
-    private MediaStream currentMediaStream;
-    private Long messageId = 0L;
+
     private boolean streamRemovable = true;
     private boolean unifiedPlan = false;
     private boolean continualIceGathering = true;
     private boolean everPublished = false;
+
     // default isCaller true
     private boolean isCaller = true;
 
@@ -63,9 +68,9 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             PeerConnectionChannelObserver observer) {
         super(peerId, configuration.rtcConfiguration, true, true, observer);
         publishCallbacks = new ConcurrentHashMap<>();
-        localStreams = new ConcurrentHashMap<>();
-        remoteStreams = new ConcurrentHashMap<>();
         sendMsgCallbacks = new ConcurrentHashMap<>();
+        publishedStreams = new ArrayList<>();
+        remoteStreams = new ConcurrentHashMap<>();
         pendingAckRemoteStreams = new ArrayList<>();
         publications = new ArrayList<>();
 
@@ -94,9 +99,10 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             }
             return;
         }
-        currentMediaStream = GetMediaStream(localStream);
+        MediaStream currentMediaStream = GetMediaStream(localStream);
         RCHECK(currentMediaStream);
-        if (localStreams.containsKey(currentMediaStream.getId())) {
+        currentMediaStreamId = localStream.id();
+        if (publishedStreams.contains(localStream)) {
             if (callback != null) {
                 callback.onFailure(
                         new OmsError(P2P_CLIENT_INVALID_STATE.value, "Duplicated stream."));
@@ -104,16 +110,15 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             return;
         }
 
-        localStreams.put(currentMediaStream.getId(), localStream);
-
         CallbackInfo callbackInfo = new CallbackInfo(currentMediaStream, callback);
-
         if (!currentMediaStream.audioTracks.isEmpty()) {
             publishCallbacks.put(currentMediaStream.audioTracks.get(0).id(), callbackInfo);
         }
         if (!currentMediaStream.videoTracks.isEmpty()) {
             publishCallbacks.put(currentMediaStream.videoTracks.get(0).id(), callbackInfo);
         }
+
+        publishedStreams.add(localStream);
         addStream(currentMediaStream);
         everPublished = true;
         // create the data channel here due to BUG1418.
@@ -122,16 +127,17 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         }
     }
 
-    void unpublish(MediaStream mediaStream) {
-        DCHECK(localStreams.containsKey(mediaStream.getId()));
-        localStreams.remove(mediaStream.getId());
-        removeStream(mediaStream);
+    void unpublish(String mediaStreamId) {
+        for (LocalStream localStream : publishedStreams) {
+            if (localStream.id().equals(mediaStreamId)) {
+                publishedStreams.remove(localStream);
+                removeStream(mediaStreamId);
+                break;
+            }
+        }
     }
 
     protected synchronized void dispose() {
-        for (LocalStream localStream : localStreams.values()) {
-            removeStream(GetMediaStream(localStream));
-        }
         super.dispose();
         for (RemoteStream remoteStream : remoteStreams.values()) {
             remoteStream.onEnded();
@@ -139,7 +145,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         for (Publication publication : publications) {
             publication.onEnded();
         }
-        localStreams.clear();
+        publishedStreams.clear();
         remoteStreams.clear();
         publications.clear();
     }
@@ -150,7 +156,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             CallbackInfo callbackInfo = publishCallbacks.get(trackId);
             if (callbackInfo != null
                     && --callbackInfo.trackNum == 0 && callbackInfo.callback != null) {
-                Publication publication = new Publication(callbackInfo.mediaStream, this);
+                Publication publication = new Publication(callbackInfo.mediaStreamId, this);
                 publications.add(publication);
                 callbackInfo.callback.onSuccess(publication);
             }
@@ -169,6 +175,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         for (CallbackInfo callbackInfo : publishCallbacks.values()) {
             if (--callbackInfo.trackNum == 0 && callbackInfo.callback != null) {
                 callbackInfo.callback.onFailure(error);
+
             }
         }
         publishCallbacks.clear();
@@ -228,8 +235,8 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             renegotiationNeeded = false;
             processNegotiationRequest();
         }
-        for (RemoteStream remoteStream : pendingAckRemoteStreams) {
-            observer.onAddStream(key, remoteStream);
+        for (String id : pendingAckRemoteStreams) {
+            observer.onAddStream(key, remoteStreams.get(id));
         }
         pendingAckRemoteStreams.clear();
     }
@@ -277,7 +284,8 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     }
 
     @Override
-    public void onIceConnectionChange(final PeerConnection.IceConnectionState iceConnectionState) {
+    public void onIceConnectionChange(
+            final PeerConnection.IceConnectionState iceConnectionState) {
         callbackExecutor.execute(() -> {
             Log.d(LOG_TAG, "onIceConnectionChange " + iceConnectionState);
             P2PPeerConnectionChannel.this.iceConnectionState = iceConnectionState;
@@ -312,25 +320,23 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     @Override
     public void onAddStream(final MediaStream mediaStream) {
         callbackExecutor.execute(() -> {
-            Log.d(LOG_TAG, "onAddStream");
             RemoteStream remoteStream = new RemoteStream(key, mediaStream);
-            remoteStreams.put(mediaStream, remoteStream);
+            remoteStreams.put(mediaStream.getId(), remoteStream);
             if (iceConnectionState == CONNECTED || iceConnectionState == COMPLETED) {
                 observer.onAddStream(key, remoteStream);
             } else {
-                pendingAckRemoteStreams.add(remoteStream);
+                pendingAckRemoteStreams.add(mediaStream.getId());
             }
         });
     }
 
     @Override
     public void onRemoveStream(final MediaStream mediaStream) {
+        String id = mediaStream.getId();
         callbackExecutor.execute(() -> {
             Log.d(LOG_TAG, "onRemoveStream");
-            if (remoteStreams.containsKey(mediaStream)) {
-                RemoteStream remoteStream = remoteStreams.get(mediaStream);
-                remoteStream.onEnded();
-                remoteStreams.remove(mediaStream);
+            if (remoteStreams.containsKey(id)) {
+                remoteStreams.remove(id).onEnded();
             }
         });
     }
@@ -360,9 +366,9 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             } else {
                 drainRemoteCandidates();
 
-                if (currentMediaStream != null) {
-                    setMaxBitrate(currentMediaStream);
-                    currentMediaStream = null;
+                if (currentMediaStreamId != null) {
+                    setMaxBitrate(currentMediaStreamId);
+                    currentMediaStreamId = null;
                 }
             }
         });
@@ -395,12 +401,12 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     }
 
     static class CallbackInfo {
-        final MediaStream mediaStream;
+        final String mediaStreamId;
         final ActionCallback<Publication> callback;
         int trackNum;
 
         CallbackInfo(MediaStream mediaStream, ActionCallback<Publication> callback) {
-            this.mediaStream = mediaStream;
+            this.mediaStreamId = mediaStream.getId();
             this.callback = callback;
             trackNum = mediaStream.audioTracks.size() + mediaStream.videoTracks.size();
         }

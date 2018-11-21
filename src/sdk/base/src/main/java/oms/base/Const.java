@@ -14,7 +14,7 @@ public class Const {
             "'sdk':{'type':'Android','version':" + CLIENT_VERSION + "}," +
             "'os':{'name':'Android', 'version':" + Build.VERSION.RELEASE + "}," +
             "'capabilities':{'continualIceGathering': true," +
-                            "'unifiedPlan': false," +
+                            "'unifiedPlan': true," +
                             "'streamRemovable': true}" +
             "}";
     public static final String PROTOCOL_VERSION = "1.0";

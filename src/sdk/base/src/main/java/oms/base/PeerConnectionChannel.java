@@ -9,11 +9,9 @@ import static oms.base.Const.LOG_TAG;
 
 import android.util.Log;
 
-import oms.base.MediaCodecs.AudioCodec;
-import oms.base.MediaCodecs.VideoCodec;
-
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
@@ -26,6 +24,7 @@ import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -37,8 +36,12 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import oms.base.MediaCodecs.AudioCodec;
+import oms.base.MediaCodecs.VideoCodec;
 
 ///@cond
 public abstract class PeerConnectionChannel
@@ -64,12 +67,16 @@ public abstract class PeerConnectionChannel
     private SessionDescription localSdp;
     private boolean disposed = false;
     protected boolean onError = false;
+    // <MediaStream id, RtpSender>
+    private ConcurrentHashMap<String, RtpSender> videoRtpSenders, audioRtpSenders;
 
     protected PeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
             boolean receiveVideo, boolean receiveAudio, PeerConnectionChannelObserver observer) {
         this.key = key;
         this.observer = observer;
 
+        videoRtpSenders = new ConcurrentHashMap<>();
+        audioRtpSenders = new ConcurrentHashMap<>();
         queuedRemoteCandidates = new LinkedList<>();
         queuedMessage = new ArrayList<>();
         sdpConstraints = new MediaConstraints();
@@ -150,7 +157,7 @@ public abstract class PeerConnectionChannel
             if (peerConnection.signalingState() == PeerConnection.SignalingState.STABLE) {
                 Log.d(LOG_TAG, "add ice candidate");
                 peerConnection.addIceCandidate(iceCandidate);
-            }else {
+            } else {
                 synchronized (remoteIceLock) {
                     Log.d(LOG_TAG, "queue ice candidate");
                     queuedRemoteCandidates.add(iceCandidate);
@@ -200,19 +207,32 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            Log.d(LOG_TAG, "add stream.");
-            peerConnection.addStream(mediaStream);
+            ArrayList<String> streamIds = new ArrayList<>();
+            streamIds.add(mediaStream.getId());
+            for (AudioTrack audioTrack : mediaStream.audioTracks) {
+                RtpSender audioSender = peerConnection.addTrack(audioTrack, streamIds);
+                audioRtpSenders.put(mediaStream.getId(), audioSender);
+            }
+            for (VideoTrack videoTrack : mediaStream.videoTracks) {
+                RtpSender videoSender = peerConnection.addTrack(videoTrack, streamIds);
+                videoRtpSenders.put(mediaStream.getId(), videoSender);
+            }
         });
     }
 
-    protected void removeStream(final MediaStream mediaStream) {
+    protected void removeStream(String mediaStreamId) {
         DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 return;
             }
             Log.d(LOG_TAG, "remove stream");
-            peerConnection.removeStream(mediaStream);
+            if (audioRtpSenders.get(mediaStreamId) != null) {
+                peerConnection.removeTrack(audioRtpSenders.get(mediaStreamId));
+            }
+            if (videoRtpSenders.get(mediaStreamId) != null) {
+                peerConnection.removeTrack(videoRtpSenders.get(mediaStreamId));
+            }
         });
     }
 
@@ -388,26 +408,15 @@ public abstract class PeerConnectionChannel
         }
     }
 
-    protected void setMaxBitrate(MediaStream mediaStream) {
+    protected void setMaxBitrate(String mediaStreamId) {
         DCHECK(peerConnection);
 
-        RtpSender videoRtpSender = null, audioRtpSender = null;
-        for (RtpSender sender : peerConnection.getSenders()) {
-            if (sender.track() != null) {
-                if (!mediaStream.videoTracks.isEmpty()
-                        && sender.track().kind().equals("video")
-                        && sender.track().id().equals(mediaStream.videoTracks.get(0).id())) {
-                    videoRtpSender = sender;
-                } else if (!mediaStream.audioTracks.isEmpty()
-                        && sender.track().kind().equals("audio")
-                        && sender.track().id().equals(mediaStream.audioTracks.get(0).id())) {
-                    audioRtpSender = sender;
-                }
-            }
+        if (videoRtpSenders.get(mediaStreamId) != null) {
+            setMaxBitrate(videoRtpSenders.get(mediaStreamId), videoMaxBitrate);
         }
-
-        setMaxBitrate(videoRtpSender, videoMaxBitrate);
-        setMaxBitrate(audioRtpSender, audioMaxBitrate);
+        if (audioRtpSenders.get(mediaStreamId) != null) {
+            setMaxBitrate(audioRtpSenders.get(mediaStreamId), audioMaxBitrate);
+        }
     }
 
     protected void dispose() {

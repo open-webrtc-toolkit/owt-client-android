@@ -21,8 +21,8 @@ public final class Publication extends oms.base.Publication {
     private final P2PPeerConnectionChannel pcChannel;
     private List<PublicationObserver> observers;
 
-    Publication(MediaStream mediaStream, P2PPeerConnectionChannel pcChannel) {
-        super(UUID.randomUUID().toString(), mediaStream);
+    Publication(String mediaStreamId, P2PPeerConnectionChannel pcChannel) {
+        super(UUID.randomUUID().toString(), mediaStreamId);
         this.pcChannel = pcChannel;
     }
 
@@ -73,7 +73,7 @@ public final class Publication extends oms.base.Publication {
     @Override
     public void stop() {
         if (!ended) {
-            pcChannel.unpublish(mediaStream);
+            pcChannel.unpublish(mediaStreamId);
             ended = true;
             if (observers != null) {
                 for (PublicationObserver observer : observers) {

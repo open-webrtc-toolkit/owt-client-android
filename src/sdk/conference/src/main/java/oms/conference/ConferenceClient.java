@@ -544,9 +544,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         callbackExecutor.execute(() -> {
             if (pubCallbacks.containsKey(id)) {
                 ActionCallback<Publication> callback = pubCallbacks.get(id);
-                ConferencePeerConnectionChannel pcChannel = getPeerConnection(id);
-                Publication publication = new Publication(id, pcChannel.getMediaStream(),
-                        ConferenceClient.this);
+                Publication publication = new Publication(id, ConferenceClient.this);
                 getPeerConnection(id).publication = publication;
                 callback.onSuccess(publication);
                 pubCallbacks.remove(id);

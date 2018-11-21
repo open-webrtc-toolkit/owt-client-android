@@ -5,6 +5,8 @@ package oms.conference;
 
 import static oms.base.CheckCondition.DCHECK;
 
+import android.util.Log;
+
 import oms.base.AudioCodecParameters;
 import oms.base.AudioEncodingParameters;
 import oms.base.LocalStream;
@@ -16,6 +18,7 @@ import oms.base.VideoEncodingParameters;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
+import org.webrtc.RtpReceiver;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -78,9 +81,6 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     }
 
     protected synchronized void dispose() {
-        if (stream instanceof LocalStream) {
-            removeStream(GetMediaStream(stream));
-        }
         super.dispose();
         if (publication != null) {
             DCHECK(subscription == null);
@@ -90,10 +90,6 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
             DCHECK(publication == null);
             subscription.onEnded();
         }
-    }
-
-    MediaStream getMediaStream() {
-        return GetMediaStream(stream);
     }
 
     @Override
@@ -106,7 +102,7 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
             queuedLocalCandidates.clear();
 
             if (stream instanceof LocalStream) {
-                setMaxBitrate(GetMediaStream(stream));
+                setMaxBitrate(stream.id());
             }
         }
     }
@@ -168,6 +164,11 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
 
     @Override
     public void onRenegotiationNeeded() {
+
+    }
+
+    @Override
+    public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
 
     }
 }
