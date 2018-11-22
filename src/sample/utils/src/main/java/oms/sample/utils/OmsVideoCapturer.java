@@ -1,32 +1,42 @@
 package oms.sample.utils;
 
 import org.webrtc.Camera1Capturer;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.CameraEnumerator;
 
-import oms.base.MediaConstraints;
 import oms.base.Stream;
 import oms.base.VideoCapturer;
 
 public final class OmsVideoCapturer extends Camera1Capturer implements VideoCapturer {
-    private MediaConstraints.VideoTrackConstraints videoTrackConstraints;
+    private int width, height, fps;
 
-    public OmsVideoCapturer(MediaConstraints.VideoTrackConstraints constraints) {
-        super(constraints.getDeviceName(), null, constraints.captureToTexture);
-        videoTrackConstraints = constraints;
+    private OmsVideoCapturer(String deviceName, boolean captureToTexture) {
+        super(deviceName, null, captureToTexture);
+    }
+
+    public static OmsVideoCapturer create(int width, int height, int fps,
+            boolean captureToTexture) {
+        String deviceName = getDeviceName(captureToTexture);
+        OmsVideoCapturer capturer = new OmsVideoCapturer(deviceName, captureToTexture);
+        capturer.width = width;
+        capturer.height = height;
+        capturer.fps = fps;
+        return capturer;
     }
 
     @Override
     public int getWidth() {
-        return videoTrackConstraints.resolutionWidth;
+        return width;
     }
 
     @Override
     public int getHeight() {
-        return videoTrackConstraints.resolutionHeight;
+        return height;
     }
 
     @Override
     public int getFps() {
-        return videoTrackConstraints.fps;
+        return fps;
     }
 
     @Override
@@ -40,5 +50,19 @@ public final class OmsVideoCapturer extends Camera1Capturer implements VideoCapt
 
     public void dispose() {
         super.dispose();
+    }
+
+    private static String getDeviceName(boolean captureToTexture) {
+        CameraEnumerator enumerator = new Camera1Enumerator(captureToTexture);
+
+        String deviceName = null;
+        for (String device : enumerator.getDeviceNames()) {
+            if (enumerator.isFrontFacing(device)) {
+                deviceName = device;
+                break;
+            }
+        }
+
+        return deviceName == null ? enumerator.getDeviceNames()[0] : deviceName;
     }
 }

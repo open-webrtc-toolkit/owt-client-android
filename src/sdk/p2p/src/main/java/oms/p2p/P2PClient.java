@@ -5,7 +5,7 @@ package oms.p2p;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.OmsConst.LOG_TAG;
+import static oms.base.Const.LOG_TAG;
 import static oms.base.Stream.StreamSourceInfo;
 import static oms.base.Stream.StreamSourceInfo.AudioSourceInfo;
 import static oms.base.Stream.StreamSourceInfo.VideoSourceInfo;
@@ -28,7 +28,7 @@ import static org.webrtc.PeerConnection.SignalingState.HAVE_LOCAL_OFFER;
 import android.util.Log;
 
 import oms.base.ActionCallback;
-import oms.base.OmsConst;
+import oms.base.Const;
 import oms.base.OmsError;
 import oms.base.LocalStream;
 import oms.base.PeerConnectionChannel;
@@ -435,7 +435,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
     private void sendUserInfo(String peerId) {
         try {
-            sendSignalingMessage(peerId, CHAT_UA, new JSONObject(OmsConst.userAgent), null);
+            sendSignalingMessage(peerId, CHAT_UA, new JSONObject(Const.userAgent), null);
         } catch (JSONException e) {
             DCHECK(e);
         }

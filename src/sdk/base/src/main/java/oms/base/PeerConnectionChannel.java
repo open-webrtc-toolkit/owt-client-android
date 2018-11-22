@@ -5,6 +5,7 @@ package oms.base;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
+import static oms.base.Const.LOG_TAG;
 
 import android.util.Log;
 
@@ -77,7 +78,7 @@ public abstract class PeerConnectionChannel
         sdpConstraints.mandatory.add(
                 new KeyValuePair("OfferToReceiveVideo", String.valueOf(receiveVideo)));
         peerConnection = PCFactoryProxy.instance().createPeerConnection(configuration, this);
-        CheckCondition.RCHECK(peerConnection);
+        RCHECK(peerConnection);
     }
 
     //Utility method for getting the mediastream as it is package privileged.
@@ -92,23 +93,23 @@ public abstract class PeerConnectionChannel
     }
 
     protected void createOffer() {
-        CheckCondition.DCHECK(pcExecutor);
+        DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 return;
             }
-            Log.d(OmsConst.LOG_TAG, "create offer");
+            Log.d(LOG_TAG, "create offer");
             peerConnection.createOffer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
 
     protected void createAnswer() {
-        CheckCondition.DCHECK(pcExecutor);
+        DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 return;
             }
-            Log.d(OmsConst.LOG_TAG, "creating answer");
+            Log.d(LOG_TAG, "creating answer");
             peerConnection.createAnswer(PeerConnectionChannel.this, sdpConstraints);
         });
     }
@@ -140,18 +141,18 @@ public abstract class PeerConnectionChannel
         if (disposed()) {
             return;
         }
-        CheckCondition.DCHECK(pcExecutor);
-        CheckCondition.DCHECK(iceCandidate);
+        DCHECK(pcExecutor);
+        DCHECK(iceCandidate);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 return;
             }
             if (peerConnection.signalingState() == PeerConnection.SignalingState.STABLE) {
-                Log.d(OmsConst.LOG_TAG, "add ice candidate");
+                Log.d(LOG_TAG, "add ice candidate");
                 peerConnection.addIceCandidate(iceCandidate);
             }else {
                 synchronized (remoteIceLock) {
-                    Log.d(OmsConst.LOG_TAG, "queue ice candidate");
+                    Log.d(LOG_TAG, "queue ice candidate");
                     queuedRemoteCandidates.add(iceCandidate);
                 }
             }
@@ -159,15 +160,15 @@ public abstract class PeerConnectionChannel
     }
 
     protected void drainRemoteCandidates() {
-        CheckCondition.DCHECK(pcExecutor);
-        CheckCondition.DCHECK(queuedRemoteCandidates);
+        DCHECK(pcExecutor);
+        DCHECK(queuedRemoteCandidates);
         synchronized (remoteIceLock) {
             for (final IceCandidate candidate : queuedRemoteCandidates) {
                 pcExecutor.execute(() -> {
                     if (disposed()) {
                         return;
                     }
-                    Log.d(OmsConst.LOG_TAG, "add ice candidate");
+                    Log.d(LOG_TAG, "add ice candidate");
                     peerConnection.addIceCandidate(candidate);
                     queuedRemoteCandidates.remove(candidate);
                 });
@@ -193,31 +194,31 @@ public abstract class PeerConnectionChannel
     }
 
     protected void addStream(final MediaStream mediaStream) {
-        CheckCondition.DCHECK(mediaStream);
-        CheckCondition.DCHECK(pcExecutor);
+        DCHECK(mediaStream);
+        DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 return;
             }
-            Log.d(OmsConst.LOG_TAG, "add stream.");
+            Log.d(LOG_TAG, "add stream.");
             peerConnection.addStream(mediaStream);
         });
     }
 
     protected void removeStream(final MediaStream mediaStream) {
-        CheckCondition.DCHECK(pcExecutor);
+        DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 return;
             }
-            Log.d(OmsConst.LOG_TAG, "remove stream");
+            Log.d(LOG_TAG, "remove stream");
             peerConnection.removeStream(mediaStream);
         });
     }
 
     protected void createDataChannel() {
-        CheckCondition.DCHECK(pcExecutor);
-        CheckCondition.DCHECK(localDataChannel == null);
+        DCHECK(pcExecutor);
+        DCHECK(localDataChannel == null);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 return;
@@ -229,7 +230,7 @@ public abstract class PeerConnectionChannel
     }
 
     public void getConnectionStats(final ActionCallback<RTCStatsReport> callback) {
-        CheckCondition.DCHECK(pcExecutor);
+        DCHECK(pcExecutor);
         pcExecutor.execute(() -> {
             if (disposed()) {
                 callback.onFailure(new OmsError("Invalid stats."));
@@ -376,19 +377,19 @@ public abstract class PeerConnectionChannel
         }
         RtpParameters rtpParameters = sender.getParameters();
         if (rtpParameters == null) {
-            Log.e(OmsConst.LOG_TAG, "Null rtp paramters");
+            Log.e(LOG_TAG, "Null rtp paramters");
             return;
         }
         for (RtpParameters.Encoding encoding : rtpParameters.encodings) {
             encoding.maxBitrateBps = bitrate == null ? null : bitrate * 1000;
         }
         if (!sender.setParameters(rtpParameters)) {
-            Log.e(OmsConst.LOG_TAG, "Failed to configure max video bitrate");
+            Log.e(LOG_TAG, "Failed to configure max video bitrate");
         }
     }
 
     protected void setMaxBitrate(MediaStream mediaStream) {
-        CheckCondition.DCHECK(peerConnection);
+        DCHECK(peerConnection);
 
         RtpSender videoRtpSender = null, audioRtpSender = null;
         for (RtpSender sender : peerConnection.getSenders()) {

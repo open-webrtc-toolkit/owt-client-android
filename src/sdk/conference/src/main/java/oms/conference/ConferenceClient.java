@@ -5,7 +5,7 @@ package oms.conference;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.OmsConst.LOG_TAG;
+import static oms.base.Const.LOG_TAG;
 
 import android.util.Log;
 

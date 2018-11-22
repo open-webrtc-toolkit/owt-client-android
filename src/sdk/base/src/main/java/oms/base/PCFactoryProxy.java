@@ -4,8 +4,8 @@
 package oms.base;
 
 import static oms.base.ContextInitialization.context;
-import static oms.base.ContextInitialization.localCtx;
-import static oms.base.ContextInitialization.remoteCtx;
+import static oms.base.ContextInitialization.localContext;
+import static oms.base.ContextInitialization.remoteContext;
 
 import android.annotation.SuppressLint;
 
@@ -42,11 +42,11 @@ final class PCFactoryProxy {
                     .setAudioDeviceModule(adm == null ? new LegacyAudioDeviceModule() : adm)
                     .setVideoEncoderFactory(
                             encoderFactory == null
-                                    ? new DefaultVideoEncoderFactory(localCtx, true, true)
+                                    ? new DefaultVideoEncoderFactory(localContext, true, true)
                                     : encoderFactory)
                     .setVideoDecoderFactory(
                             decoderFactory == null
-                                    ? new DefaultVideoDecoderFactory(remoteCtx)
+                                    ? new DefaultVideoDecoderFactory(remoteContext)
                                     : decoderFactory)
                     .createPeerConnectionFactory();
         }

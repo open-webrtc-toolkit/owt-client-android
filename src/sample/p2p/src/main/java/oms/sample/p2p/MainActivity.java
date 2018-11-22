@@ -30,8 +30,6 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static oms.base.MediaCodecs.VideoCodec.H264;
 import static oms.base.MediaCodecs.VideoCodec.H265;
 import static oms.base.MediaCodecs.VideoCodec.VP8;
-import static oms.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
-import static oms.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
 
 import android.Manifest;
 import android.content.Context;
@@ -47,18 +45,6 @@ import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 
-import oms.base.ActionCallback;
-import oms.base.ContextInitialization;
-import oms.base.OmsError;
-import oms.sample.utils.OmsVideoCapturer;
-import oms.base.LocalStream;
-import oms.base.MediaConstraints;
-import oms.base.VideoEncodingParameters;
-import oms.p2p.P2PClient;
-import oms.p2p.P2PClientConfiguration;
-import oms.p2p.Publication;
-import oms.p2p.RemoteStream;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.EglBase;
@@ -69,6 +55,18 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import oms.base.ActionCallback;
+import oms.base.ContextInitialization;
+import oms.base.LocalStream;
+import oms.base.MediaConstraints;
+import oms.base.OmsError;
+import oms.base.VideoEncodingParameters;
+import oms.p2p.P2PClient;
+import oms.p2p.P2PClientConfiguration;
+import oms.p2p.Publication;
+import oms.p2p.RemoteStream;
+import oms.sample.utils.OmsVideoCapturer;
 
 public class MainActivity extends AppCompatActivity implements LoginFragment.LoginFragmentListener,
         CallFragment.CallFragmentListener, ChatFragment.ChatFragmentListener,
@@ -302,14 +300,8 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
         remoteRenderer.init(rootEglBase.getEglBaseContext(), null);
 
         executor.execute(() -> {
-            boolean cameraFront = settingsFragment == null || settingsFragment.cameraFront;
-            MediaConstraints.VideoTrackConstraints vmc = MediaConstraints.VideoTrackConstraints
-                    .create(true)
-                    .setCameraFacing(cameraFront ? FRONT : BACK)
-                    .setResolution(1280, 720)
-                    .setFramerate(30);
             if (capturer == null) {
-                capturer = new OmsVideoCapturer(vmc);
+                capturer = OmsVideoCapturer.create(1280, 720, 30, true);
                 localStream = new LocalStream(capturer,
                         new MediaConstraints.AudioTrackConstraints());
             }

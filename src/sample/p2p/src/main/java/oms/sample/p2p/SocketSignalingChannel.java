@@ -31,7 +31,7 @@ import static oms.p2p.OmsP2PError.P2P_CONN_SERVER_UNKNOWN;
 import android.util.Log;
 
 import oms.base.ActionCallback;
-import oms.base.OmsConst;
+import oms.base.Const;
 import oms.base.OmsError;
 import oms.p2p.OmsP2PError;
 import oms.p2p.SignalingChannelInterface;
@@ -64,7 +64,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
     private final String CLIENT_TYPE = "&clientType=";
     private final String CLIENT_TYPE_VALUE = "Android";
     private final String CLIENT_VERSION = "&clientVersion=";
-    private final String CLIENT_VERSION_VALUE = OmsConst.CLIENT_VERSION;
+    private final String CLIENT_VERSION_VALUE = Const.CLIENT_VERSION;
 
     private final int MAX_RECONNECT_ATTEMPTS = 5;
     private int reconnectAttempts = 0;

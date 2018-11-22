@@ -6,8 +6,8 @@ package oms.base;
 import android.os.Build;
 
 ///@cond
-public class OmsConst {
-    public static final String LOG_TAG = "ICS";
+public class Const {
+    public static final String LOG_TAG = "OMS";
     public static final String CLIENT_VERSION = "4.1";
     public static final String userAgent = "{" +
             "'runtime':{'name':'webrtc','version':'67'}," +

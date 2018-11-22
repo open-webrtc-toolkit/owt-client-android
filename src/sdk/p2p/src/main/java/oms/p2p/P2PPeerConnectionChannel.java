@@ -5,7 +5,7 @@ package oms.p2p;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.OmsConst.LOG_TAG;
+import static oms.base.Const.LOG_TAG;
 import static oms.p2p.OmsP2PError.P2P_CLIENT_INVALID_STATE;
 import static oms.p2p.OmsP2PError.P2P_WEBRTC_SDP;
 

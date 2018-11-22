@@ -5,7 +5,7 @@ package oms.base;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.ContextInitialization.localCtx;
+import static oms.base.ContextInitialization.localContext;
 
 import org.webrtc.AudioSource;
 import org.webrtc.MediaStream;
@@ -45,7 +45,7 @@ final class MediaStreamFactory {
         if (videoCapturer != null) {
             VideoSource videoSource = PCFactoryProxy.instance().createVideoSource(
                     videoCapturer.isScreencast());
-            SurfaceTextureHelper helper = SurfaceTextureHelper.create("CT", localCtx);
+            SurfaceTextureHelper helper = SurfaceTextureHelper.create("CT", localContext);
             videoCapturer.initialize(helper, ContextInitialization.context,
                     videoSource.getCapturerObserver());
             videoCapturer.startCapture(videoCapturer.getWidth(),

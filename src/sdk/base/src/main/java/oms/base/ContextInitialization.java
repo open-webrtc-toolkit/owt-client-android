@@ -24,7 +24,7 @@ public class ContextInitialization {
     private static ContextInitialization instance = null;
     @SuppressLint("StaticFieldLeak")
     static Context context = null;
-    static EglBase.Context localCtx = null, remoteCtx = null;
+    static EglBase.Context localContext = null, remoteContext = null;
 
     private ContextInitialization() {
     }
@@ -49,8 +49,8 @@ public class ContextInitialization {
      * @return ContextInitialization
      */
     public ContextInitialization addIgnoreNetworkType(NetworkType ignoreNetworkType) {
-        CheckCondition.RCHECK(!initialized);
-        CheckCondition.RCHECK(ignoreNetworkType);
+        RCHECK(!initialized);
+        RCHECK(ignoreNetworkType);
         PCFactoryProxy.networkIgnoreMask |= ignoreNetworkType.value;
         return this;
     }
@@ -62,7 +62,7 @@ public class ContextInitialization {
      * @return ContextInitialization
      */
     public ContextInitialization setApplicationContext(Context ctx) {
-        CheckCondition.RCHECK(!initialized);
+        RCHECK(!initialized);
         context = ctx;
         return this;
     }
@@ -70,16 +70,17 @@ public class ContextInitialization {
     /**
      * Set the EGL context used by hardware video encoder and decoder.
      *
-     * @param localEglCtx Must be the same as that used by VideoCapturerAndroid and any local video
+     * @param localEglContext Must be the same as that used by VideoCapturerAndroid and any local
+     * video
      * renderer.
-     * @param remoteEglCtx Must be the same as that used by any remote video renderer.
+     * @param remoteEglContext Must be the same as that used by any remote video renderer.
      * @return ContextInitialization
      */
-    public ContextInitialization setVideoHardwareAccelerationOptions(EglBase.Context localEglCtx,
-            EglBase.Context remoteEglCtx) {
-        CheckCondition.RCHECK(!initialized);
-        localCtx = localEglCtx;
-        remoteCtx = remoteEglCtx;
+    public ContextInitialization setVideoHardwareAccelerationOptions(
+            EglBase.Context localEglContext, EglBase.Context remoteEglContext) {
+        RCHECK(!initialized);
+        localContext = localEglContext;
+        remoteContext = remoteEglContext;
         return this;
     }
 
@@ -92,7 +93,7 @@ public class ContextInitialization {
      * @return ContextInitialization
      */
     public ContextInitialization addFieldTrials(String fieldTrial) {
-        CheckCondition.RCHECK(!initialized);
+        RCHECK(!initialized);
         PCFactoryProxy.fieldTrials += fieldTrial;
         return this;
     }
@@ -105,7 +106,7 @@ public class ContextInitialization {
      */
     public ContextInitialization setCustomizedVideoEncoderFactory(
             VideoEncoderFactory encoderFactory) {
-        CheckCondition.RCHECK(!initialized);
+        RCHECK(!initialized);
         PCFactoryProxy.encoderFactory = encoderFactory;
         return this;
     }
@@ -118,7 +119,7 @@ public class ContextInitialization {
      */
     public ContextInitialization setCustomizedVideoDecoderFactory(
             VideoDecoderFactory decoderFactory) {
-        CheckCondition.RCHECK(!initialized);
+        RCHECK(!initialized);
         PCFactoryProxy.decoderFactory = decoderFactory;
         return this;
     }
@@ -130,7 +131,7 @@ public class ContextInitialization {
      * @return ContextInitialization
      */
     public ContextInitialization setCustomizedAudioDeviceModule(AudioDeviceModule adm) {
-        CheckCondition.RCHECK(!initialized);
+        RCHECK(!initialized);
         PCFactoryProxy.adm = adm;
         return this;
     }
@@ -139,7 +140,7 @@ public class ContextInitialization {
      * Initialize context settings.
      */
     public void initialize() {
-        CheckCondition.RCHECK(!initialized);
+        RCHECK(!initialized);
         initialized = true;
         PCFactoryProxy.instance();
     }
