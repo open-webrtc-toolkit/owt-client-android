@@ -1,32 +1,41 @@
 package oms.test.util;
 
 import org.webrtc.Camera1Capturer;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.CameraEnumerator;
 
-import oms.base.MediaConstraints;
 import oms.base.Stream;
 import oms.base.VideoCapturer;
 
 public final class VideoCapturerForTest extends Camera1Capturer implements VideoCapturer {
-    private MediaConstraints.VideoTrackConstraints videoTrackConstraints;
+    private int width, height, fps;
 
-    public VideoCapturerForTest(MediaConstraints.VideoTrackConstraints constraints) {
-        super(constraints.getDeviceName(), null, constraints.captureToTexture);
-        videoTrackConstraints = constraints;
+    private VideoCapturerForTest(String deviceName, boolean captureToTexture) {
+        super(deviceName, null, captureToTexture);
+    }
+
+    public static VideoCapturerForTest create() {
+        String deviceName = getDeviceName(true);
+        VideoCapturerForTest capturer = new VideoCapturerForTest(deviceName, true);
+        capturer.width = 640;
+        capturer.height = 480;
+        capturer.fps = 20;
+        return capturer;
     }
 
     @Override
     public int getWidth() {
-        return videoTrackConstraints.resolutionWidth;
+        return width;
     }
 
     @Override
     public int getHeight() {
-        return videoTrackConstraints.resolutionHeight;
+        return height;
     }
 
     @Override
     public int getFps() {
-        return videoTrackConstraints.fps;
+        return fps;
     }
 
     @Override
@@ -40,5 +49,19 @@ public final class VideoCapturerForTest extends Camera1Capturer implements Video
 
     public void dispose() {
         super.dispose();
+    }
+
+    private static String getDeviceName(boolean captureToTexture) {
+        CameraEnumerator enumerator = new Camera1Enumerator(captureToTexture);
+
+        String deviceName = null;
+        for (String device : enumerator.getDeviceNames()) {
+            if (enumerator.isFrontFacing(device)) {
+                deviceName = device;
+                break;
+            }
+        }
+
+        return deviceName == null ? enumerator.getDeviceNames()[0] : deviceName;
     }
 }

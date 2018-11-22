@@ -9,8 +9,6 @@ import static oms.base.MediaCodecs.AudioCodec.PCMU;
 import static oms.base.MediaCodecs.VideoCodec.H264;
 import static oms.base.MediaCodecs.VideoCodec.VP8;
 import static oms.base.MediaCodecs.VideoCodec.VP9;
-import static oms.base.MediaConstraints.VideoTrackConstraints;
-import static oms.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
 import static oms.test.conference.util.ConferenceAction.createClient;
 import static oms.test.conference.util.ConferenceAction.createPublishOptions;
 import static oms.test.conference.util.ConferenceAction.getRemoteForwardStream;
@@ -170,11 +168,7 @@ public class PublishTest extends TestBase {
         for (int i = 0; i < resolutions.length; i++) {
             int width = Integer.valueOf(resolutions[i].split("x")[0]);
             int height = Integer.valueOf(resolutions[i].split("x")[1]);
-            VideoTrackConstraints vmc = VideoTrackConstraints.create(true);
-            vmc.setResolution(width, height);
-            vmc.setFramerate(30);
-            vmc.setCameraFacing(FRONT);
-            capturer1 = new VideoCapturerForTest(vmc);
+            capturer1 = VideoCapturerForTest.create();
             localStream1 = createLocalStream(true, capturer1);
             PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
                     new VideoCodec[]{});

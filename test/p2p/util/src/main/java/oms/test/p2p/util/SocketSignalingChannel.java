@@ -30,12 +30,6 @@ import static oms.p2p.OmsP2PError.P2P_CONN_SERVER_UNKNOWN;
 
 import android.util.Log;
 
-import oms.base.ActionCallback;
-import oms.base.OmsConst;
-import oms.base.OmsError;
-import oms.p2p.OmsP2PError;
-import oms.p2p.SignalingChannelInterface;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -52,6 +46,11 @@ import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter.Listener;
+import oms.base.ActionCallback;
+import oms.base.Const;
+import oms.base.OmsError;
+import oms.p2p.OmsP2PError;
+import oms.p2p.SignalingChannelInterface;
 
 /**
  * Socket.IO implementation of P2P signaling channel.
@@ -64,7 +63,7 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
     private final String CLIENT_TYPE = "&clientType=";
     private final String CLIENT_TYPE_VALUE = "Android";
     private final String CLIENT_VERSION = "&clientVersion=";
-    private final String CLIENT_VERSION_VALUE = OmsConst.CLIENT_VERSION;
+    private final String CLIENT_VERSION_VALUE = Const.CLIENT_VERSION;
     private Socket socketIOClient;
     private List<SignalingChannelObserver> signalingChannelObservers;
     private ActionCallback<String> connectCallback;

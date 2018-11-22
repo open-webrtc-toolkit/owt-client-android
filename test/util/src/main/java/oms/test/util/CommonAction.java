@@ -12,17 +12,12 @@ import java.util.Map;
 
 import oms.base.LocalStream;
 import oms.base.MediaConstraints.AudioTrackConstraints;
-import oms.base.MediaConstraints.VideoTrackConstraints;
 import oms.base.VideoCapturer;
 
 public class CommonAction {
 
     public static VideoCapturer createDefaultCapturer() {
-        VideoTrackConstraints vmc = VideoTrackConstraints.create(true);
-        vmc.setResolution(1280, 720);
-        vmc.setFramerate(30);
-        vmc.setCameraFacing(VideoTrackConstraints.CameraFacing.FRONT);
-        return new VideoCapturerForTest(vmc);
+        return VideoCapturerForTest.create();
     }
 
     public static LocalStream createLocalStream(boolean enableAudio, VideoCapturer capturer) {
