@@ -2,13 +2,12 @@ package oms.test.conference.apitest;
 
 import android.app.Activity;
 import android.os.Bundle;
-
 import android.os.Process;
 import android.util.Log;
 
-import oms.base.ContextInitialization;
-
 import org.webrtc.EglBase;
+
+import oms.base.ContextInitialization;
 
 public class TestActivity extends Activity {
     private final static String TAG = "ics_conference_test";
@@ -24,7 +23,6 @@ public class TestActivity extends Activity {
     private void initConferenceClient() {
         EglBase rootEglBase = EglBase.create();
         ContextInitialization.create().setApplicationContext(this)
-                .setCodecHardwareAccelerationEnabled(true)
                 .setVideoHardwareAccelerationOptions(rootEglBase.getEglBaseContext(),
                         rootEglBase.getEglBaseContext())
                 .initialize();

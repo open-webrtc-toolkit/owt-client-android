@@ -4,26 +4,20 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
-import oms.base.OMSVideoCapturer;
-import oms.base.LocalStream;
-import oms.base.MediaConstraints.AudioTrackConstraints;
-import oms.base.MediaConstraints.VideoTrackConstraints;
-import oms.base.VideoCapturer;
-
 import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import oms.base.LocalStream;
+import oms.base.MediaConstraints.AudioTrackConstraints;
+import oms.base.VideoCapturer;
+
 public class CommonAction {
 
     public static VideoCapturer createDefaultCapturer() {
-        VideoTrackConstraints vmc = VideoTrackConstraints.create(true);
-        vmc.setResolution(1280, 720);
-        vmc.setFramerate(30);
-        vmc.setCameraFacing(VideoTrackConstraints.CameraFacing.FRONT);
-        return new OMSVideoCapturer(vmc);
+        return VideoCapturerForTest.create();
     }
 
     public static LocalStream createLocalStream(boolean enableAudio, VideoCapturer capturer) {

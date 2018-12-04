@@ -4,18 +4,18 @@
 package oms.base;
 
 /**
- * OMSError includes error code and error message.
+ * OmsError includes error code and error message.
  */
-public class OMSError {
+public class OmsError {
     public final int errorCode;
     public final String errorMessage;
 
-    public OMSError(String errorMessage) {
+    public OmsError(String errorMessage) {
         this.errorCode = 0;
         this.errorMessage = errorMessage;
     }
 
-    public OMSError(int errorCode, String errorMessage) {
+    public OmsError(int errorCode, String errorMessage) {
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }

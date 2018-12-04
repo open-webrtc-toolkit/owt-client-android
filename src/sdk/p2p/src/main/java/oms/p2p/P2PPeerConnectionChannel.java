@@ -5,9 +5,9 @@ package oms.p2p;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.OMSConst.LOG_TAG;
-import static oms.p2p.OMSP2PError.P2P_CLIENT_INVALID_STATE;
-import static oms.p2p.OMSP2PError.P2P_WEBRTC_SDP;
+import static oms.base.Const.LOG_TAG;
+import static oms.p2p.OmsP2PError.P2P_CLIENT_INVALID_STATE;
+import static oms.p2p.OmsP2PError.P2P_WEBRTC_SDP;
 
 import static org.webrtc.DataChannel.State.OPEN;
 import static org.webrtc.PeerConnection.IceConnectionState.COMPLETED;
@@ -18,7 +18,7 @@ import android.util.Log;
 
 import oms.base.ActionCallback;
 import oms.base.AudioEncodingParameters;
-import oms.base.OMSError;
+import oms.base.OmsError;
 import oms.base.LocalStream;
 import oms.base.PeerConnectionChannel;
 import oms.base.VideoEncodingParameters;
@@ -89,7 +89,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     void publish(LocalStream localStream, ActionCallback<Publication> callback) {
         if (!streamRemovable && everPublished) {
             if (callback != null) {
-                callback.onFailure(new OMSError(P2P_CLIENT_INVALID_STATE.value,
+                callback.onFailure(new OmsError(P2P_CLIENT_INVALID_STATE.value,
                         "Cannot publish multiple streams due to the ability of peer client."));
             }
             return;
@@ -99,7 +99,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         if (localStreams.containsKey(currentMediaStream.getId())) {
             if (callback != null) {
                 callback.onFailure(
-                        new OMSError(P2P_CLIENT_INVALID_STATE.value, "Duplicated stream."));
+                        new OmsError(P2P_CLIENT_INVALID_STATE.value, "Duplicated stream."));
             }
             return;
         }
@@ -165,7 +165,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         }
     }
 
-    void processError(OMSError error) {
+    void processError(OmsError error) {
         for (CallbackInfo callbackInfo : publishCallbacks.values()) {
             if (--callbackInfo.trackNum == 0 && callbackInfo.callback != null) {
                 callbackInfo.callback.onFailure(error);
@@ -373,7 +373,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         callbackExecutor.execute(() -> {
             for (CallbackInfo callbackInfo : publishCallbacks.values()) {
                 if (callbackInfo.callback != null) {
-                    callbackInfo.callback.onFailure(new OMSError(P2P_WEBRTC_SDP.value, error));
+                    callbackInfo.callback.onFailure(new OmsError(P2P_WEBRTC_SDP.value, error));
                 }
             }
             publishCallbacks.clear();
@@ -386,7 +386,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         callbackExecutor.execute(() -> {
             for (CallbackInfo callbackInfo : publishCallbacks.values()) {
                 if (callbackInfo.callback != null) {
-                    callbackInfo.callback.onFailure(new OMSError(P2P_WEBRTC_SDP.value, error));
+                    callbackInfo.callback.onFailure(new OmsError(P2P_WEBRTC_SDP.value, error));
                 }
             }
             publishCallbacks.clear();

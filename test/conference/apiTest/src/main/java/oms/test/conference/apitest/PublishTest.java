@@ -9,8 +9,6 @@ import static oms.base.MediaCodecs.AudioCodec.PCMU;
 import static oms.base.MediaCodecs.VideoCodec.H264;
 import static oms.base.MediaCodecs.VideoCodec.VP8;
 import static oms.base.MediaCodecs.VideoCodec.VP9;
-import static oms.base.MediaConstraints.VideoTrackConstraints;
-import static oms.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
 import static oms.test.conference.util.ConferenceAction.createClient;
 import static oms.test.conference.util.ConferenceAction.createPublishOptions;
 import static oms.test.conference.util.ConferenceAction.getRemoteForwardStream;
@@ -31,7 +29,11 @@ import static oms.test.util.Config.USER1_NAME;
 import static oms.test.util.Config.VIDEO_ONLY_VIEWER_ROLE;
 import static oms.test.util.Config.VIEWER_ROLE;
 
-import oms.base.OMSVideoCapturer;
+import org.webrtc.RTCStatsReport;
+
+import java.io.IOException;
+import java.util.HashMap;
+
 import oms.base.MediaCodecs.AudioCodec;
 import oms.base.MediaCodecs.VideoCodec;
 import oms.conference.Publication;
@@ -40,11 +42,7 @@ import oms.conference.RemoteStream;
 import oms.test.conference.util.ConferenceClientObserver;
 import oms.test.util.RawCapturerForTest;
 import oms.test.util.TestCallback;
-
-import org.webrtc.RTCStatsReport;
-
-import java.io.IOException;
-import java.util.HashMap;
+import oms.test.util.VideoCapturerForTest;
 
 public class PublishTest extends TestBase {
 
@@ -170,11 +168,7 @@ public class PublishTest extends TestBase {
         for (int i = 0; i < resolutions.length; i++) {
             int width = Integer.valueOf(resolutions[i].split("x")[0]);
             int height = Integer.valueOf(resolutions[i].split("x")[1]);
-            VideoTrackConstraints vmc = VideoTrackConstraints.create(true);
-            vmc.setResolution(width, height);
-            vmc.setFramerate(30);
-            vmc.setCameraFacing(FRONT);
-            capturer1 = new OMSVideoCapturer(vmc);
+            capturer1 = VideoCapturerForTest.create();
             localStream1 = createLocalStream(true, capturer1);
             PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
                     new VideoCodec[]{});

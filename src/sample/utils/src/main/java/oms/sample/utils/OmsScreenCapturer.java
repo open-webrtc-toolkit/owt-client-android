@@ -10,11 +10,11 @@ import oms.base.VideoCapturer;
 
 import org.webrtc.ScreenCapturerAndroid;
 
-public class OMSScreenCapturer extends ScreenCapturerAndroid implements VideoCapturer{
+public class OmsScreenCapturer extends ScreenCapturerAndroid implements VideoCapturer{
     private int width, height;
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public OMSScreenCapturer(Intent data, int width, int height) {
+    public OmsScreenCapturer(Intent data, int width, int height) {
         super(data, new MediaProjection.Callback() {
             @Override
             public void onStop() {

@@ -6,7 +6,7 @@ package oms.conference;
 import static oms.base.CheckCondition.RCHECK;
 
 import oms.base.ActionCallback;
-import oms.base.OMSError;
+import oms.base.OmsError;
 import oms.base.MediaConstraints.TrackKind;
 
 import org.json.JSONException;
@@ -43,11 +43,11 @@ public final class Subscription {
      * @param trackKind TrackKind of the media to be stopped.
      * @param callback ActionCallback.onSuccess will be invoked when succeeds to mute. Otherwise
      * when fails to do so, ActionCallback.onFailure will be invoked with the
-     * corresponding OMSError.
+     * corresponding OmsError.
      */
     public void mute(final TrackKind trackKind, final ActionCallback<Void> callback) {
         if (ended) {
-            client.triggerCallback(callback, new OMSError("Wrong state"));
+            client.triggerCallback(callback, new OmsError("Wrong state"));
             return;
         }
         Ack ack = args -> {
@@ -57,7 +57,7 @@ public final class Subscription {
                     callback.onSuccess(null);
                 }
             } else {
-                client.triggerCallback(callback, new OMSError(args[1].toString()));
+                client.triggerCallback(callback, new OmsError(args[1].toString()));
             }
         };
 
@@ -66,7 +66,7 @@ public final class Subscription {
                     generateMsg(trackKind, true),
                     ack);
         } catch (JSONException e) {
-            callback.onFailure(new OMSError(e.getMessage()));
+            callback.onFailure(new OmsError(e.getMessage()));
         }
     }
 
@@ -76,11 +76,11 @@ public final class Subscription {
      * @param trackKind TrackKind of the media to be started.
      * @param callback ActionCallback.onSuccess will be invoked when succeeds to unmute. Otherwise
      * when fails to do so, ActionCallback.onFailure will be invoked with the
-     * corresponding OMSError.
+     * corresponding OmsError.
      */
     public void unmute(final TrackKind trackKind, final ActionCallback<Void> callback) {
         if (ended) {
-            client.triggerCallback(callback, new OMSError(0, "Wrong state"));
+            client.triggerCallback(callback, new OmsError(0, "Wrong state"));
             return;
         }
         Ack ack = args -> {
@@ -90,7 +90,7 @@ public final class Subscription {
                     callback.onSuccess(null);
                 }
             } else {
-                client.triggerCallback(callback, new OMSError(args[1].toString()));
+                client.triggerCallback(callback, new OmsError(args[1].toString()));
             }
         };
 
@@ -99,7 +99,7 @@ public final class Subscription {
                     generateMsg(trackKind, false),
                     ack);
         } catch (JSONException e) {
-            callback.onFailure(new OMSError(e.getMessage()));
+            callback.onFailure(new OmsError(e.getMessage()));
         }
     }
 
@@ -118,12 +118,12 @@ public final class Subscription {
      * @param updateOptions UpdateOptions
      * @param callback ActionCallback.onSuccess will be invoked when succeeds to get the
      * update. Otherwise when fails to do so, ActionCallback
-     * .onFailure will be invoked with the corresponding OMSError.
+     * .onFailure will be invoked with the corresponding OmsError.
      */
     public void applyOptions(VideoUpdateOptions updateOptions,
             final ActionCallback<Void> callback) {
         if (ended) {
-            client.triggerCallback(callback, new OMSError(0, "Wrong state"));
+            client.triggerCallback(callback, new OmsError(0, "Wrong state"));
             return;
         }
         RCHECK(updateOptions);
@@ -133,7 +133,7 @@ public final class Subscription {
             msg.put("operation", "update");
             msg.put("data", updateOptions.generateOptionMsg());
         } catch (JSONException e) {
-            client.triggerCallback(callback, new OMSError(e.getMessage()));
+            client.triggerCallback(callback, new OmsError(e.getMessage()));
         }
 
         client.sendSignalingMessage("subscription-control", msg, args -> {
@@ -142,7 +142,7 @@ public final class Subscription {
                     callback.onSuccess(null);
                 }
             } else {
-                client.triggerCallback(callback, new OMSError(args[1].toString()));
+                client.triggerCallback(callback, new OmsError(args[1].toString()));
             }
         });
     }
@@ -152,11 +152,11 @@ public final class Subscription {
      *
      * @param callback ActionCallback.onSuccess will be invoked with RTCStatsReport when succeeds
      * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure
-     * will be invoked with the corresponding OMSError.
+     * will be invoked with the corresponding OmsError.
      */
     public void getStats(ActionCallback<RTCStatsReport> callback) {
         if (ended) {
-            client.triggerCallback(callback, new OMSError("Wrong state"));
+            client.triggerCallback(callback, new OmsError("Wrong state"));
             return;
         }
         client.getStats(id, callback);

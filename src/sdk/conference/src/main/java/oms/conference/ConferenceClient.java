@@ -5,12 +5,12 @@ package oms.conference;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.OMSConst.LOG_TAG;
+import static oms.base.Const.LOG_TAG;
 
 import android.util.Log;
 
 import oms.base.ActionCallback;
-import oms.base.OMSError;
+import oms.base.OmsError;
 import oms.base.LocalStream;
 import oms.base.MediaConstraints.TrackKind;
 import oms.base.PeerConnectionChannel;
@@ -147,11 +147,11 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param token token issued by conference server (nuve).
      * @param callback ActionCallback.onSuccess will be invoked with the ConferenceInfo when
      * succeeds to join the conference room. Otherwise when fails to do so, ActionCallback
-     * .onFailure will be invoked with the corresponding OMSError.
+     * .onFailure will be invoked with the corresponding OmsError.
      */
     public synchronized void join(String token, ActionCallback<ConferenceInfo> callback) {
         if (!checkRoomStatus(RoomStates.DISCONNECTED)) {
-            triggerCallback(callback, new OMSError("Wrong room status."));
+            triggerCallback(callback, new OmsError("Wrong room status."));
             return;
         }
         DCHECK(signalingChannel == null);
@@ -184,7 +184,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param localStream LocalStream to be published.
      * @param callback ActionCallback.onSuccess will be invoked with the Publication when
      * succeeds to publish the LocalStream. Otherwise when fails to do so, ActionCallback
-     * .onFailure will be invoked with the corresponding OMSError.
+     * .onFailure will be invoked with the corresponding OmsError.
      */
     public void publish(LocalStream localStream, ActionCallback<Publication> callback) {
         publish(localStream, null, callback);
@@ -197,13 +197,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param options PublishOptions for publishing this LocalStream.
      * @param callback ActionCallback.onSuccess will be invoked with the Publication when
      * succeeds to publish the LocalStream. Otherwise when fails to do so, ActionCallback
-     * .onFailure will be invoked with the corresponding OMSError.
+     * .onFailure will be invoked with the corresponding OmsError.
      */
     public synchronized void publish(final LocalStream localStream, final PublishOptions options,
             final ActionCallback<Publication> callback) {
         RCHECK(localStream);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
-            triggerCallback(callback, new OMSError("Wrong room status."));
+            triggerCallback(callback, new OmsError("Wrong room status."));
             return;
         }
         try {
@@ -259,7 +259,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                         DCHECK(e);
                     }
                 } else {
-                    triggerCallback(callback, new OMSError(extractMsg(1, args)));
+                    triggerCallback(callback, new OmsError(extractMsg(1, args)));
                 }
             });
 
@@ -303,7 +303,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param remoteStream RemoteStream to be subscribed.
      * @param callback ActionCallback.onSuccess will be invoked with the Subscription when
      * succeeds to subscribe the RemoteStream. Otherwise when fails to do so, ActionCallback
-     * .onFailure will be invoked with the corresponding OMSError.
+     * .onFailure will be invoked with the corresponding OmsError.
      */
     public void subscribe(RemoteStream remoteStream, ActionCallback<Subscription> callback) {
         subscribe(remoteStream, null, callback);
@@ -316,13 +316,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param options SubscribeOptions for subscribing the RemoteStream.
      * @param callback ActionCallback.onSuccess will be invoked with the Subscription when
      * succeeds to subscribe the RemoteStream. Otherwise when fails to do so, ActionCallback
-     * .onFailure will be invoked with the corresponding OMSError.
+     * .onFailure will be invoked with the corresponding OmsError.
      */
     public synchronized void subscribe(final RemoteStream remoteStream,
             final SubscribeOptions options, final ActionCallback<Subscription> callback) {
         RCHECK(remoteStream);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
-            triggerCallback(callback, new OMSError("Wrong room status."));
+            triggerCallback(callback, new OmsError("Wrong room status."));
             return;
         }
 
@@ -357,7 +357,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                     for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
                         if (pcChannel.stream.id().equals(remoteStream.id())) {
                             triggerCallback(callback,
-                                    new OMSError("Remote stream has been subscribed."));
+                                    new OmsError("Remote stream has been subscribed."));
                             return;
                         }
                     }
@@ -373,7 +373,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                         DCHECK(e);
                     }
                 } else {
-                    triggerCallback(callback, new OMSError(extractMsg(1, args)));
+                    triggerCallback(callback, new OmsError(extractMsg(1, args)));
                 }
             });
 
@@ -418,7 +418,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param message message to be sent.
      * @param callback ActionCallback.onSuccess will be invoked succeeds to send the message.
      * Otherwise when fails to do so, ActionCallback.onFailure will be invoked with the
-     * corresponding OMSError.
+     * corresponding OmsError.
      */
     public void send(String message, ActionCallback<Void> callback) {
         send(null, message, callback);
@@ -431,13 +431,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
      * @param message message to be sent.
      * @param callback ActionCallback.onSuccess will be invoked succeeds to send the message.
      * Otherwise when fails to do so, ActionCallback.onFailure will be invoked with the
-     * corresponding OMSError.
+     * corresponding OmsError.
      */
     public synchronized void send(String participantId, String message,
             final ActionCallback<Void> callback) {
         RCHECK(message);
         if (!checkRoomStatus(RoomStates.CONNECTED)) {
-            triggerCallback(callback, new OMSError(0, "Wrong status"));
+            triggerCallback(callback, new OmsError(0, "Wrong status"));
             return;
         }
 
@@ -454,7 +454,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                         }
                     });
                 } else {
-                    triggerCallback(callback, new OMSError(extractMsg(1, args)));
+                    triggerCallback(callback, new OmsError(extractMsg(1, args)));
                 }
             });
 
@@ -466,7 +466,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     // Not a public API.
     synchronized void getStats(String id, final ActionCallback<RTCStatsReport> callback) {
         if (!pcChannels.containsKey(id)) {
-            triggerCallback(callback, new OMSError(0, "Wrong state"));
+            triggerCallback(callback, new OmsError(0, "Wrong state"));
             return;
         }
         if (callback != null) {
@@ -516,7 +516,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         return pcChannel;
     }
 
-    <T> void triggerCallback(final ActionCallback<T> callback, final OMSError error) {
+    <T> void triggerCallback(final ActionCallback<T> callback, final OmsError error) {
         DCHECK(callbackExecutor);
         if (callback == null) {
             return;
@@ -566,11 +566,11 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         callbackExecutor.execute(() -> {
             if (pubCallbacks.containsKey(id)) {
                 ActionCallback<Publication> callback = pubCallbacks.get(id);
-                triggerCallback(callback, new OMSError(errorMsg));
+                triggerCallback(callback, new OmsError(errorMsg));
                 pubCallbacks.remove(id);
             } else {
                 ActionCallback<Subscription> callback = subCallbacks.get(id);
-                triggerCallback(callback, new OMSError(errorMsg));
+                triggerCallback(callback, new OmsError(errorMsg));
                 subCallbacks.remove(id);
             }
         });
@@ -594,7 +594,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                     }
                 }
             } catch (JSONException e) {
-                triggerCallback(joinCallback, new OMSError(e.getMessage()));
+                triggerCallback(joinCallback, new OmsError(e.getMessage()));
             }
             joinCallback = null;
         });
@@ -607,7 +607,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         changeRoomStatus(RoomStates.DISCONNECTED);
         signalingChannel = null;
 
-        triggerCallback(joinCallback, new OMSError(errorMsg));
+        triggerCallback(joinCallback, new OmsError(errorMsg));
         joinCallback = null;
     }
 
@@ -864,11 +864,11 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         }
         callbackExecutor.execute(() -> {
             if (pubCallbacks.containsKey(id)) {
-                triggerCallback(pubCallbacks.get(id), new OMSError(0, errorMsg));
+                triggerCallback(pubCallbacks.get(id), new OmsError(0, errorMsg));
                 pubCallbacks.remove(id);
             }
             if (subCallbacks.containsKey(id)) {
-                triggerCallback(subCallbacks.get(id), new OMSError(0, errorMsg));
+                triggerCallback(subCallbacks.get(id), new OmsError(0, errorMsg));
                 subCallbacks.remove(id);
             }
         });

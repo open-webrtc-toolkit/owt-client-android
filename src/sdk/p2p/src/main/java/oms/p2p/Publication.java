@@ -4,7 +4,7 @@
 package oms.p2p;
 
 import oms.base.ActionCallback;
-import oms.base.OMSError;
+import oms.base.OmsError;
 
 import org.webrtc.MediaStream;
 import org.webrtc.RTCStatsReport;
@@ -54,7 +54,7 @@ public final class Publication extends oms.base.Publication {
      *
      * @param callback ActionCallback.onSuccess will be invoked with RTCStatsReport when succeeds
      * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure
-     * will be invoked with the corresponding OMSError.
+     * will be invoked with the corresponding OmsError.
      */
     @Override
     public void getStats(final ActionCallback<RTCStatsReport> callback) {
@@ -62,7 +62,7 @@ public final class Publication extends oms.base.Publication {
             pcChannel.getConnectionStats(callback);
         } else {
             if (callback != null) {
-                callback.onFailure(new OMSError(OMSP2PError.P2P_CLIENT_INVALID_STATE.value, "Wrong state"));
+                callback.onFailure(new OmsError(OmsP2PError.P2P_CLIENT_INVALID_STATE.value, "Wrong state"));
             }
         }
     }

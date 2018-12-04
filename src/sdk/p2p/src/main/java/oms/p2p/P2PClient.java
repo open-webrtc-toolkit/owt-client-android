@@ -5,7 +5,7 @@ package oms.p2p;
 
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
-import static oms.base.OMSConst.LOG_TAG;
+import static oms.base.Const.LOG_TAG;
 import static oms.base.Stream.StreamSourceInfo;
 import static oms.base.Stream.StreamSourceInfo.AudioSourceInfo;
 import static oms.base.Stream.StreamSourceInfo.VideoSourceInfo;
@@ -28,8 +28,8 @@ import static org.webrtc.PeerConnection.SignalingState.HAVE_LOCAL_OFFER;
 import android.util.Log;
 
 import oms.base.ActionCallback;
-import oms.base.OMSConst;
-import oms.base.OMSError;
+import oms.base.Const;
+import oms.base.OmsError;
 import oms.base.LocalStream;
 import oms.base.PeerConnectionChannel;
 
@@ -184,14 +184,14 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * @param token token information for connecting to the signaling server.
      * @param callback ActionCallback.onSuccess will be invoked with the id when succeeds to connect
      * the signaling server. Otherwise when fails to do so, ActionCallback.onFailure will be
-     * invoked with the corresponding OMSError.
+     * invoked with the corresponding OmsError.
      */
     public synchronized void connect(final String token, final ActionCallback<String> callback) {
         // Format and content of |token| can be customized, so we do not assume any expectations.
         DCHECK(signalingChannel);
         DCHECK(signalingExecutor);
         if (!checkConnectionStatus(DISCONNECTED)) {
-            triggerCallback(callback, new OMSError(OMSP2PError.P2P_CLIENT_INVALID_STATE.value,
+            triggerCallback(callback, new OmsError(OmsP2PError.P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
             return;
         }
@@ -211,7 +211,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                     }
 
                     @Override
-                    public void onFailure(OMSError error) {
+                    public void onFailure(OmsError error) {
                         changeConnectionStatus(DISCONNECTED);
                         triggerCallback(callback, error);
                     }
@@ -237,13 +237,13 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * @param localStream LocalStream to be published.
      * @param callback ActionCallback.onSuccess will be invoked with the Publication when
      * succeeds to publish the LocalStream. Otherwise when fails to do so, ActionCallback
-     * .onFailure will be invoked with the corresponding OMSError.
+     * .onFailure will be invoked with the corresponding OmsError.
      */
     public synchronized void publish(final String peerId, final LocalStream localStream,
             final ActionCallback<Publication> callback) {
         RCHECK(localStream);
         if (!checkConnectionStatus(CONNECTED)) {
-            triggerCallback(callback, new OMSError(OMSP2PError.P2P_CLIENT_INVALID_STATE.value,
+            triggerCallback(callback, new OmsError(OmsP2PError.P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
             return;
         }
@@ -262,7 +262,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
             }
 
             @Override
-            public void onFailure(OMSError error) {
+            public void onFailure(OmsError error) {
                 triggerCallback(callback, error);
             }
         });
@@ -296,13 +296,13 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * @param peerId id of remote P2PClient.
      * @param callback ActionCallback.onSuccess will be invoked with RTCStatsReport when succeeds
      * to get the stats. Otherwise when fails to do so, ActionCallback.onFailure will be invoked
-     * with the corresponding OMSError.
+     * with the corresponding OmsError.
      */
     public synchronized void getStats(String peerId,
             final ActionCallback<RTCStatsReport> callback) {
         RCHECK(peerId);
         if (!containsPCChannel(peerId)) {
-            triggerCallback(callback, new OMSError(OMSP2PError.P2P_CLIENT_INVALID_STATE.value,
+            triggerCallback(callback, new OmsError(OmsP2PError.P2P_CLIENT_INVALID_STATE.value,
                     "No peerconnection established yet."));
             return;
         }
@@ -319,11 +319,11 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      * @param message message to be sent.
      * @param callback ActionCallback.onSuccess will be invoked succeeds to send the message.
      * Otherwise when fails to do so, ActionCallback.onFailure will be invoked with the
-     * corresponding OMSError.
+     * corresponding OmsError.
      */
     public synchronized void send(String peerId, String message, ActionCallback<Void> callback) {
         if (!checkConnectionStatus(CONNECTED)) {
-            triggerCallback(callback, new OMSError(OMSP2PError.P2P_CLIENT_INVALID_STATE.value,
+            triggerCallback(callback, new OmsError(OmsP2PError.P2P_CLIENT_INVALID_STATE.value,
                     "Wrong server connection status."));
             return;
         }
@@ -333,7 +333,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         RCHECK(message);
         if (message.length() > 0xFFFF) {
             triggerCallback(callback,
-                    new OMSError(OMSP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Message too long."));
+                    new OmsError(OmsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Message too long."));
             return;
         }
         if (!containsPCChannel(peerId)) {
@@ -355,7 +355,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         JSONObject errorMsg = new JSONObject();
         try {
             errorMsg.put("message", "Denied");
-            errorMsg.put("code", OMSP2PError.P2P_CLIENT_DENIED.value);
+            errorMsg.put("code", OmsP2PError.P2P_CLIENT_DENIED.value);
         } catch (JSONException e) {
             DCHECK(e);
         }
@@ -392,7 +392,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         callbackExecutor.execute(() -> callback.onSuccess(result));
     }
 
-    private <T> void triggerCallback(final ActionCallback<T> callback, final OMSError e) {
+    private <T> void triggerCallback(final ActionCallback<T> callback, final OmsError e) {
         DCHECK(callbackExecutor);
         if (callback == null) {
             return;
@@ -427,7 +427,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     private <T> boolean checkPermission(String peerId, ActionCallback<T> callback) {
         if (!allowedRemotePeers.contains(peerId) || peerId.equals(id)) {
             triggerCallback(callback,
-                    new OMSError(OMSP2PError.P2P_CLIENT_NOT_ALLOWED.value, "Not allowed."));
+                    new OmsError(OmsP2PError.P2P_CLIENT_NOT_ALLOWED.value, "Not allowed."));
             return false;
         }
         return true;
@@ -435,7 +435,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
     private void sendUserInfo(String peerId) {
         try {
-            sendSignalingMessage(peerId, CHAT_UA, new JSONObject(OMSConst.userAgent), null);
+            sendSignalingMessage(peerId, CHAT_UA, new JSONObject(Const.userAgent), null);
         } catch (JSONException e) {
             DCHECK(e);
         }
@@ -506,14 +506,14 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             }
 
                             @Override
-                            public void onFailure(OMSError error) {
+                            public void onFailure(OmsError error) {
                                 if (callback != null) {
                                     callback.onFailure(error);
                                 }
                             }
                         });
             } catch (JSONException e) {
-                triggerCallback(callback, new OMSError(OMSP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value,
+                triggerCallback(callback, new OmsError(OmsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value,
                         e.getMessage()));
             }
 
@@ -603,7 +603,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                 }
 
                 @Override
-                public void onFailure(OMSError error) {
+                public void onFailure(OmsError error) {
                     synchronized (pcChannelsLock) {
                         //failed to send sdp, trigger callbacks.
                         getPeerConnection(peerId).processError(error);
@@ -629,7 +629,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         JSONObject errorMsg = new JSONObject();
         try {
             errorMsg.put("code",
-                    recoverable ? OMSP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value : OMSP2PError.P2P_WEBRTC_SDP.value);
+                    recoverable ? OmsP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value : OmsP2PError.P2P_WEBRTC_SDP.value);
             errorMsg.put("message", error);
         } catch (JSONException e) {
             DCHECK(e);
@@ -775,7 +775,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             }
                         }
                         pcChannels.remove(peerId);
-                        if (code == OMSP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value) {
+                        if (code == OmsP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value) {
                             // re-create peerconnection and re-publish.
                             LocalStream localStream = null;
                             ActionCallback<Publication> callback = null;
@@ -794,7 +794,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             newChannel.publish(localStream, callback);
                         } else {
                             // trigger callbacks.
-                            oldChannel.processError(new OMSError(code, error));
+                            oldChannel.processError(new OmsError(code, error));
                         }
                         oldChannel.dispose();
                     }

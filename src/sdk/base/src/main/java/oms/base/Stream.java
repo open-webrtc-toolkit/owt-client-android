@@ -3,19 +3,15 @@
  */
 package oms.base;
 
-import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
 
 import org.webrtc.MediaStream;
-import org.webrtc.VideoRenderer;
+import org.webrtc.VideoSink;
 
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Stream {
 
-    private final ConcurrentHashMap<VideoRenderer.Callbacks, VideoRenderer> renderers
-            = new ConcurrentHashMap<>();
     ///@cond
     protected MediaStream mediaStream;
     ///@endcond
@@ -113,48 +109,31 @@ public abstract class Stream {
     }
 
     /**
-     * Attach the video track of the media stream to renderer in order to display the video content.
+     * Attach the video track of the media stream to videosink in order to display the video content.
      *
-     * @param renderer VideoRenderer.Callbacks
+     * @param videoSink VideoSink
      */
-    public void attach(VideoRenderer.Callbacks renderer) {
+    public void attach(VideoSink videoSink) {
         if (mediaStream == null) {
             return;
         }
-        RCHECK(renderer);
+        RCHECK(videoSink);
         CheckCondition.RCHECK(!mediaStream.videoTracks.isEmpty());
-        VideoRenderer videoRenderer = new VideoRenderer(renderer);
-        renderers.put(renderer, videoRenderer);
-        mediaStream.videoTracks.get(0).addRenderer(videoRenderer);
+        mediaStream.videoTracks.get(0).addSink(videoSink);
     }
 
     /**
-     * Detach the video track of the media stream from a renderer.
+     * Detach the video track of the media stream from a videosink.
      *
-     * @param renderer VideoRenderer.Callbacks
+     * @param videoSink VideoSink
      */
-    public void detach(VideoRenderer.Callbacks renderer) {
+    public void detach(VideoSink videoSink) {
         if (mediaStream == null) {
             return;
         }
-        RCHECK(renderer);
+        RCHECK(videoSink);
         CheckCondition.RCHECK(!mediaStream.videoTracks.isEmpty());
-        mediaStream.videoTracks.get(0).removeRenderer(renderers.get(renderer));
-        renderers.remove(renderer);
-    }
-
-    /**
-     * Detach the video track of the media stream from all renderers attached.
-     */
-    public void detach() {
-        if (mediaStream == null) {
-            return;
-        }
-        CheckCondition.RCHECK(!mediaStream.videoTracks.isEmpty());
-        for (VideoRenderer renderer : renderers.values()) {
-            mediaStream.videoTracks.get(0).removeRenderer(renderer);
-        }
-        renderers.clear();
+        mediaStream.videoTracks.get(0).removeSink(videoSink);
     }
 
     ///@cond

@@ -31,8 +31,6 @@ import static oms.base.MediaCodecs.AudioCodec.OPUS;
 import static oms.base.MediaCodecs.AudioCodec.PCMU;
 import static oms.base.MediaCodecs.VideoCodec.H264;
 import static oms.base.MediaCodecs.VideoCodec.VP8;
-import static oms.base.MediaConstraints.VideoTrackConstraints.CameraFacing.BACK;
-import static oms.base.MediaConstraints.VideoTrackConstraints.CameraFacing.FRONT;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -55,14 +53,24 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.webrtc.EglBase;
+import org.webrtc.RTCStatsReport;
+import org.webrtc.SurfaceViewRenderer;
+
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import oms.base.ActionCallback;
 import oms.base.AudioCodecParameters;
 import oms.base.ContextInitialization;
-import oms.base.OMSError;
-import oms.base.OMSVideoCapturer;
 import oms.base.LocalStream;
 import oms.base.MediaConstraints;
-import oms.base.MediaConstraints.VideoTrackConstraints;
+import oms.base.OmsError;
 import oms.base.VideoCodecParameters;
 import oms.base.VideoEncodingParameters;
 import oms.conference.ConferenceClient;
@@ -77,20 +85,8 @@ import oms.conference.SubscribeOptions;
 import oms.conference.SubscribeOptions.AudioSubscriptionConstraints;
 import oms.conference.SubscribeOptions.VideoSubscriptionConstraints;
 import oms.conference.Subscription;
-
-import oms.sample.utils.OMSScreenCapturer;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.webrtc.EglBase;
-import org.webrtc.RTCStatsReport;
-import org.webrtc.SurfaceViewRenderer;
-
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import oms.sample.utils.OmsScreenCapturer;
+import oms.sample.utils.OmsVideoCapturer;
 
 public class MainActivity extends AppCompatActivity
         implements VideoFragment.VideoFragmentListener,
@@ -118,9 +114,9 @@ public class MainActivity extends AppCompatActivity
     private Subscription subscription;
     private LocalStream localStream;
     private RemoteStream stream2Sub;
-    private OMSVideoCapturer capturer;
+    private OmsVideoCapturer capturer;
     private LocalStream screenStream;
-    private OMSScreenCapturer screenCapturer;
+    private OmsScreenCapturer screenCapturer;
     private Publication screenPublication;
     private SurfaceViewRenderer localRenderer, remoteRenderer;
 
@@ -195,14 +191,8 @@ public class MainActivity extends AppCompatActivity
             rightBtn.setEnabled(false);
             rightBtn.setTextColor(Color.DKGRAY);
             executor.execute(() -> {
-                boolean front = settingsFragment == null || settingsFragment.cameraFront;
-                VideoTrackConstraints.CameraFacing cameraFacing = front ? FRONT : BACK;
                 boolean vga = settingsFragment == null || settingsFragment.resolutionVGA;
-                VideoTrackConstraints vmc =
-                        VideoTrackConstraints.create(true)
-                                .setCameraFacing(cameraFacing)
-                                .setResolution(vga ? 640 : 1280, vga ? 480 : 720);
-                capturer = new OMSVideoCapturer(vmc);
+                capturer = OmsVideoCapturer.create(vga ? 640 : 1280, vga ? 480 : 720, 30, true);
                 localStream = new LocalStream(capturer,
                         new MediaConstraints.AudioTrackConstraints());
                 localStream.attach(localRenderer);
@@ -248,7 +238,7 @@ public class MainActivity extends AppCompatActivity
                     }
 
                     @Override
-                    public void onFailure(final OMSError error) {
+                    public void onFailure(final OmsError error) {
                         runOnUiThread(() -> {
                             rightBtn.setEnabled(true);
                             rightBtn.setTextColor(Color.WHITE);
@@ -298,7 +288,7 @@ public class MainActivity extends AppCompatActivity
                     }
 
                     @Override
-                    public void onFailure(OMSError e) {
+                    public void onFailure(OmsError e) {
                         runOnUiThread(() -> {
                             leftBtn.setEnabled(true);
                             leftBtn.setTextColor(Color.WHITE);
@@ -392,7 +382,6 @@ public class MainActivity extends AppCompatActivity
         if (!contextHasInitialized) {
             ContextInitialization.create()
                     .setApplicationContext(this)
-                    .setCodecHardwareAccelerationEnabled(true)
                     .setVideoHardwareAccelerationOptions(
                             rootEglBase.getEglBaseContext(),
                             rootEglBase.getEglBaseContext())
@@ -508,7 +497,7 @@ public class MainActivity extends AppCompatActivity
                         }
 
                         @Override
-                        public void onFailure(OMSError error) {
+                        public void onFailure(OmsError error) {
                             Log.e(TAG, "Failed to subscribe "
                                     + error.errorMessage);
                         }
@@ -519,33 +508,34 @@ public class MainActivity extends AppCompatActivity
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        screenCapturer = new OMSScreenCapturer(data, 1280, 720);
+        screenCapturer = new OmsScreenCapturer(data, 1280, 720);
         screenStream = new LocalStream(screenCapturer);
-        executor.execute(() -> conferenceClient.publish(screenStream, new ActionCallback<Publication>() {
-            @Override
-            public void onSuccess(Publication result) {
-                runOnUiThread(() -> {
-                    middleBtn.setEnabled(true);
-                    middleBtn.setTextColor(Color.WHITE);
-                    middleBtn.setText(R.string.stop_screen);
-                });
-                screenPublication = result;
-            }
+        executor.execute(
+                () -> conferenceClient.publish(screenStream, new ActionCallback<Publication>() {
+                    @Override
+                    public void onSuccess(Publication result) {
+                        runOnUiThread(() -> {
+                            middleBtn.setEnabled(true);
+                            middleBtn.setTextColor(Color.WHITE);
+                            middleBtn.setText(R.string.stop_screen);
+                        });
+                        screenPublication = result;
+                    }
 
-            @Override
-            public void onFailure(OMSError error) {
-                runOnUiThread(() -> {
-                    middleBtn.setEnabled(true);
-                    middleBtn.setTextColor(Color.WHITE);
-                    middleBtn.setText(R.string.share_screen);
-                });
-                screenCapturer.stopCapture();
-                screenCapturer.dispose();
-                screenCapturer = null;
-                screenStream.dispose();
-                screenStream = null;
-            }
-        }));
+                    @Override
+                    public void onFailure(OmsError error) {
+                        runOnUiThread(() -> {
+                            middleBtn.setEnabled(true);
+                            middleBtn.setTextColor(Color.WHITE);
+                            middleBtn.setText(R.string.share_screen);
+                        });
+                        screenCapturer.stopCapture();
+                        screenCapturer.dispose();
+                        screenCapturer = null;
+                        screenStream.dispose();
+                        screenStream = null;
+                    }
+                }));
     }
 
     private void getStats() {
@@ -557,7 +547,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 @Override
-                public void onFailure(OMSError error) {
+                public void onFailure(OmsError error) {
 
                 }
             });
@@ -570,7 +560,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 @Override
-                public void onFailure(OMSError error) {
+                public void onFailure(OmsError error) {
 
                 }
             });

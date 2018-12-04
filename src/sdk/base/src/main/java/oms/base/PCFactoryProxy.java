@@ -3,10 +3,14 @@
  */
 package oms.base;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
+import static oms.base.ContextInitialization.context;
+import static oms.base.ContextInitialization.localContext;
+import static oms.base.ContextInitialization.remoteContext;
 
-import org.webrtc.EglBase;
+import android.annotation.SuppressLint;
+
+import org.webrtc.DefaultVideoDecoderFactory;
+import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
@@ -18,13 +22,9 @@ final class PCFactoryProxy {
     // Enable H.264 high profile by default.
     static String fieldTrials = "/WebRTC-H264HighProfile/Enabled/";
 
-    @SuppressLint("StaticFieldLeak")
-    static Context context;
-    static boolean hwAcc = true;
     static VideoEncoderFactory encoderFactory = null;
     static VideoDecoderFactory decoderFactory = null;
     static AudioDeviceModule adm = null;
-    static EglBase.Context localCtx = null, remoteCtx = null;
     @SuppressLint("StaticFieldLeak")
     private static PeerConnectionFactory peerConnectionFactory;
 
@@ -32,7 +32,6 @@ final class PCFactoryProxy {
         if (peerConnectionFactory == null) {
             PeerConnectionFactory.InitializationOptions initializationOptions =
                     PeerConnectionFactory.InitializationOptions.builder(context)
-                            .setEnableVideoHwAcceleration(hwAcc)
                             .setFieldTrials(fieldTrials)
                             .createInitializationOptions();
             PeerConnectionFactory.initialize(initializationOptions);
@@ -40,18 +39,16 @@ final class PCFactoryProxy {
             options.networkIgnoreMask = networkIgnoreMask;
             peerConnectionFactory = PeerConnectionFactory.builder()
                     .setOptions(options)
-                    // TODO: currently using legacy adm
                     .setAudioDeviceModule(adm == null ? new LegacyAudioDeviceModule() : adm)
-                    // TODO: currently using legacy factory by default
-                    .setVideoEncoderFactory(encoderFactory)
-                    .setVideoDecoderFactory(decoderFactory)
+                    .setVideoEncoderFactory(
+                            encoderFactory == null
+                                    ? new DefaultVideoEncoderFactory(localContext, true, true)
+                                    : encoderFactory)
+                    .setVideoDecoderFactory(
+                            decoderFactory == null
+                                    ? new DefaultVideoDecoderFactory(remoteContext)
+                                    : decoderFactory)
                     .createPeerConnectionFactory();
-            if (localCtx != null || remoteCtx != null) {
-                peerConnectionFactory.setVideoHwAccelerationOptions(localCtx, remoteCtx);
-            }
-
-            //dereference context or better design?
-            context = null;
         }
         return peerConnectionFactory;
     }

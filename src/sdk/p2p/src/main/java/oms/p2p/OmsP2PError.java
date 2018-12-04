@@ -3,7 +3,7 @@
  */
 package oms.p2p;
 
-public enum OMSP2PError {
+public enum OmsP2PError {
 
     P2P_CONN_SERVER_UNKNOWN(2100),
     P2P_CONN_SERVER_UNAVAILABLE(2101),
@@ -25,11 +25,11 @@ public enum OMSP2PError {
 
     public final int value;
 
-    OMSP2PError(final int value) {
+    OmsP2PError(final int value) {
         this.value = value;
     }
 
-    public static OMSP2PError get(int value) {
+    public static OmsP2PError get(int value) {
         switch (value) {
             case 2100:
                 return P2P_CONN_SERVER_UNKNOWN;
