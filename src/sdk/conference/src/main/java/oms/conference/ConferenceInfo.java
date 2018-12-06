@@ -15,15 +15,15 @@ import java.util.List;
  * Information of the conference.
  */
 public final class ConferenceInfo {
-    //package access here, as the getter methods return an immutable list.
+    // package access here, as the getter methods return an immutable list.
     final List<Participant> participants;
     final List<RemoteStream> remoteStreams;
     private String id;
     private Participant self;
 
     ConferenceInfo(JSONObject conferenceInfo) throws JSONException {
-        participants = Collections.synchronizedList(new ArrayList<Participant>());
-        remoteStreams = Collections.synchronizedList(new ArrayList<RemoteStream>());
+        participants = Collections.synchronizedList(new ArrayList<>());
+        remoteStreams = Collections.synchronizedList(new ArrayList<>());
         updateInfo(conferenceInfo);
     }
 
@@ -32,7 +32,7 @@ public final class ConferenceInfo {
         JSONObject room = conferenceInfo.getJSONObject("room");
         id = room.getString("id");
 
-        //dealing with participants
+        // dealing with participants
         JSONArray participantsInfo = room.getJSONArray("participants");
         for (int i = 0; i < participantsInfo.length(); i++) {
             JSONObject participantInfo = participantsInfo.getJSONObject(i);
@@ -44,7 +44,7 @@ public final class ConferenceInfo {
             }
         }
 
-        //dealing with remote streams
+        // dealing with remote streams
         JSONArray streamsInfo = room.getJSONArray("streams");
         for (int i = 0; i < streamsInfo.length(); i++) {
             JSONObject streamInfo = streamsInfo.getJSONObject(i);

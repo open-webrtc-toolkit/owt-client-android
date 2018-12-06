@@ -9,12 +9,6 @@ import static oms.base.Const.LOG_TAG;
 
 import android.util.Log;
 
-import oms.base.ActionCallback;
-import oms.base.OmsError;
-import oms.base.LocalStream;
-import oms.base.MediaConstraints.TrackKind;
-import oms.base.PeerConnectionChannel;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,6 +25,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import io.socket.client.Ack;
+import oms.base.ActionCallback;
+import oms.base.LocalStream;
+import oms.base.MediaConstraints.TrackKind;
+import oms.base.OmsError;
+import oms.base.PeerConnectionChannel;
 
 /**
  * ConferenceClient handles PeerConnection interactions between client and server.
@@ -483,8 +482,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         subCallbacks.clear();
         pubCallbacks.clear();
         signalingChannel = null;
-        conferenceInfo = null;
         joinCallback = null;
+        synchronized (infoLock) {
+            conferenceInfo = null;
+        }
     }
 
     private boolean checkRoomStatus(RoomStates roomStates) {
@@ -681,11 +682,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             synchronized (infoLock) {
-                for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                    if (remoteStream.id().equals(streamId)) {
-                        remoteStream.onEnded();
-                        conferenceInfo.remoteStreams.remove(remoteStream);
-                        break;
+                if (conferenceInfo != null) {
+                    for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                        if (remoteStream.id().equals(streamId)) {
+                            remoteStream.onEnded();
+                            conferenceInfo.remoteStreams.remove(remoteStream);
+                            break;
+                        }
                     }
                 }
             }
@@ -761,7 +764,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                     observer.onParticipantJoined(participant);
                 }
                 synchronized (infoLock) {
-                    conferenceInfo.participants.add(participant);
+                    if (conferenceInfo != null) {
+                        conferenceInfo.participants.add(participant);
+                    }
                 }
             } catch (JSONException e) {
                 DCHECK(false);
@@ -774,11 +779,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
             synchronized (infoLock) {
-                for (Participant participant : conferenceInfo.participants) {
-                    if (participant.id.equals(participantId)) {
-                        participant.onLeft();
-                        conferenceInfo.participants.remove(participant);
-                        break;
+                if (conferenceInfo != null) {
+                    for (Participant participant : conferenceInfo.participants) {
+                        if (participant.id.equals(participantId)) {
+                            participant.onLeft();
+                            conferenceInfo.participants.remove(participant);
+                            break;
+                        }
                     }
                 }
             }
