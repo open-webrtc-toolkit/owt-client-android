@@ -7,3 +7,6 @@
 **/build
 /captures
 /dist
+/gradle
+gradlew
+gradlew.bat

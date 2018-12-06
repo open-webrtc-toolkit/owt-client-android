@@ -21,6 +21,10 @@
 
     Getting information on how to build libwebrtc library, please refer to [oms-nativesdk](https://github.com/intel-webrtc/oms-nativesdk).
 
+* Download Gradle
+    Before building the project, gradle is needed. In order to download gradle and configure gradle wrapper if you'd like to,
+    please refer to [gradle](https://gradle.org/install/)
+
 ## Build Project
 
 * To build the entire project including sdk and samples
