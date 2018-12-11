@@ -11,7 +11,7 @@ TEST_PATH = os.path.join(HOME_PATH, 'test')
 BASE_TEST_PATH = os.path.join(TEST_PATH, 'base')
 CONF_TEST_PATH = os.path.join(TEST_PATH, 'conference/apiTest')
 P2P_TEST_PATH = os.path.join(TEST_PATH, 'p2p/apiTest')
-DEPS_PATH = os.path.join(HOME_PATH, 'dependencies')
+DEPS_PATH = os.path.join(HOME_PATH, 'dependencies/libwebrtc')
 
 CONF_TARGET_PACKAGE = 'oms.test.conference.apitest'
 P2P_TARGET_PACKAGE = 'oms.test.p2p.apitest'
@@ -116,8 +116,11 @@ def recover_config():
                 os.path.join(HOME_PATH, 'settings.gradle'))
 
 
-def build_libs():
+def build_libs(dependencies_dir):
     print '> building sdk libraries...'
+    if os.path.exists(DEPS_PATH):
+        shutil.rmtree(DEPS_PATH)
+    shutil.copytree(dependencies_dir, DEPS_PATH)
     cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip-zip']
     if subprocess.call(cmd):
         sys.exit(1)
@@ -149,12 +152,6 @@ def validate_caselist(case_list):
     return True
 
 
-def recover_deps():
-    shutil.rmtree(os.path.join(DEPS_PATH, 'libwebrtc'))
-    cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc.bk'), os.path.join(DEPS_PATH, 'libwebrtc')]
-    subprocess.call(cmd)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run android instrumentation tests.')
     parser.add_argument('--build-deps', dest='build', action='store_true', default=False,
@@ -168,6 +165,8 @@ if __name__ == '__main__':
                              'please indicate the device using this parameter.')
     parser.add_argument('--log-dir', dest='log_dir', default=TEST_PATH,
                         help='Location of the directory where logs for this test will output to.')
+    parser.add_argument('--dependencies-dir', dest='dependencies_dir', required=True,
+                        help='Location of the dependency libraries.')
 
     args = parser.parse_args()
 
@@ -176,7 +175,7 @@ if __name__ == '__main__':
 
     # generate sdk libraries.
     if args.build:
-        build_libs()
+        build_libs(args.dependencies_dir)
         copy_libs()
 
     # change settings.gradle to include test modules.
@@ -186,9 +185,6 @@ if __name__ == '__main__':
 
     # recover the settings.gradle
     recover_config()
-
-    # TODO: remove this
-    recover_deps()
 
     # collect test results
     sys.exit(not result)
