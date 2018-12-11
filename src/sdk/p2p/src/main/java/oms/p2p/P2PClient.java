@@ -690,7 +690,9 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
             sendSignalingMessage(peerId, CHAT_DATA_ACK, msgId, null);
         } catch (JSONException e) {
-            DCHECK(e);
+            // TODO: Webrtc sometimes trigger this event with weird messages,
+            // need to investigate this issue. Temporarily comment out this DCHECK.
+            //DCHECK(e);
         }
     }
 
