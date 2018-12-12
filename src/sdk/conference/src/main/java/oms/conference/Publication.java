@@ -27,8 +27,8 @@ public final class Publication extends oms.base.Publication {
     private final ConferenceClient client;
     private List<PublicationObserver> observers;
 
-    Publication(String id, MediaStream mediaStream, ConferenceClient client) {
-        super(id, mediaStream);
+    Publication(String id, ConferenceClient client) {
+        super(id);
         this.client = client;
     }
 

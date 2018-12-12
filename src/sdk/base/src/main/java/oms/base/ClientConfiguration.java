@@ -4,7 +4,8 @@
 package oms.base;
 
 import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
-
+import static org.webrtc.PeerConnection.SdpSemantics.UNIFIED_PLAN;
+import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnection.RTCConfiguration;
 
 import java.util.LinkedList;
@@ -20,6 +21,7 @@ public abstract class ClientConfiguration {
             rtcConf.enableDtlsSrtp = true;
             rtcConf.continualGatheringPolicy = GATHER_CONTINUALLY;
         }
+        rtcConf.sdpSemantics = UNIFIED_PLAN;
         this.rtcConfiguration = rtcConf;
     }
 }

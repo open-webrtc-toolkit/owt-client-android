@@ -9,12 +9,17 @@ import org.webrtc.RTCStatsReport;
 public abstract class Publication {
     ///@cond
     protected final String id;
-    protected final MediaStream mediaStream;
+    protected final String mediaStreamId;
     protected boolean ended = false;
 
-    protected Publication(String id, MediaStream mediaStream) {
+    protected Publication(String id) {
         this.id = id;
-        this.mediaStream = mediaStream;
+        this.mediaStreamId = "";
+    }
+
+    protected Publication(String id, String mediaStreamId) {
+        this.id = id;
+        this.mediaStreamId = mediaStreamId;
     }
     ///@endcond
 

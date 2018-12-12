@@ -15,7 +15,7 @@ public abstract class Stream {
     ///@cond
     protected MediaStream mediaStream;
     ///@endcond
-    StreamSourceInfo streamSourceInfo;
+    protected StreamSourceInfo streamSourceInfo = new StreamSourceInfo();
     private HashMap<String, String> attributes;
 
     abstract public String id();
@@ -44,7 +44,6 @@ public abstract class Stream {
      * @return StreamSourceInfo
      */
     public StreamSourceInfo getStreamSourceInfo() {
-        CheckCondition.DCHECK(streamSourceInfo);
         return streamSourceInfo;
     }
 
@@ -109,7 +108,8 @@ public abstract class Stream {
     }
 
     /**
-     * Attach the video track of the media stream to videosink in order to display the video content.
+     * Attach the video track of the media stream to videosink in order to display the video
+     * content.
      *
      * @param videoSink VideoSink
      */
@@ -158,11 +158,16 @@ public abstract class Stream {
         /**
          * Video source info of the Stream.
          */
-        public final VideoSourceInfo videoSourceInfo;
+        public VideoSourceInfo videoSourceInfo;
         /**
          * Audio source info of the Stream.
          */
-        public final AudioSourceInfo audioSourceInfo;
+        public AudioSourceInfo audioSourceInfo;
+
+        public StreamSourceInfo() {
+            this.videoSourceInfo = null;
+            this.audioSourceInfo = null;
+        }
 
         public StreamSourceInfo(VideoSourceInfo videoSourceInfo, AudioSourceInfo audioSourceInfo) {
             this.videoSourceInfo = videoSourceInfo;

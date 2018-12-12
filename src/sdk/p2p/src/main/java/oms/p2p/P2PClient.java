@@ -3,10 +3,13 @@
  */
 package oms.p2p;
 
+import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_ONCE;
+import static org.webrtc.PeerConnection.SignalingState.HAVE_LOCAL_OFFER;
+
 import static oms.base.CheckCondition.DCHECK;
 import static oms.base.CheckCondition.RCHECK;
 import static oms.base.Const.LOG_TAG;
-import static oms.base.Stream.StreamSourceInfo;
 import static oms.base.Stream.StreamSourceInfo.AudioSourceInfo;
 import static oms.base.Stream.StreamSourceInfo.VideoSourceInfo;
 import static oms.p2p.P2PClient.ServerConnectionStatus.CONNECTED;
@@ -21,33 +24,32 @@ import static oms.p2p.P2PClient.SignalingMessageType.STREAM_INFO;
 import static oms.p2p.P2PClient.SignalingMessageType.TRACK_ADD_ACK;
 import static oms.p2p.P2PClient.SignalingMessageType.TRACK_INFO;
 
-import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
-import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_ONCE;
-import static org.webrtc.PeerConnection.SignalingState.HAVE_LOCAL_OFFER;
-
 import android.util.Log;
-
-import oms.base.ActionCallback;
-import oms.base.Const;
-import oms.base.OmsError;
-import oms.base.LocalStream;
-import oms.base.PeerConnectionChannel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import oms.p2p.SignalingChannelInterface.SignalingChannelObserver;
 import org.webrtc.IceCandidate;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.SessionDescription;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import oms.base.ActionCallback;
+import oms.base.Const;
+import oms.base.LocalStream;
+import oms.base.OmsError;
+import oms.base.PeerConnectionChannel;
+import oms.base.Stream;
+import oms.p2p.SignalingChannelInterface.SignalingChannelObserver;
 
 /**
  * P2PClient handles PeerConnection interactions between clients.
@@ -86,7 +88,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     // key: peer id.
     private final ConcurrentHashMap<String, P2PPeerConnectionChannel> pcChannels;
     private final Object pcChannelsLock = new Object();
-    private final ConcurrentHashMap<String, String> streamInfos;
     private String id;
     private SignalingChannelInterface signalingChannel;
     private ServerConnectionStatus serverConnectionStatus;
@@ -95,6 +96,8 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     private ExecutorService callbackExecutor;
     // All signaling works should be ran on signalingExecutor.
     private ExecutorService signalingExecutor;
+    // key: stream id.
+    private final ConcurrentHashMap<String, JSONObject> streamInfos;
 
     /**
      * Constructor for P2PClient.
@@ -109,13 +112,13 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         this.configuration = configuration;
         this.signalingChannel = signalingChannel;
         signalingChannel.addObserver(this);
-        observers = Collections.synchronizedList(new ArrayList<P2PClientObserver>());
+        observers = Collections.synchronizedList(new ArrayList<>());
         allowedRemotePeers = new HashSet<>();
         pcChannels = new ConcurrentHashMap<>();
-        streamInfos = new ConcurrentHashMap<>();
         serverConnectionStatus = DISCONNECTED;
         callbackExecutor = Executors.newSingleThreadExecutor();
         signalingExecutor = Executors.newSingleThreadExecutor();
+        streamInfos = new ConcurrentHashMap<>();
     }
 
     /**
@@ -333,7 +336,8 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         RCHECK(message);
         if (message.length() > 0xFFFF) {
             triggerCallback(callback,
-                    new OmsError(OmsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Message too long."));
+                    new OmsError(OmsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value,
+                            "Message too long."));
             return;
         }
         if (!containsPCChannel(peerId)) {
@@ -369,7 +373,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
             }
             pcChannels.clear();
         }
-        streamInfos.clear();
     }
 
     private void changeConnectionStatus(ServerConnectionStatus newStatus) {
@@ -513,22 +516,15 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             }
                         });
             } catch (JSONException e) {
-                triggerCallback(callback, new OmsError(OmsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value,
-                        e.getMessage()));
+                triggerCallback(callback,
+                        new OmsError(OmsP2PError.P2P_CLIENT_ILLEGAL_ARGUMENT.value,
+                                e.getMessage()));
             }
 
         });
     }
 
-    private void sendTrackAck(String peerId, RemoteStream remoteStream) {
-        JSONArray tracks = new JSONArray();
-        if (remoteStream.hasAudio()) {
-            tracks.put(remoteStream.audioTrackId());
-        }
-        if (remoteStream.hasVideo()) {
-            tracks.put(remoteStream.videoTrackId());
-        }
-
+    private void sendTrackAck(String peerId, JSONArray tracks) {
         sendSignalingMessage(peerId, TRACK_ADD_ACK, tracks, null);
     }
 
@@ -545,10 +541,11 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                     ActionCallback<Publication> callback = null;
                     // As this situation will happen only at the initial phase of a pc,
                     // so iterate the lists below will only get one instance of each kind.
-                    for (LocalStream ls : oldChannel.localStreams.values()) {
+                    for (LocalStream ls : oldChannel.publishedStreams) {
                         localStream = ls;
                     }
-                    for (P2PPeerConnectionChannel.CallbackInfo cbi : oldChannel.publishCallbacks.values()) {
+                    for (P2PPeerConnectionChannel.CallbackInfo cbi : oldChannel.publishCallbacks
+                            .values()) {
                         callback = cbi.callback;
                     }
 
@@ -565,6 +562,10 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                 getPeerConnection(peerId).processSignalingMessage(message);
             }
         }
+    }
+
+    private void processStreamInfo(JSONObject streamInfo) throws JSONException {
+        streamInfos.put(streamInfo.getString("id"), streamInfo);
     }
 
     ///@cond
@@ -629,7 +630,8 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
         JSONObject errorMsg = new JSONObject();
         try {
             errorMsg.put("code",
-                    recoverable ? OmsP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value : OmsP2PError.P2P_WEBRTC_SDP.value);
+                    recoverable ? OmsP2PError.P2P_WEBRTC_ICE_POLICY_UNSUPPORTED.value
+                            : OmsP2PError.P2P_WEBRTC_SDP.value);
             errorMsg.put("message", error);
         } catch (JSONException e) {
             DCHECK(e);
@@ -638,39 +640,43 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     @Override
-    public void onAddStream(final String peerId,
-            final oms.base.RemoteStream remoteStream) {
+    public void onAddStream(final String peerId, final oms.base.RemoteStream remoteStream) {
         DCHECK(callbackExecutor);
         DCHECK(pcChannels.containsKey(peerId));
 
-        String videoSource = null;
-        String audioSource = null;
-        if (remoteStream.hasVideo()) {
-            String id = remoteStream.videoTrackId();
-            videoSource = streamInfos.get(id);
-            streamInfos.remove(id);
-        }
-        if (remoteStream.hasAudio()) {
-            String id = remoteStream.audioTrackId();
-            audioSource = streamInfos.get(id);
-            streamInfos.remove(id);
-        }
-        StreamSourceInfo streamSourceInfo = new StreamSourceInfo(
-                videoSource == null ? null : VideoSourceInfo.get(videoSource),
-                audioSource == null ? null : AudioSourceInfo.get(audioSource));
-
-        ((RemoteStream) remoteStream).setInfo(streamSourceInfo);
-
         callbackExecutor.execute(() -> {
+            try {
+                if (streamInfos.containsKey(remoteStream.id())) {
+                    JSONObject streamInfo = streamInfos.remove(remoteStream.id());
+                    JSONObject sourceInfo = streamInfo.getJSONObject("source");
+                    VideoSourceInfo vInfo = sourceInfo.has("video")
+                            ? VideoSourceInfo.get(sourceInfo.getString("video")) : null;
+                    AudioSourceInfo aInfo = sourceInfo.has("audio")
+                            ? AudioSourceInfo.get(sourceInfo.getString("audio")) : null;
+                    Stream.StreamSourceInfo info = new Stream.StreamSourceInfo(vInfo, aInfo);
+                    ((oms.p2p.RemoteStream) remoteStream).setInfo(info);
 
-            synchronized (observers) {
-                for (P2PClientObserver observer : observers) {
-                    observer.onStreamAdded((RemoteStream) remoteStream);
+                    if (streamInfo.has("attributes")) {
+                        JSONObject attr = streamInfo.getJSONObject("attributes");
+                        HashMap<String, String> attributes = new HashMap<>();
+                        for (Iterator<String> it = attr.keys(); it.hasNext(); ) {
+                            String key = it.next();
+                            attributes.put(key, attr.getString(key));
+                        }
+                        remoteStream.setAttributes(attributes);
+                    }
+
+                    sendTrackAck(peerId, streamInfo.getJSONArray("tracks"));
                 }
+                synchronized (observers) {
+                    for (P2PClientObserver observer : observers) {
+                        observer.onStreamAdded((RemoteStream) remoteStream);
+                    }
+                }
+            } catch (JSONException e) {
+                DCHECK(e);
             }
         });
-
-        sendTrackAck(peerId, (RemoteStream) remoteStream);
     }
 
     @Override
@@ -717,12 +723,9 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                 case SIGNALING_MESSAGE:
                     processSignalingMsg(peerId, msgObj.getJSONObject("data"));
                     break;
-                case TRACK_INFO:
-                    JSONArray data = msgObj.getJSONArray("data");
-                    for (int i = 0; i < data.length(); i++) {
-                        JSONObject trackInfo = data.getJSONObject(i);
-                        streamInfos.put(trackInfo.getString("id"), trackInfo.getString("source"));
-                    }
+                case STREAM_INFO:
+                    JSONObject streamInfo = msgObj.getJSONObject("data");
+                    processStreamInfo(streamInfo);
                     break;
                 case TRACK_ADD_ACK:
                     synchronized (pcChannelsLock) {
@@ -783,11 +786,13 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                             ActionCallback<Publication> callback = null;
                             // As this situation will happen only at the initial phase of a pc,
                             // so iterate the lists below will only get one instance of each kind.
-                            for (LocalStream ls : oldChannel.localStreams.values()) {
+                            for (LocalStream ls : oldChannel.publishedStreams) {
                                 localStream = ls;
                             }
-                            for (P2PPeerConnectionChannel.CallbackInfo cbi : oldChannel.publishCallbacks.values()) {
+                            for (P2PPeerConnectionChannel.CallbackInfo cbi : oldChannel
+                                    .publishCallbacks.values()) {
                                 callback = cbi.callback;
+
                             }
                             // disable continual gathering.
                             P2PClientConfiguration config = this.configuration;
