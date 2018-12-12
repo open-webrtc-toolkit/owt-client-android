@@ -116,8 +116,11 @@ def recover_config():
                 os.path.join(HOME_PATH, 'settings.gradle'))
 
 
-def build_libs():
+def build_libs(dependencies_dir):
     print '> building sdk libraries...'
+    cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc'), os.path.join(DEPS_PATH, 'libwebrtc.bk')]
+    subprocess.call(cmd, cwd=DEPS_PATH)
+    shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip-zip']
     if subprocess.call(cmd):
         sys.exit(1)
@@ -168,6 +171,8 @@ if __name__ == '__main__':
                              'please indicate the device using this parameter.')
     parser.add_argument('--log-dir', dest='log_dir', default=TEST_PATH,
                         help='Location of the directory where logs for this test will output to.')
+    parser.add_argument('--dependencies-dir', dest='dependencies_dir', required=True,
+                        help='Location of the dependency libraries.')
 
     args = parser.parse_args()
 
@@ -176,7 +181,7 @@ if __name__ == '__main__':
 
     # generate sdk libraries.
     if args.build:
-        build_libs()
+        build_libs(args.dependencies_dir)
         copy_libs()
 
     # change settings.gradle to include test modules.
@@ -187,7 +192,7 @@ if __name__ == '__main__':
     # recover the settings.gradle
     recover_config()
 
-    # TODO: remove this
+    # recover deps_path
     recover_deps()
 
     # collect test results
