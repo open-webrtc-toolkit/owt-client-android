@@ -17,7 +17,9 @@ import java.util.List;
 public final class ConferenceInfo {
     // package access here, as the getter methods return an immutable list.
     final List<Participant> participants;
+    private final Object parLock = new Object();
     final List<RemoteStream> remoteStreams;
+    private final Object streamLock = new Object();
     private String id;
     private Participant self;
 
@@ -37,7 +39,9 @@ public final class ConferenceInfo {
         for (int i = 0; i < participantsInfo.length(); i++) {
             JSONObject participantInfo = participantsInfo.getJSONObject(i);
             Participant participant = new Participant(participantInfo);
-            participants.add(participant);
+            synchronized (parLock) {
+                participants.add(participant);
+            }
 
             if (participant.id.equals(conferenceInfo.getString("id"))) {
                 self = participant;
@@ -54,7 +58,9 @@ public final class ConferenceInfo {
             } else {
                 remoteStream = new RemoteStream(streamInfo);
             }
-            remoteStreams.add(remoteStream);
+            synchronized (streamLock) {
+                remoteStreams.add(remoteStream);
+            }
         }
     }
 
@@ -82,7 +88,9 @@ public final class ConferenceInfo {
      * @return list of Participant%s in the conference.
      */
     public List<Participant> getParticipants() {
-        return Collections.unmodifiableList(participants);
+        synchronized (parLock) {
+            return Collections.unmodifiableList(participants);
+        }
     }
 
     /**
@@ -91,7 +99,9 @@ public final class ConferenceInfo {
      * @return list of the RemoteStream%s in the conference.
      */
     public List<RemoteStream> getRemoteStreams() {
-        return Collections.unmodifiableList(remoteStreams);
+        synchronized (streamLock) {
+            return Collections.unmodifiableList(remoteStreams);
+        }
     }
 
 }

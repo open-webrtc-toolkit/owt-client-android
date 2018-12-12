@@ -666,11 +666,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     public void onStreamAdded(final RemoteStream remoteStream) {
         DCHECK(callbackExecutor);
         callbackExecutor.execute(() -> {
+            synchronized (infoLock) {
+                if (conferenceInfo != null) {
+                    conferenceInfo.remoteStreams.add(remoteStream);
+                }
+            }
             for (ConferenceClientObserver observer : observers) {
                 observer.onStreamAdded(remoteStream);
-            }
-            synchronized (infoLock) {
-                conferenceInfo.remoteStreams.add(remoteStream);
             }
         });
     }
@@ -683,8 +685,8 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 if (conferenceInfo != null) {
                     for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
                         if (remoteStream.id().equals(streamId)) {
-                            remoteStream.onEnded();
                             conferenceInfo.remoteStreams.remove(remoteStream);
+                            remoteStream.onEnded();
                             break;
                         }
                     }
@@ -758,13 +760,13 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
         callbackExecutor.execute(() -> {
             try {
                 Participant participant = new Participant(participantInfo);
-                for (ConferenceClientObserver observer : observers) {
-                    observer.onParticipantJoined(participant);
-                }
                 synchronized (infoLock) {
                     if (conferenceInfo != null) {
                         conferenceInfo.participants.add(participant);
                     }
+                }
+                for (ConferenceClientObserver observer : observers) {
+                    observer.onParticipantJoined(participant);
                 }
             } catch (JSONException e) {
                 DCHECK(false);
@@ -780,8 +782,8 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 if (conferenceInfo != null) {
                     for (Participant participant : conferenceInfo.participants) {
                         if (participant.id.equals(participantId)) {
-                            participant.onLeft();
                             conferenceInfo.participants.remove(participant);
+                            participant.onLeft();
                             break;
                         }
                     }
