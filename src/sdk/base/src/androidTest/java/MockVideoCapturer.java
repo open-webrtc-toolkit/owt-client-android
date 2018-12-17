@@ -3,6 +3,7 @@ import android.content.Context;
 import oms.base.Stream;
 import oms.base.VideoCapturer;
 
+import org.webrtc.CapturerObserver;
 import org.webrtc.SurfaceTextureHelper;
 
 public class MockVideoCapturer implements VideoCapturer {
