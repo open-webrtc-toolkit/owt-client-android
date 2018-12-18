@@ -19,7 +19,7 @@
     which is left as empty files. So before building the project, webrtc library files need to be put into this
     folder.
 
-    Getting information on how to build libwebrtc library, please refer to [oms-nativesdk](https://github.com/intel-webrtc/oms-nativesdk).
+    Getting information on how to build libwebrtc library, please refer to [oms-nativesdk](https://github.com/open-media-streamer/oms-client-native).
 
 ## Build Project
 
@@ -31,3 +31,14 @@
 
 * To pack a whole release package
     > python tools/pack.py
+    
+## How to contribute
+
+We warmly welcome community contributions to oms-client-android repository. If you are willing to contribute your features and ideas to OMS, follow the process below:
+
+* Make sure your patch will not break anything, including all the build and tests
+* Submit a pull request onto [Pull Requests](https://github.com/open-media-streamer/oms-client-android/pulls)
+* Watch your patch for review comments if any, until it is accepted and merged
+
+OMS project is licensed under Apache License, Version 2.0. By contributing to the project, you agree to the license and copyright terms therein and release your contributions under these terms. 
+
