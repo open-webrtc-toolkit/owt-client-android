@@ -3,9 +3,10 @@
 Open Media Streamer Client SDK for Android builds on top of the W3C standard WebRTC APIs to accelerate development of real-time communications (RTC) for Android applications, including peer-to-peer, broadcasting, and conference mode communications.
 
 # Documentation
-## API documents
 
-## Design documents
+For design documents please xxx
+
+For API documents please yyy
 
 # How to build
 ## Prerequisites
