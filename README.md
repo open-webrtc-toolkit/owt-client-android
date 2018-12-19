@@ -1,5 +1,13 @@
-# Open Media Streamer Android SDK
+# Open Media Streamer Client SDK for Android
 
+Open Media Streamer Client SDK for Android builds on top of the W3C standard WebRTC APIs to accelerate development of real-time communications (RTC) for Android applications, including peer-to-peer, broadcasting, and conference mode communications.
+
+# Documentation
+## API documents
+
+## Design documents
+
+# How to build
 ## Prerequisites
 
 * Configure Android SDK
@@ -32,7 +40,7 @@
 * To pack a whole release package
     > python tools/pack.py
     
-## How to contribute
+# How to contribute
 
 We warmly welcome community contributions to oms-client-android repository. If you are willing to contribute your features and ideas to OMS, follow the process below:
 
@@ -42,3 +50,10 @@ We warmly welcome community contributions to oms-client-android repository. If y
 
 OMS project is licensed under Apache License, Version 2.0. By contributing to the project, you agree to the license and copyright terms therein and release your contributions under these terms. 
 
+# How to report issue
+
+Use the "Issues" tab on Github
+
+# See Also
+
+http://webrtc.intel.com
