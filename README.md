@@ -51,7 +51,7 @@ We warmly welcome community contributions to oms-client-android repository. If y
 
 OMS project is licensed under Apache License, Version 2.0. By contributing to the project, you agree to the license and copyright terms therein and release your contributions under these terms. 
 
-# How to report issue
+# How to report issues
 
 Use the "Issues" tab on Github
 
