@@ -536,7 +536,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
 
     void sendSignalingMessage(final String type, final JSONObject message, final Ack ack) {
         DCHECK(signalingChannel);
-        signalingChannel.sendMsg(type, message, ack);
+        if (signalingChannel != null) {
+            signalingChannel.sendMsg(type, message, ack);
+        }
     }
 
     private void processAck(final String id) {
