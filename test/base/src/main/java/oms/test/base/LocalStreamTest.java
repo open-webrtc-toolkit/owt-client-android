@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
 package oms.test.base;
 
 import static oms.test.util.CommonAction.createDefaultCapturer;
@@ -7,7 +11,6 @@ import static oms.test.util.Config.TIMEOUT;
 import android.test.ActivityInstrumentationTestCase2;
 
 import oms.base.LocalStream;
-import oms.base.MediaConstraints;
 import oms.base.VideoCapturer;
 import oms.test.util.FakeRenderer;
 import oms.test.util.VideoCapturerForTest;
