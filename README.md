@@ -4,9 +4,7 @@ Open Media Streamer Client SDK for Android builds on top of the W3C standard Web
 
 # Documentation
 
-For design documents please xxx
-
-For API documents please yyy
+See [README.md](docs/README.md) in *docs* directory.
 
 # How to build
 ## Prerequisites
@@ -40,7 +38,7 @@ For API documents please yyy
 
 * To pack a whole release package
     > python tools/pack.py
-    
+
 # How to contribute
 
 We warmly welcome community contributions to oms-client-android repository. If you are willing to contribute your features and ideas to OMS, follow the process below:
@@ -49,7 +47,7 @@ We warmly welcome community contributions to oms-client-android repository. If y
 * Submit a pull request onto [Pull Requests](https://github.com/open-media-streamer/oms-client-android/pulls)
 * Watch your patch for review comments if any, until it is accepted and merged
 
-OMS project is licensed under Apache License, Version 2.0. By contributing to the project, you agree to the license and copyright terms therein and release your contributions under these terms. 
+OMS project is licensed under Apache License, Version 2.0. By contributing to the project, you agree to the license and copyright terms therein and release your contributions under these terms.
 
 # How to report issues
 
