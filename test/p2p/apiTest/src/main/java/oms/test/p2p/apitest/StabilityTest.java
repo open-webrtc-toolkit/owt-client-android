@@ -32,13 +32,17 @@ public class StabilityTest extends TestBase {
         capturer1 = createDefaultCapturer();
         localStream1 = createLocalStream(true, capturer1);
         for (int i = 0; i < 200; i++) {
+            observer2 = new P2PClientObserver(USER2_NAME);
             TestCallback<Publication> callback = new TestCallback<>();
+            user2.addObserver(observer2);
             user1.publish(USER2_NAME, localStream1, callback);
             assertTrue(callback.getResult(true, TIMEOUT));
+            assertTrue(observer2.getResultForStreamAdded(TIMEOUT));
             TestObserver publicationObserver = new TestObserver();
             callback.successCallbackResult.addObserver(publicationObserver);
             callback.successCallbackResult.stop();
             assertTrue(publicationObserver.getResult(TIMEOUT));
+            user2.removeObserver(observer2);
         }
     }
 
