@@ -21,7 +21,7 @@ import oms.base.VideoCapturer;
 public class CommonAction {
 
     public static VideoCapturer createDefaultCapturer() {
-        return VideoCapturerForTest.create();
+        return VideoCapturerForTest.create(640,480);
     }
 
     public static LocalStream createLocalStream(boolean enableAudio, VideoCapturer capturer) {
