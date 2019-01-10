@@ -109,6 +109,7 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
      */
     public P2PClient(P2PClientConfiguration configuration,
             SignalingChannelInterface signalingChannel) {
+        RCHECK(configuration);
         RCHECK(signalingChannel);
         this.configuration = configuration;
         this.signalingChannel = signalingChannel;
