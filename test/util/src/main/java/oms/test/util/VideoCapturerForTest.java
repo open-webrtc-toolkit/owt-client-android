@@ -18,11 +18,11 @@ public final class VideoCapturerForTest extends Camera1Capturer implements Video
         super(deviceName, null, captureToTexture);
     }
 
-    public static VideoCapturerForTest create() {
+    public static VideoCapturerForTest create(int width, int height) {
         String deviceName = getDeviceName(true);
         VideoCapturerForTest capturer = new VideoCapturerForTest(deviceName, true);
-        capturer.width = 640;
-        capturer.height = 480;
+        capturer.width = width;
+        capturer.height = height;
         capturer.fps = 20;
         return capturer;
     }

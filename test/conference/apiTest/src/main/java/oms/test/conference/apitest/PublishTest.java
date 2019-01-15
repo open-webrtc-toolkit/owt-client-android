@@ -172,7 +172,7 @@ public class PublishTest extends TestBase {
         for (int i = 0; i < resolutions.length; i++) {
             int width = Integer.valueOf(resolutions[i].split("x")[0]);
             int height = Integer.valueOf(resolutions[i].split("x")[1]);
-            capturer1 = VideoCapturerForTest.create();
+            capturer1 = VideoCapturerForTest.create(width, height);
             localStream1 = createLocalStream(true, capturer1);
             PublishOptions publishOptions = createPublishOptions(new AudioCodec[]{},
                     new VideoCodec[]{});
