@@ -279,7 +279,7 @@ final class SignalingChannel {
     private void flushCachedMsg() {
         for (HashMap<String, Object> msg : cache) {
             try {
-                sendMsg((String) msg.get("name"), (JSONObject) msg.get("msg"),
+                sendMsg((String) msg.get("type"), (JSONObject) msg.get("msg"),
                         (Ack) msg.get("ack"));
             } catch (Exception exception) {
                 DCHECK(exception);
