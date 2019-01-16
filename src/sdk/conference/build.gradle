@@ -24,7 +24,7 @@ android {
 }
 
 dependencies {
-    compileOnly('io.socket:socket.io-client:0.8.3') {
+    compileOnly('io.socket:socket.io-client:1.0.0') {
         // excluding org.json which is provided by Android
         exclude group: 'org.json', module: 'json'
     }
@@ -33,7 +33,7 @@ dependencies {
     androidTestImplementation 'com.android.support:support-annotations:28.0.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
-    androidTestImplementation('io.socket:socket.io-client:0.8.3') {
+    androidTestImplementation('io.socket:socket.io-client:1.0.0') {
         // excluding org.json which is provided by Android
         exclude group: 'org.json', module: 'json'
     }
