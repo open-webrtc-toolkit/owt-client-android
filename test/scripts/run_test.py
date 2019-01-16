@@ -122,7 +122,8 @@ def build_libs(dependencies_dir):
     subprocess.call(cmd, cwd=DEPS_PATH)
     shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip-zip']
-    return subprocess.call(cmd)
+    if subprocess.call(cmd):
+        sys.exit(1)
 
 
 def copy_libs():
@@ -152,13 +153,9 @@ def validate_caselist(case_list):
 
 
 def recover_deps():
-    libwebrtc_bk = os.path.join(DEPS_PATH, 'libwebrtc.bk')
-    libwebrtc = os.path.join(DEPS_PATH, 'libwebrtc')
-    if os.path.exists(libwebrtc) and os.path.exists(libwebrtc_bk):
-        shutil.rmtree(libwebrtc)
-    if os.path.exists(libwebrtc_bk):
-        cmd = ['mv', libwebrtc_bk, libwebrtc]
-        subprocess.call(cmd)
+    shutil.rmtree(os.path.join(DEPS_PATH, 'libwebrtc'))
+    cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc.bk'), os.path.join(DEPS_PATH, 'libwebrtc')]
+    subprocess.call(cmd)
 
 
 if __name__ == '__main__':
@@ -179,20 +176,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # clean environment before test.
-    recover_deps()
-    
     if not validate_caselist(args.caselist):
         sys.exit(1)
 
     # generate sdk libraries.
     if args.build:
-        if not build_libs(args.dependencies_dir):
-            copy_libs()
-        else:
-            recover_deps()
-            sys.exit(1)
-      
+        build_libs(args.dependencies_dir)
+        copy_libs()
+
     # change settings.gradle to include test modules.
     change_config()
 
