@@ -11,6 +11,7 @@ import static oms.base.Const.LOG_TAG;
 import android.util.Base64;
 import android.util.Log;
 
+import okhttp3.OkHttpClient;
 import oms.base.Const;
 
 import org.json.JSONException;
@@ -184,13 +185,16 @@ final class SignalingChannel {
             opt.reconnection = true;
             opt.reconnectionAttempts = MAX_RECONNECT_ATTEMPTS;
             opt.secure = isSecure;
+            OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
             if (configuration.sslContext != null) {
-                opt.sslContext = configuration.sslContext;
+                clientBuilder.sslSocketFactory(configuration.sslContext.getSocketFactory());
             }
             if (configuration.hostnameVerifier != null) {
-                opt.hostnameVerifier = configuration.hostnameVerifier;
+                clientBuilder.hostnameVerifier(configuration.hostnameVerifier);
             }
-
+            OkHttpClient httpClient = clientBuilder.build();
+            opt.callFactory = httpClient;
+            opt.webSocketFactory = httpClient;
             socketClient = IO.socket(url, opt);
 
             // Do not listen EVENT_DISCONNECT event on this phase.
@@ -275,7 +279,7 @@ final class SignalingChannel {
     private void flushCachedMsg() {
         for (HashMap<String, Object> msg : cache) {
             try {
-                sendMsg((String) msg.get("name"), (JSONObject) msg.get("msg"),
+                sendMsg((String) msg.get("type"), (JSONObject) msg.get("msg"),
                         (Ack) msg.get("ack"));
             } catch (Exception exception) {
                 DCHECK(exception);

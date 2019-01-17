@@ -166,7 +166,6 @@ def build_libs(dependencies_dir):
     subprocess.call(cmd)
     shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip-zip']
-
     if subprocess.call(cmd):
         return False
     return True
@@ -252,6 +251,7 @@ if __name__ == '__main__':
     if args.build and not build_libs(args.dependencies_dir):
         recover_deps()
         sys.exit(1)
+
 
     instrumentation_result = True
     unit_result = True
