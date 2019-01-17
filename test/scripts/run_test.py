@@ -166,6 +166,7 @@ def build_libs(dependencies_dir):
     subprocess.call(cmd)
     shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', HOME_PATH + '/tools/pack.py', '--skip-zip']
+
     if subprocess.call(cmd):
         return False
     return True
@@ -207,9 +208,13 @@ def validate_caselist(case_list):
 
 
 def recover_deps():
-    shutil.rmtree(os.path.join(DEPS_PATH, 'libwebrtc'))
-    cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc.bk'), os.path.join(DEPS_PATH, 'libwebrtc')]
-    subprocess.call(cmd)
+    libwebrtc_bk = os.path.join(DEPS_PATH, 'libwebrtc.bk')
+    libwebrtc = os.path.join(DEPS_PATH, 'libwebrtc')
+    if os.path.exists(libwebrtc) and os.path.exists(libwebrtc_bk):
+        shutil.rmtree(libwebrtc)
+    if os.path.exists(libwebrtc_bk):
+        cmd = ['mv', libwebrtc_bk, libwebrtc]
+        subprocess.call(cmd)
 
 
 def recover_unit_test_environment():
@@ -234,6 +239,9 @@ if __name__ == '__main__':
     parser.add_argument('--unit', dest='unit', action='store_true', default=False,
                         help='Run unit test.')
     args = parser.parse_args()
+
+    # clean environment before test.
+    recover_deps()
 
     validate_result = False if args.instrumentation is None else validate_caselist(
         args.instrumentation)
