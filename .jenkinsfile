@@ -15,7 +15,8 @@ pipeline {
             steps {
                 script{
                     withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
-                        sh "${env.mcuScriptPath}/startmcu.sh"
+                        sh "${env.starMcuScriptPath} --package-url ${env.mcuPackageUrl} --package-name \
+                        mcu-all-bin-v{data}.tgz  --base-dir ${env.mcuServerBasePath}"
                     }
                 }
             }
@@ -29,7 +30,7 @@ pipeline {
             steps{
                 script{
                     withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
-                        sh "${env.p2pScriptPath}/startP2PServer.sh"
+                        sh "${env.startP2PServerScriptPath} --server-path ${env.p2pServerPath}"
                         }    
                 }
             }
@@ -44,7 +45,7 @@ pipeline {
             steps {
                 sh "python ${env.androidCIScriptPath}/runTest.py --log-dir ${env.androidCILogPath}/${GIT_COMMIT} \
                 --dependencies-dir ${env.andoridLibWebrtcPath} --source-path ${env.androidSourcePath} \
-                --caselist-path ${env.androidCIScriptPath}/caselist.json \
+                --instrumentation ${env.androidCIScriptPath}/caselist.json --unit \
                 --p2p-server http://${env.p2pServer}:8095 --conference-server-http http://${env.mcuServer}:3001"
             }
         }
