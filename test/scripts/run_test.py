@@ -7,6 +7,7 @@ import sys
 import time
 import re
 from enum import Enum
+from xml.dom import minidom
 
 HOME_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 TEST_PATH = os.path.join(HOME_PATH, 'test')
@@ -26,7 +27,8 @@ UNIT_TESTS = {'base': {'path': os.path.join(HOME_PATH, 'src/sdk/base'), 'target'
                              'target': 'oms.conference'},
               'p2p': {'path': os.path.join(HOME_PATH, 'src/sdk/p2p'), 'target': 'oms.p2p'}}
 
-LOGCAT_SUFFIX = str(int(time.time())) + '.log'
+TIMESTAMP =  str(int(time.time()))
+LOGCAT_SUFFIX = TIMESTAMP + '.log'
 
 
 class TestMode(Enum):
@@ -34,7 +36,7 @@ class TestMode(Enum):
     UNIT = 'unit'
 
 
-'''TODO: merge analyse_unit_test_result and analyse_instrumentation_test_result with 
+'''TODO: merge analyse_unit_test_result and analyse_instrumentation_test_result with
 checking INSTRUMENTATION_STATUS_CODE of each test case.
 '''
 def analyse_instrumentation_test_result(result):
@@ -48,46 +50,59 @@ def analyse_instrumentation_test_result(result):
 
 
 def analyse_unit_test_result(result):
-    total_num = 0
-    fail_num = 0
-    with open(result, 'r') as f:
-        for line in f:
-            m_failure = re.match('Tests run:\s+(\d+).*?Failures:\s+(\d+)', line)
-            m_succeed = re.match('OK.*?(\d+) test', line)
-            if m_failure is not None:
-                total_num = int(m_failure.group(1))
-                fail_num = int(m_failure.group(2))
-            if m_succeed is not None:
-                total_num = int(m_succeed.group(1))
-    return total_num, fail_num
+    try:
+        xml_doc = minidom.parse(result)
+    except:
+        print "Error occured while reading test result."
+        return 0, 0
+    test_suite = xml_doc.documentElement
+    total_num = int(test_suite.attributes["tests"].value)
+    failed_num = int(test_suite.attributes["failures"].value)
+    error_num = int(test_suite.attributes["errors"].value)
+    success_num = total_num - failed_num - error_num
+    return total_num, success_num
 
 
-def exec_am_cmd(am_cmd, device, target_package, result_file, logcat_file):
+def exec_android_test(mode, cmd, device, target_package, result_file, logcat_file, cmd_path):
+    if device is not None:
+        os.environ['ANDROID_SERIAL'] = device
+    if mode == TestMode.UNIT:
+        subprocess.call([HOME_PATH + '/gradlew', '-q', 'clean'], cwd=cmd_path)
     adb = ['adb'] if device == None else ['adb', '-s', device]
     clean_logcat = ['logcat', '-c']
     subprocess.call(adb + clean_logcat)
     with open(result_file, 'a+') as rf:
-        subprocess.call(adb + am_cmd, stdout=rf)
+        subprocess.call(cmd, cwd=cmd_path, stdout=rf ,stderr=rf)
     logcat_cmd = ['logcat', '-d', target_package]
     with open(logcat_file, 'a+') as lf:
         subprocess.call(adb + logcat_cmd, stdout=lf)
 
 
-def run_cases(mode, module, target_package, log_dir, device, cases=None):
+def run_cases(mode, module, target_package, log_dir, device, test_path, cases=None):
     print '\n> running ' + mode.value + ' cases on device', device
     result_file = os.path.join(log_dir, module + '-' + mode.value + '-result-' + LOGCAT_SUFFIX)
     logcat_file = os.path.join(log_dir, module + '-' + mode.value + '-logcat-' + LOGCAT_SUFFIX)
 
     if mode == TestMode.INSTRUMENTATION:
+        adb = ['adb'] if device == None else ['adb', '-s', device]
         for case in cases:
             am_cmd = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'debug', 'false', '-e',
                       'class', target_package + '.' + case,
                       target_package + '.test/android.test.InstrumentationTestRunner']
-            exec_am_cmd(am_cmd, device, target_package, result_file, logcat_file)
+            exec_android_test(mode, adb + am_cmd, device, target_package, result_file, logcat_file, test_path)
     elif mode == TestMode.UNIT:
-        am_cmd = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'debug', 'false',
-                  target_package + '.test/android.support.test.runner.AndroidJUnitRunner']
-        exec_am_cmd(am_cmd, device, target_package, result_file, logcat_file)
+        cmd = [HOME_PATH + '/gradlew', 'connectedAndroidTest']
+        exec_android_test(mode, cmd, device, target_package, result_file, logcat_file, test_path)
+        xml_file_name = module + '-' + mode.value + '-result-' + TIMESTAMP + '.xml'
+        dst_xml_report_path = os.path.join(log_dir, xml_file_name)
+        p = re.compile(".*?XML test result file generated at (.*?\.xml)")
+        with open(result_file, 'r') as f:
+            for line in f:
+                m = re.match(p, line)
+                if m is not None:
+                    src_xml_report_path = m.group(1)
+                    shutil.copyfile(src_xml_report_path, dst_xml_report_path)
+                    result_file = dst_xml_report_path
     print '> done.'
     print '  Result file: <LOG_DIR>/' + module + '-' + mode.value + '-result-' + LOGCAT_SUFFIX
     print '  Log file: <LOG_DIR>/' + module + '-' + mode.value + '-logcat-' + LOGCAT_SUFFIX
@@ -122,7 +137,7 @@ def run_instrumentation_test(case_list, log_dir, device):
         install_test(INST_TESTS[obj['module']]['path'], device)
         result_file = run_cases(TestMode.INSTRUMENTATION, obj['module'],
                                 INST_TESTS[obj['module']]['target'], log_dir,
-                                device, obj['cases'])
+                                device, HOME_PATH, cases=obj['cases'])
         succeed = analyse_instrumentation_test_result(result_file)
         total = len(obj['cases'])
         result = result and (succeed == total)
@@ -135,13 +150,11 @@ def run_unit_test(log_dir, device):
     result = True
     for module, unit_test in UNIT_TESTS.items():
         prepare_unit_test(unit_test['path'])
-        install_test(unit_test['path'], device)
-        result_file = run_cases(TestMode.UNIT, module, unit_test['target'], log_dir, device)
-        total, failure = analyse_unit_test_result(result_file)
-        succeed = total - failure
+        result_file = run_cases(TestMode.UNIT, module, unit_test['target'], log_dir, device, unit_test['path'])
+        total, succeed = analyse_unit_test_result(result_file)
         result = result and total != 0 and (succeed == total)
         print '\n>', module + ' result: All:', total, \
-            'Succeed:', succeed, 'Failed:', failure
+            'Succeed:', succeed, 'Failed:', total - succeed
     return result
 
 
@@ -242,8 +255,7 @@ if __name__ == '__main__':
     # clean environment before test.
     recover_deps()
 
-    validate_result = False if args.instrumentation is None else validate_caselist(
-        args.instrumentation)
+    validate_result = False if args.instrumentation is None else validate_caselist(args.instrumentation)
     if not (validate_result or args.unit):
         sys.exit(1)
 
@@ -251,7 +263,6 @@ if __name__ == '__main__':
     if args.build and not build_libs(args.dependencies_dir):
         recover_deps()
         sys.exit(1)
-
 
     instrumentation_result = True
     unit_result = True
