@@ -1,6 +1,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="oms.test.conference.apitest.WooGeenActivity" >
+    tools:context="owt.test.conference.apitest.WooGeenActivity" >
 
     <item
         android:id="@+id/action_settings"

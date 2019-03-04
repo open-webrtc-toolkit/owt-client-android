@@ -1,8 +1,8 @@
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
-import oms.base.ContextInitialization;
-import oms.base.LocalStream;
+import owt.base.ContextInitialization;
+import owt.base.LocalStream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

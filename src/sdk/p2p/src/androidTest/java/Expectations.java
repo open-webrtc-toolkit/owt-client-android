@@ -1,7 +1,7 @@
 import android.util.Log;
 
-import oms.p2p.P2PClient;
-import oms.p2p.RemoteStream;
+import owt.p2p.P2PClient;
+import owt.p2p.RemoteStream;
 
 public class Expectations implements P2PClient.P2PClientObserver{
     private static final String TAG = Expectations.class.getSimpleName();

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="oms.test.conference.apitest"
+    package="owt.test.conference.apitest"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -44,5 +44,5 @@
     <!--suppress AndroidDomInspection -->
     <instrumentation
         android:name="android.test.InstrumentationTestRunner"
-        android:targetPackage="oms.test.conference.apitest"/>
+        android:targetPackage="owt.test.conference.apitest"/>
 </manifest>

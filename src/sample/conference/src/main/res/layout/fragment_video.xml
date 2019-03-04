@@ -2,7 +2,7 @@
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
              android:layout_height="match_parent"
-             tools:context="oms.sample.conference.VideoFragment">
+             tools:context="owt.sample.conference.VideoFragment">
 
     <FrameLayout
         android:id="@+id/video_container"

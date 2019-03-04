@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="oms.test.p2p.apitest"
+    package="owt.test.p2p.apitest"
     android:versionCode="1"
     android:versionName="1.0"
     android:installLocation="auto">
@@ -48,6 +48,6 @@
     <!--suppress AndroidDomInspection -->
     <instrumentation
         android:name="android.test.InstrumentationTestRunner"
-        android:targetPackage="oms.test.p2p.apitest" />
+        android:targetPackage="owt.test.p2p.apitest" />
 
 </manifest>

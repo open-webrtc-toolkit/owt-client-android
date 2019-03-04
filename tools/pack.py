@@ -12,7 +12,7 @@ DEPS_PATH = os.path.join(HOME_PATH, 'dependencies')
 CODE_PATH = os.path.join(HOME_PATH, 'src')
 SDK_PATH = os.path.join(CODE_PATH, 'sdk')
 SAMPLE_PATH = os.path.join(CODE_PATH, 'sample')
-ICS_DEBUG_PATH = os.path.join(SDK_PATH, 'base/src/main/java/oms/base')
+ICS_DEBUG_PATH = os.path.join(SDK_PATH, 'base/src/main/java/owt/base')
 
 # distribution path
 DIST_PATH = os.path.join(HOME_PATH, 'dist')
