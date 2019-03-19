@@ -5,7 +5,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        applicationId "oms.test.conference.apitest"
+        applicationId "owt.test.conference.apitest"
         minSdkVersion 16
         targetSdkVersion 21
 

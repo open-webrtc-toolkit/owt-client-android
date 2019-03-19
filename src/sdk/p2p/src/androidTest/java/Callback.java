@@ -3,8 +3,8 @@ import static junit.framework.Assert.assertTrue;
 
 import android.util.Log;
 
-import oms.base.ActionCallback;
-import oms.base.OmsError;
+import owt.base.ActionCallback;
+import owt.base.OwtError;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +24,7 @@ public class Callback<T> implements ActionCallback<T> {
     }
 
     @Override
-    public void onFailure(OmsError error) {
+    public void onFailure(OwtError error) {
         Log.v(TAG, "Callback.onFailure: " + error.errorMessage);
         onFailureTriggered = true;
         onResult();

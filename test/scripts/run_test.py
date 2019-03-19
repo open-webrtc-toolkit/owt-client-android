@@ -16,16 +16,16 @@ DEPS_PATH = os.path.join(HOME_PATH, 'dependencies')
 TEST_MODULES = ["':test:util'", "':test:base'", "':test:p2p:util'", "':test:p2p:apiTest'",
                 "':test:conference:util'", "':test:conference:apiTest'"]
 
-INST_TESTS = {'base': {'path': os.path.join(TEST_PATH, 'base'), 'target': 'oms.test.base'},
+INST_TESTS = {'base': {'path': os.path.join(TEST_PATH, 'base'), 'target': 'owt.test.base'},
               'conference': {'path': os.path.join(TEST_PATH, 'conference/apiTest'),
-                             'target': 'oms.test.conference.apitest'},
+                             'target': 'owt.test.conference.apitest'},
               'p2p': {'path': os.path.join(TEST_PATH, 'p2p/apiTest'),
-                      'target': 'oms.test.p2p.apitest'}}
+                      'target': 'owt.test.p2p.apitest'}}
 
-UNIT_TESTS = {'base': {'path': os.path.join(HOME_PATH, 'src/sdk/base'), 'target': 'oms.base'},
+UNIT_TESTS = {'base': {'path': os.path.join(HOME_PATH, 'src/sdk/base'), 'target': 'owt.base'},
               'conference': {'path': os.path.join(HOME_PATH, 'src/sdk/conference'),
-                             'target': 'oms.conference'},
-              'p2p': {'path': os.path.join(HOME_PATH, 'src/sdk/p2p'), 'target': 'oms.p2p'}}
+                             'target': 'owt.conference'},
+              'p2p': {'path': os.path.join(HOME_PATH, 'src/sdk/p2p'), 'target': 'owt.p2p'}}
 
 TIMESTAMP =  str(int(time.time()))
 LOGCAT_SUFFIX = TIMESTAMP + '.log'

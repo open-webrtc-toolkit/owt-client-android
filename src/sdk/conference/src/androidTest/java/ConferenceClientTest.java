@@ -3,8 +3,8 @@ import static junit.framework.Assert.fail;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
-import oms.base.ContextInitialization;
-import oms.conference.ConferenceClient;
+import owt.base.ContextInitialization;
+import owt.conference.ConferenceClient;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

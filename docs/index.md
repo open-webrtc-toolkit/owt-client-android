@@ -1,12 +1,12 @@
-The Open Media Streamer Client Android SDK Documentation
+The Open WebRTC Toolkit Client Android SDK Documentation
 ===============================
 # 1 Introduction {#section1}
-The Open Media Streamer Client SDK for Android, OMS Android briefly, provides helpful tools (including a sample Android application) for developing Android native WebRTC applications using Java APIs. The SDK is distributed in the `CS_WebRTC_Client_SDK_Android.<ver>.zip` release package.
+The Open WebRTC Toolkit Client SDK for Android, OWT Android briefly, provides helpful tools (including a sample Android application) for developing Android native WebRTC applications using Java APIs. The SDK is distributed in the `CS_WebRTC_Client_SDK_Android.<ver>.zip` release package.
 
 Please refer to the Release Notes for the latest information in the SDK release package, including new features, fixed bugs and known issues.
 
 # 2 Supported platforms {#section2}
-OMS Android requires using Android SDK API level 16 or above. In order to use hardware media codec, API level 19 is recommended.
+OWT Android requires using Android SDK API level 16 or above. In order to use hardware media codec, API level 19 is recommended.
 
 The following devices have been validated with our SDK:
 
@@ -37,7 +37,7 @@ First, be sure to install the prerequisite software.
         sdk.dir=/path/to/your/android/sdk/location
 
 ## 3.2 Sample applications {#section3_2}
-Sample Android application projects are provided along with OMS Android release package, including a peer-to-peer application and a conference application. To build and run sample apps, please follow below steps:
+Sample Android application projects are provided along with OWT Android release package, including a peer-to-peer application and a conference application. To build and run sample apps, please follow below steps:
 Please notice that there are some linux format link files in sample dependency folders, modify them before you run on a different platform.
 
 ### 3.2.1 Run samples with Android Studio {#section3_2_1}
@@ -53,8 +53,8 @@ Please notice that there are some linux format link files in sample dependency f
 
 Apk files will be located in `build/outputs/apk` folder.
 
-## 3.3 Developing Android applications with OMS Android {#section3_3}
-Follow these general steps to create an Android application using OMS Android:
+## 3.3 Developing Android applications with OWT Android {#section3_3}
+Follow these general steps to create an Android application using OWT Android:
 
 1. Create an Android Application project in Android Studio.
 2. Create a libs/ folder under the project directory.
@@ -72,25 +72,25 @@ Follow these general steps to create an Android application using OMS Android:
 
 ## 4.1 Video codecs {#section4_1}
 
-OMS Android supports VP8, VP9, H.264 and HEVC video codecs depending on the device hardware. Use the following APIs to set the preferred video codec:
+OWT Android supports VP8, VP9, H.264 and HEVC video codecs depending on the device hardware. Use the following APIs to set the preferred video codec:
 
-  + `oms.conference.PublishOptions.addVideoParameter`
-  + `oms.conference.SubscribeOptions.setVideoOption`
-  + `oms.p2p.P2PClientConfiguration.addVideoParameters`
+  + `owt.conference.PublishOptions.addVideoParameter`
+  + `owt.conference.SubscribeOptions.setVideoOption`
+  + `owt.p2p.P2PClientConfiguration.addVideoParameters`
 
 > **Note:** Hardware encoder/decoder requires Android API level 19 or above.
 
 ## 4.2 Audio codecs {#section4_2}
 
-OMS Android supports PCMU, OPUS and other codecs depending on the device hardware. Use the following API to set the preferred audio codec for recording:
+OWT Android supports PCMU, OPUS and other codecs depending on the device hardware. Use the following API to set the preferred audio codec for recording:
 
-  + `oms.conference.PublishOptions.addAudioParameter`
-  + `oms.conference.SubscribeOptions.setAudioOption`
-  + `oms.p2p.P2PClientConfiguration.addAudioParameters`
+  + `owt.conference.PublishOptions.addAudioParameter`
+  + `owt.conference.SubscribeOptions.setAudioOption`
+  + `owt.p2p.P2PClientConfiguration.addAudioParameters`
 
 # 5 NAT and firewall traversal {#section5}
 
-OMS Android fully supports NAT and firewall traversal with STUN / TURN / ICE. [The Coturn TURN server](https://github.com/coturn/coturn) could be one choice.
+OWT Android fully supports NAT and firewall traversal with STUN / TURN / ICE. [The Coturn TURN server](https://github.com/coturn/coturn) could be one choice.
 
 # 6 Customize signaling channel {#section6}
 
@@ -100,7 +100,7 @@ Signaling channel is an implementation to transmit signaling data for creating a
 
 # 7 Customize renderer {#section7}
 
-OMS Android uses `org.webrtc.SurfaceViewRenderer` in the sample apps, which can be used to render a stream on a SurfaceView.  If you would like to customize your own renderer, follow these steps:
+OWT Android uses `org.webrtc.SurfaceViewRenderer` in the sample apps, which can be used to render a stream on a SurfaceView.  If you would like to customize your own renderer, follow these steps:
 
 1.  Create your own renderer class which implements the interface `org.webrtc.VideoRenderer.Callbacks`;
 2.  In the renderer class you have to implement the method `renderFrame(org.webrtc.VideoRenderer.I420Frame)`;
@@ -112,30 +112,30 @@ OMS Android uses `org.webrtc.SurfaceViewRenderer` in the sample apps, which can 
 Conference SDK allows customized SSL context when connecting to MCU server. That means you can change the behavior of how client verifies server's certificate. This may be useful if you want to use self-signed certificate during development. Make sure your SSL context is secure enough when using it in production environment.
 To use a customized SSL context, please use APIs below:
 
-  + `oms.conference.ConferenceClientConfiguration.setSSLContext`
-  + `oms.conference.ConferenceClientConfiguration.setHostnameVerifier`
+  + `owt.conference.ConferenceClientConfiguration.setSSLContext`
+  + `owt.conference.ConferenceClientConfiguration.setHostnameVerifier`
 
 Please refer to [detailed description of SSL/TLS](https://developer.android.com/training/articles/security-ssl.html).
 
 # 9 Customize video input {#section9}
 
-Instead of getting video frames from device camera, OMS Android allows customizing video input which enables media stream to get video frames from the source that application customizes. To set a customized video input, please follow these steps:
+Instead of getting video frames from device camera, OWT Android allows customizing video input which enables media stream to get video frames from the source that application customizes. To set a customized video input, please follow these steps:
 
-1. Implement `oms.base.VideoCapturer` interface;
-2. Create `oms.base.LocalStream` with the object instance of the class implemented in step 1;
+1. Implement `owt.base.VideoCapturer` interface;
+2. Create `owt.base.LocalStream` with the object instance of the class implemented in step 1;
 
 # 10 Customize video encoder/decoder {#section10}
 
-Instead of using Android mediacodec APIs to utilize hardware codes on the devices, OMS Android allows customizing video encoder/decoder to encode/decode video streams.
+Instead of using Android mediacodec APIs to utilize hardware codes on the devices, OWT Android allows customizing video encoder/decoder to encode/decode video streams.
 
-  + `oms.base.ContextInitialization.setCustomizedVideoEncoderFactory`
-  + `oms.base.ContextInitialization.setCustomizedVideoDecoderFactory`
+  + `owt.base.ContextInitialization.setCustomizedVideoEncoderFactory`
+  + `owt.base.ContextInitialization.setCustomizedVideoDecoderFactory`
 
 # 11 Customize audio input {#section11}
 
 Instead of getting audio data from device microphone, our Android client SDK allows customizing audio input which enables media stream to get audio data from the source that application customizes. To set a customized audio input, please follow these steps:
 
-1. Implement `oms.base.IcsAudioRecord.AudioFrameGeneratorInterface`;
+1. Implement `owt.base.IcsAudioRecord.AudioFrameGeneratorInterface`;
 2. Call WebRtcUtils.setCustomizedAudioInput(AudioFrameGeneratorInterface) before instantiating PeerClient or ConferenceClient;
 
 > **Note:** \* Other names and brands may be claimed as the property of others.
