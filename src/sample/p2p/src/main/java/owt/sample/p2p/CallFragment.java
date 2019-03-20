@@ -18,7 +18,7 @@ import org.webrtc.SurfaceViewRenderer;
 
 public class CallFragment extends Fragment implements View.OnClickListener {
 
-    private static final String TAG = "ICS_P2P";
+    private static final String TAG = "OWT_P2P";
     private SurfaceViewRenderer fullRenderer, smallRenderer;
     private Button publishBtn, backBtn;
     private CallFragmentListener mListener;
