@@ -17,7 +17,7 @@ import owt.test.util.Resultable;
 
 public class PubSubObserver extends Resultable implements Publication.PublicationObserver,
         Subscription.SubscriptionObserver {
-    private final static String TAG = "owt_test_conference";
+    private final static String TAG = "ics_test_conference";
     private boolean onEndedTriggered = false;
     private boolean onMuteVideoTriggered = false;
     private boolean onMuteAudioTriggered = false;

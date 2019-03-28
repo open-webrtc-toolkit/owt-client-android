@@ -28,7 +28,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public final class HttpUtils {
-    private final static String TAG = "owt_conference_test";
+    private final static String TAG = "ics_conference_test";
     static SSLContext sslContext;
     static HostnameVerifier hostnameVerifier;
 

@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class P2PClientObserver extends Resultable implements P2PClient.P2PClientObserver {
-    private final static String TAG = "owt_test_p2p";
+    private final static String TAG = "ics_test_p2p";
     public final String name;
     public final List<String> dataReceived = new ArrayList<>();
     public final List<String> dataSenders = new ArrayList<>();

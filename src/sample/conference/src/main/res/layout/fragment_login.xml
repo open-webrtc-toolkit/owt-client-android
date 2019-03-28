@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="50dp"
             android:gravity="center"
-            android:text="@string/owt_conf"
+            android:text="@string/ics_conf"
             android:textColor="@color/colorPrimary"
             android:textSize="50sp"
             android:textStyle="bold"/>
