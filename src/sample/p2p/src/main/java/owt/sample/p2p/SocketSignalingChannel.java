@@ -36,7 +36,7 @@ import io.socket.emitter.Emitter.Listener;
  * Socket.IO implementation of P2P signaling channel.
  */
 public class SocketSignalingChannel implements SignalingChannelInterface {
-    private static final String TAG = "ICS-SocketClient";
+    private static final String TAG = "OWT-SocketClient";
     private final String CLIENT_CHAT_TYPE = "ics-message";
     private final String SERVER_AUTHENTICATED = "server-authenticated";
     private final String FORCE_DISCONNECT = "server-disconnect";
