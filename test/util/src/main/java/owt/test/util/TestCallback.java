@@ -10,7 +10,7 @@ import owt.base.ActionCallback;
 import owt.base.OwtError;
 
 public class TestCallback<T> extends Resultable implements ActionCallback<T> {
-    private final String TAG = "ics_test_util";
+    private final String TAG = "owt_test_util";
     public T successCallbackResult;
     private boolean onSuccessTriggered = false;
     private boolean onFailureTriggered = false;

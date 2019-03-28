@@ -35,7 +35,7 @@ import owt.p2p.SignalingChannelInterface;
  * Socket.IO implementation of P2P signaling channel.
  */
 public class SocketSignalingChannel implements SignalingChannelInterface {
-    private static final String TAG = "ics-test-p2p";
+    private static final String TAG = "owt-test-p2p";
     private final String CLIENT_CHAT_TYPE = "ics-message";
     private final String SERVER_AUTHENTICATED = "server-authenticated";
     private final String FORCE_DISCONNECT = "server-disconnect";
