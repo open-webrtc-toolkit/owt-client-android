@@ -4,6 +4,7 @@
  */
 package owt.test.p2p.apitest;
 
+import static owt.test.p2p.util.P2PAction.checkRemoteStreamEnded;
 import static owt.test.p2p.util.P2PAction.connect;
 import static owt.test.p2p.util.P2PAction.createPeerClient;
 import static owt.test.p2p.util.P2PAction.disconnect;
@@ -14,10 +15,12 @@ import static owt.test.p2p.util.P2PAction.stop;
 import static owt.test.util.CommonAction.checkRTCStats;
 import static owt.test.util.CommonAction.createDefaultCapturer;
 import static owt.test.util.CommonAction.createLocalStream;
+import static owt.test.util.CommonAction.createRawCapture;
 import static owt.test.util.Config.MESSAGE;
 import static owt.test.util.Config.P2P_SERVER;
 import static owt.test.util.Config.RAW_STREAM_FILE;
 import static owt.test.util.Config.TIMEOUT;
+import static owt.test.util.Config.TIMEOUT_LONG;
 import static owt.test.util.Config.USER1_NAME;
 import static owt.test.util.Config.USER2_NAME;
 
@@ -28,6 +31,7 @@ import owt.test.p2p.util.P2PClientObserver;
 import owt.test.util.Config;
 import owt.test.util.RawCapturerForTest;
 import owt.test.util.TestCallback;
+import owt.test.util.TestObserver;
 
 import org.webrtc.RTCStatsReport;
 
@@ -457,5 +461,155 @@ public class PublishTest extends TestBase {
         localStream1 = createLocalStream(true, capturer1);
         disconnect(user1, observer1);
         publish(user1, localStream1, USER2_NAME, null, false, false);
+    }
+
+    public void testRepublish_receiveRePublishAfterSelfStopClient_shouldSucceed() {
+        observer1 = new P2PClientObserver(USER1_NAME);
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(observer1);
+        user2 = createPeerClient(observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        Publication publication1 = publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        TestObserver publicationObserver = new TestObserver();
+        publication1.addObserver(publicationObserver);
+        Publication publication2 = publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        stop(user2, USER1_NAME, observer2, publication2);
+        assertTrue(publicationObserver.getResult(TIMEOUT_LONG));
+        checkRemoteStreamEnded(observer1.remoteStreamObservers.values());
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+    }
+
+    public void testRepublish_receiveRePublishAfterOtherStopClient_shouldSucceed() {
+        observer1 = new P2PClientObserver(USER1_NAME);
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(observer1);
+        user2 = createPeerClient(observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        Publication publication1 = publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        Publication publication2 = publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        TestObserver publicationObserver = new TestObserver();
+        publication2.addObserver(publicationObserver);
+        stop(user1, USER2_NAME, observer1, publication1);
+        assertTrue(publicationObserver.getResult(TIMEOUT_LONG));
+        checkRemoteStreamEnded(observer2.remoteStreamObservers.values());
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+    }
+
+    public void testRepublish_receiveRePublishAfterSelfPublicationStop_shouldSucceed() {
+        observer1 = new P2PClientObserver(USER1_NAME);
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(observer1);
+        user2 = createPeerClient(observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        Publication publication2 = publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        stop(publication2, observer1, 0, true);
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+    }
+
+    public void testRepublish_receiveRePublishWithVP8_shouldSucceed() {
+        ArrayList<MediaCodecs.VideoCodec> videoCodecs = new ArrayList<>();
+        videoCodecs.add(MediaCodecs.VideoCodec.VP8);
+        observer1 = new P2PClientObserver(USER1_NAME);
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(videoCodecs, null, observer1);
+        user2 = createPeerClient(videoCodecs, null, observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        Publication publication2 = publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        stop(publication2, observer1, 0, true);
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+    }
+
+    public void testRepublish_receiveRePublishWithH264_shouldSucceed() {
+        ArrayList<MediaCodecs.VideoCodec> videoCodecs = new ArrayList<>();
+        videoCodecs.add(MediaCodecs.VideoCodec.H264);
+        observer1 = new P2PClientObserver(USER1_NAME);
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(videoCodecs, null, observer1);
+        user2 = createPeerClient(videoCodecs, null, observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        Publication publication2 = publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        stop(publication2, observer1, 0, true);
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+    }
+
+    public void testRepublish_receiveRePublishWithVP9_shouldSucceed() {
+        ArrayList<MediaCodecs.VideoCodec> videoCodecs = new ArrayList<>();
+        videoCodecs.add(MediaCodecs.VideoCodec.VP9);
+        observer1 = new P2PClientObserver(USER1_NAME);
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(videoCodecs, null, observer1);
+        user2 = createPeerClient(videoCodecs, null, observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        localStream1 = createLocalStream(true, capturer1);
+        publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        Publication publication2 = publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        stop(publication2, observer1, 0, true);
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+    }
+
+    public void testPublish_senderPublishTwoStreamReceiverPublishOneStream_shouldSucceed() {
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(null);
+        user2 = createPeerClient(observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        capturer2 = createRawCapture();
+        localStream1 = createLocalStream(true, capturer1);
+        localStream2 = createLocalStream(true, capturer2);
+        publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        publish(user1, localStream2, USER2_NAME, observer2, true, true);
+    }
+
+    public void testPublish_senderPublishOneStreamReceiverPublishTwoStream_shouldSucceed() {
+        observer2 = new P2PClientObserver(USER2_NAME);
+        user1 = createPeerClient(null);
+        user2 = createPeerClient(observer2);
+        user1.addAllowedRemotePeer(USER2_NAME);
+        user2.addAllowedRemotePeer(USER1_NAME);
+        connect(user1, USER1_NAME, P2P_SERVER, true);
+        connect(user2, USER2_NAME, P2P_SERVER, true);
+        capturer1 = createDefaultCapturer();
+        capturer2 = createRawCapture();
+        localStream1 = createLocalStream(true, capturer1);
+        localStream2 = createLocalStream(true, capturer2);
+        publish(user1, localStream1, USER2_NAME, observer2, true, true);
+        publish(user2, localStream1, USER1_NAME, observer1, true, true);
+        publish(user2, localStream2, USER1_NAME, observer2, true, true);
     }
 }
