@@ -51,8 +51,8 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
         CallFragment.CallFragmentListener, ChatFragment.ChatFragmentListener,
         P2PClient.P2PClientObserver {
 
-    private static final String TAG = "OWT_P2P";
-    private static final int OWT_REQUEST_CODE = 100;
+    private static final String TAG = "ICS_P2P";
+    private static final int ICS_REQUEST_CODE = 100;
     private static final int STATS_INTERVAL_MS = 10000;
     EglBase rootEglBase;
     private LoginFragment loginFragment;
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                     permission) != PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(MainActivity.this,
                         permissions,
-                        OWT_REQUEST_CODE);
+                        ICS_REQUEST_CODE);
                 return;
             }
         }
@@ -169,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
 
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
             int[] grantResults) {
-        if (requestCode == OWT_REQUEST_CODE
+        if (requestCode == ICS_REQUEST_CODE
                 && grantResults.length == 2
                 && grantResults[0] == PERMISSION_GRANTED
                 && grantResults[1] == PERMISSION_GRANTED) {

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">OWT_P2P</string>
+    <string name="app_name">ICS_P2P</string>
     <string name="title_home">Home</string>
     <string name="title_settings">Settings</string>
     <string name="title_chat">Message</string>
@@ -22,5 +22,5 @@
     <string name="camera_back">BACK</string>
     <string name="camera_resolution">Camera Resolution</string>
     <string name="send">send</string>
-    <string name="owt_p2p">ICS P2P</string>
+    <string name="ics_p2p">ICS P2P</string>
 </resources>

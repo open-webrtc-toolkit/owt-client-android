@@ -73,8 +73,8 @@ public class MainActivity extends AppCompatActivity
         ConferenceClient.ConferenceClientObserver {
 
     static final int STATS_INTERVAL_MS = 5000;
-    private static final String TAG = "OWT_CONF";
-    private static final int OWT_REQUEST_CODE = 100;
+    private static final String TAG = "ICS_CONF";
+    private static final int ICS_REQUEST_CODE = 100;
     private static boolean contextHasInitialized = false;
     EglBase rootEglBase;
     private boolean fullScreen = false;
@@ -289,7 +289,7 @@ public class MainActivity extends AppCompatActivity
             if (middleBtn.getText().equals("ShareScreen")) {
                 MediaProjectionManager manager =
                         (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-                startActivityForResult(manager.createScreenCaptureIntent(), OWT_REQUEST_CODE);
+                startActivityForResult(manager.createScreenCaptureIntent(), ICS_REQUEST_CODE);
             } else {
                 executor.execute(() -> {
                     if (screenPublication != null) {
@@ -387,7 +387,7 @@ public class MainActivity extends AppCompatActivity
                     permission) != PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(MainActivity.this,
                         permissions,
-                        OWT_REQUEST_CODE);
+                        ICS_REQUEST_CODE);
                 return;
             }
         }
@@ -398,7 +398,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
             int[] grantResults) {
-        if (requestCode == OWT_REQUEST_CODE
+        if (requestCode == ICS_REQUEST_CODE
                 && grantResults.length == 2
                 && grantResults[0] == PERMISSION_GRANTED
                 && grantResults[1] == PERMISSION_GRANTED) {

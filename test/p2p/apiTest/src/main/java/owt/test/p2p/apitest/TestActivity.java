@@ -14,7 +14,7 @@ import org.webrtc.EglBase;
 import owt.base.ContextInitialization;
 
 public class TestActivity extends Activity {
-    private final static String TAG = "owt_p2p_test";
+    private final static String TAG = "ics_p2p_test";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

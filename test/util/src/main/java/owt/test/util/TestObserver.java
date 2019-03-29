@@ -15,7 +15,7 @@ import owt.base.RemoteStream;
  */
 public class TestObserver extends Resultable implements RemoteStream.StreamObserver,
         Publication.PublicationObserver, Participant.ParticipantObserver {
-    private final static String TAG = "owt_test_util";
+    private final static String TAG = "ics_test_util";
     public final String id;
     public final String name;
 
