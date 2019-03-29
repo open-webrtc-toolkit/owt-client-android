@@ -87,6 +87,7 @@ public abstract class PeerConnectionChannel
                 new KeyValuePair("OfferToReceiveVideo", String.valueOf(receiveVideo)));
         peerConnection = PCFactoryProxy.instance().createPeerConnection(configuration, this);
         RCHECK(peerConnection);
+        signalingState = peerConnection.signalingState();
     }
 
     //Utility method for getting the mediastream as it is package privileged.
