@@ -8,13 +8,13 @@ import android.util.Log;
 
 ///@cond
 public final class CheckCondition {
-    private static final String TAG = "OWT";
+    private static final String TAG = "ICS";
     //TODO: As project variable BuildConfig.DEBUG isn't reliable reportedly, we set up ourselves.
-    //TODO: DO NOT forget to disable OWT_DEBUG when exporting release jar files.
-    private static final boolean OWT_DEBUG = true;
+    //TODO: DO NOT forget to disable ICS_DEBUG when exporting release jar files.
+    private static final boolean ICS_DEBUG = true;
 
     public static void DCHECK(Object obj) {
-        if (OWT_DEBUG) {
+        if (ICS_DEBUG) {
             RCHECK(obj);
         }
     }
@@ -29,7 +29,7 @@ public final class CheckCondition {
     }
 
     public static void DCHECK(boolean condition) {
-        if (OWT_DEBUG) {
+        if (ICS_DEBUG) {
             RCHECK(condition);
         }
     }
@@ -44,7 +44,7 @@ public final class CheckCondition {
     }
 
     public static void DCHECK(Exception e) {
-        if (OWT_DEBUG) {
+        if (ICS_DEBUG) {
             RCHECK(e);
         }
     }

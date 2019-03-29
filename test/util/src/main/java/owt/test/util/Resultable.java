@@ -12,7 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public abstract class Resultable {
-    private final String TAG = "owt_test_util";
+    private final String TAG = "ics_test_util";
     private CountDownLatch latch;
 
     public Resultable(int count) {

@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">OWT_CONF</string>
-    <string name="owt_conf">ICS CONFERENCE</string>
+    <string name="app_name">ICS_CONF</string>
+    <string name="ics_conf">ICS CONFERENCE</string>
     <string name="server_url">server url</string>
     <string name="connect">connect</string>
     <string name="connecting">connecting</string>

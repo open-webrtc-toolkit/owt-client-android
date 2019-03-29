@@ -58,7 +58,7 @@ Follow these general steps to create an Android application using OWT Android:
 
 1. Create an Android Application project in Android Studio.
 2. Create a libs/ folder under the project directory.
-3. Copy owt_base.jar and owt_p2p.jar(or owt_conference.jar) from the libs/ folder in release package to the libs/ folder created in step 2.
+3. Copy oms_base.jar and oms_p2p.jar(or oms_conference.jar) from the libs/ folder in release package to the libs/ folder created in step 2.
 4. Create jniLibs/ folder under project/src/main directory.
 5. Copy the libjingle_peerconnection_so.so from libs/webrtc/<target_arch> of our Android client SDKto jniLibs/<target_arch> folders.
 6. Add all the JAR (Java archive) files dependencies in your project build.gradle.
