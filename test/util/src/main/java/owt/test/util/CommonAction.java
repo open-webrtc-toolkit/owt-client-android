@@ -8,9 +8,12 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
+import static owt.test.util.Config.RAW_STREAM_FILE;
+
 import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,7 +24,17 @@ import owt.base.VideoCapturer;
 public class CommonAction {
 
     public static VideoCapturer createDefaultCapturer() {
-        return VideoCapturerForTest.create(640,480);
+        return VideoCapturerForTest.create(640, 480);
+    }
+
+    public static VideoCapturer createRawCapture() {
+        RawCapturerForTest capturer = null;
+        try {
+            capturer = new RawCapturerForTest(RAW_STREAM_FILE);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        return capturer;
     }
 
     public static LocalStream createLocalStream(boolean enableAudio, VideoCapturer capturer) {
