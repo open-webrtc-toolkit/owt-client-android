@@ -5,6 +5,7 @@ import subprocess
 import sys
 import zipfile
 from xml.dom import minidom
+import platform
 
 # path variables
 HOME_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -12,23 +13,27 @@ DEPS_PATH = os.path.join(HOME_PATH, 'dependencies')
 CODE_PATH = os.path.join(HOME_PATH, 'src')
 SDK_PATH = os.path.join(CODE_PATH, 'sdk')
 SAMPLE_PATH = os.path.join(CODE_PATH, 'sample')
-ICS_DEBUG_PATH = os.path.join(SDK_PATH, 'base/src/main/java/owt/base')
+ICS_DEBUG_PATH = os.path.join(SDK_PATH, 'base', 'src', 'main', 'java', 'owt', 'base')
 
 # distribution path
 DIST_PATH = os.path.join(HOME_PATH, 'dist')
 DIST_LIB_PATH = os.path.join(DIST_PATH, 'libs')
 DIST_SAMPLE_PATH = os.path.join(DIST_PATH, 'samples')
-DIST_SAMPLE_CODE_PATH = os.path.join(DIST_SAMPLE_PATH, 'src/sample')
+DIST_SAMPLE_CODE_PATH = os.path.join(DIST_SAMPLE_PATH, 'src', 'sample')
 DIST_APK_PATH = os.path.join(DIST_PATH, 'apks')
 
 # gradle wrapper
-GRADLEW = HOME_PATH + '/gradlew'
+GRADLEW_EXECUTABLE = 'gradlew.bat' if platform.system() == 'Windows' else 'gradlew'
+GRADLEW_PATH = os.path.join(HOME_PATH, GRADLEW_EXECUTABLE)
 
 
 def recover_variable():
     # recover
-    os.rename(os.path.join(ICS_DEBUG_PATH, 'CheckCondition.java.bk'),
-              os.path.join(ICS_DEBUG_PATH, 'CheckCondition.java'))
+    backup_path = os.path.join(ICS_DEBUG_PATH, 'CheckCondition.java.bk')
+    origin_path = os.path.join(ICS_DEBUG_PATH, 'CheckCondition.java')
+    if os.path.exists(origin_path):
+        os.remove(origin_path)
+    os.rename(backup_path, origin_path)
 
 
 def zip_package(package_name):
@@ -82,7 +87,7 @@ def pack_sample_source(sample):
 def pack_sample(sample):
     print '\n> packing ics_' + sample.lower() + '.apk'
     os.chdir(os.path.join(SAMPLE_PATH, sample))
-    cmd = [GRADLEW, '-q', 'assembleDebug']
+    cmd = [GRADLEW_PATH, '-q', 'assembleDebug']
     if subprocess.call(cmd):
         print '\nFailed to build', sample, 'sample.'
         sys.exit(1)
@@ -101,7 +106,7 @@ def pack_sample(sample):
 def pack_sdk(sdk):
     print '\n> packing ics_' + sdk.lower() + '.aar'
     os.chdir(os.path.join(SDK_PATH, sdk))
-    cmd = [GRADLEW, '-q', 'assembleRelease']
+    cmd = [GRADLEW_PATH, '-q', 'assembleRelease']
     if subprocess.call(cmd):
         print '\nFailed to build', sdk, 'sdk.'
         sys.exit(1)
@@ -143,7 +148,7 @@ def copy_deps():
 
 
 def run_lint():
-    cmd = [GRADLEW, '-p', SDK_PATH, 'lint']
+    cmd = [GRADLEW_PATH, '-p', SDK_PATH, 'lint']
     subprocess.call(cmd)
 
     has_error = False
@@ -168,7 +173,7 @@ def run_lint():
 def clean():
     print '\n> cleaning environment.'
     os.chdir(HOME_PATH)
-    cmd = [GRADLEW, '-q', 'clean']
+    cmd = [GRADLEW_PATH, '-q', 'clean']
     subprocess.call(cmd)
 
     if os.path.exists(DIST_PATH):
