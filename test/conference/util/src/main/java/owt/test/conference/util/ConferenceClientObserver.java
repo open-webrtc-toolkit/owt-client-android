@@ -18,7 +18,7 @@ import java.util.List;
 
 public class ConferenceClientObserver extends Resultable implements
         ConferenceClient.ConferenceClientObserver {
-    private final static String TAG = "ics_test_conference";
+    private final static String TAG = "owt_test_conference";
     public final String name;
     public String lastSenderId = null;
     public String lastRecvMsg = null;
