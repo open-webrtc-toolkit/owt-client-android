@@ -19,7 +19,6 @@ import static owt.p2p.P2PClient.ServerConnectionStatus.DISCONNECTED;
 import static owt.p2p.P2PClient.SignalingMessageType.CHAT_CLOSED;
 import static owt.p2p.P2PClient.SignalingMessageType.CHAT_DATA_ACK;
 import static owt.p2p.P2PClient.SignalingMessageType.CHAT_UA;
-import static owt.p2p.P2PClient.SignalingMessageType.NEGOTIATION_REQUEST;
 import static owt.p2p.P2PClient.SignalingMessageType.SIGNALING_MESSAGE;
 import static owt.p2p.P2PClient.SignalingMessageType.STREAM_INFO;
 import static owt.p2p.P2PClient.SignalingMessageType.TRACK_ADD_ACK;
@@ -706,7 +705,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
     @Override
     public void onRenegotiationRequest(String peerId) {
-        sendSignalingMessage(peerId, NEGOTIATION_REQUEST, null, null);
     }
 
     //SignalingChannelObserver
@@ -733,13 +731,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
                     synchronized (pcChannelsLock) {
                         if (pcChannels.containsKey(peerId)) {
                             getPeerConnection(peerId).processTrackAck(msgObj.getJSONArray("data"));
-                        }
-                    }
-                    break;
-                case NEGOTIATION_REQUEST:
-                    synchronized (pcChannelsLock) {
-                        if (pcChannels.containsKey(peerId)) {
-                            getPeerConnection(peerId).processNegotiationRequest();
                         }
                     }
                     break;
@@ -843,7 +834,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     enum SignalingMessageType {
-        NEGOTIATION_REQUEST("chat-negotiation-needed"),
         SIGNALING_MESSAGE("chat-signal"),
         TRACK_ADD_ACK("chat-tracks-added"),
         TRACK_INFO("chat-track-sources"),
@@ -861,8 +851,6 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
 
         static SignalingMessageType get(String type) {
             switch (type) {
-                case "chat-negotiation-needed":
-                    return NEGOTIATION_REQUEST;
                 case "chat-signal":
                     return SIGNALING_MESSAGE;
                 case "chat-tracks-added":

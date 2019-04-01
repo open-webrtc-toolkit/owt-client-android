@@ -62,9 +62,6 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     private boolean continualIceGathering = true;
     private boolean everPublished = false;
 
-    // default isCaller true
-    private boolean isCaller = true;
-
     P2PPeerConnectionChannel(String peerId, P2PClientConfiguration configuration,
             PeerConnectionChannelObserver observer) {
         super(peerId, configuration.rtcConfiguration, true, true, observer);
@@ -213,14 +210,10 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
 
     void processNegotiationRequest() {
         synchronized (negLock) {
-            if (!negotiating) {
+            if (!negotiating && getSignalingState() == STABLE) {
                 negotiating = true;
                 renegotiationNeeded = false;
-                if (isCaller) {
-                    createOffer();
-                } else {
-                    observer.onRenegotiationRequest(key);
-                }
+                createOffer();
             } else {
                 renegotiationNeeded = true;
             }
@@ -362,7 +355,6 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             Log.d(LOG_TAG, "onSetSuccess ");
             if (signalingState == PeerConnection.SignalingState.HAVE_REMOTE_OFFER
                     || peerConnection.getLocalDescription() == null) {
-                isCaller = false;
                 createAnswer();
             } else {
                 drainRemoteCandidates();
