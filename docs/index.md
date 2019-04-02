@@ -10,20 +10,21 @@ OWT Android requires using Android SDK API level 16 or above. In order to use ha
 
 The following devices have been validated with our SDK:
 
-   + Huawei* Nexus 6P (Android 8.0.0)
-   + OPPO* R11 (Android 7.1.1)
-   + LG* Nexus 5X (Android 7.1.1)
-   + Sumsung* S8 (Android 7.0)
    + Huawei* Mate9 (Android 7.0)
-   + Sumsung* S6 (Android 6.0.1)
    + Huawei* NXT-AL10 (Android 6.0)
-   + Xiaomi* MI5 (Android 6.0)
-   + vivo* X7 (Android 5.1.1)
-   + LG Nexus 5 (Android 5.1.1)
-   + Xiaomi* pad2 (Android 5.1)
    + Huawei* P8 (Android 5.0)
-   + Xiaomi* MI4 (Android 4.4.4)
+   + Nexus 5 (Android 5.1.1)
+   + Nexus 5X (Android 7.1.1)
+   + Nexus 6P (Android 8.0.0)
    + OPPO* R7 (Android 4.4.4)
+   + OPPO* R11 (Android 7.1.1)
+   + Sumsung* S8 (Android 7.0)
+   + Sumsung* S6 (Android 6.0.1)
+   + vivo* X7 (Android 5.1.1)
+   + Xiaomi* MI4 (Android 4.4.4)
+   + Xiaomi* MI5 (Android 6.0)
+   + Xiaomi* Pad2 (Android 5.1)
+
 
 # 3 Development {#section3}
 
@@ -128,14 +129,7 @@ Instead of getting video frames from device camera, OWT Android allows customizi
 
 Instead of using Android mediacodec APIs to utilize hardware codes on the devices, OWT Android allows customizing video encoder/decoder to encode/decode video streams.
 
-  + `owt.base.ContextInitialization.setCustomizedVideoEncoderFactory`
+  + `owt.base.ContextInitialization.setCustomizedVideioEncoderFactory`
   + `owt.base.ContextInitialization.setCustomizedVideoDecoderFactory`
-
-# 11 Customize audio input {#section11}
-
-Instead of getting audio data from device microphone, our Android client SDK allows customizing audio input which enables media stream to get audio data from the source that application customizes. To set a customized audio input, please follow these steps:
-
-1. Implement `owt.base.IcsAudioRecord.AudioFrameGeneratorInterface`;
-2. Call WebRtcUtils.setCustomizedAudioInput(AudioFrameGeneratorInterface) before instantiating PeerClient or ConferenceClient;
 
 > **Note:** \* Other names and brands may be claimed as the property of others.
