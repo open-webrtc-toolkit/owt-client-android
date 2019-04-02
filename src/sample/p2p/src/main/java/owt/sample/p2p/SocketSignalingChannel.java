@@ -37,7 +37,7 @@ import io.socket.emitter.Emitter.Listener;
  */
 public class SocketSignalingChannel implements SignalingChannelInterface {
     private static final String TAG = "OWT-SocketClient";
-    private final String CLIENT_CHAT_TYPE = "ics-message";
+    private final String CLIENT_CHAT_TYPE = "owt-message";
     private final String SERVER_AUTHENTICATED = "server-authenticated";
     private final String FORCE_DISCONNECT = "server-disconnect";
     private final String CLIENT_TYPE = "&clientType=";
