@@ -10,20 +10,19 @@ OWT Android requires using Android SDK API level 16 or above. In order to use ha
 
 The following devices have been validated with our SDK:
 
+   + Huawei* Mate20 (Android 9.0)
    + Huawei* Mate9 (Android 7.0)
    + Huawei* NXT-AL10 (Android 6.0)
+   + Huawei* P20 (Android 8.1)
    + Huawei* P8 (Android 5.0)
    + Nexus 5 (Android 5.1.1)
    + Nexus 5X (Android 7.1.1)
    + Nexus 6P (Android 8.0.0)
-   + OPPO* R7 (Android 4.4.4)
-   + OPPO* R11 (Android 7.1.1)
+   + OPPO* R17 (Android 8.1.0)
    + Sumsung* S8 (Android 7.0)
    + Sumsung* S6 (Android 6.0.1)
-   + vivo* X7 (Android 5.1.1)
-   + Xiaomi* MI4 (Android 4.4.4)
-   + Xiaomi* MI5 (Android 6.0)
-   + Xiaomi* Pad2 (Android 5.1)
+   + vivo* X23 (Android 8.1.0)
+   + Xiaomi* MI8 (Android 8.1.0)
 
 
 # 3 Development {#section3}
