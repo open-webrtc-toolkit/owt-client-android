@@ -14,6 +14,7 @@
     <string name="front">FRONT</string>
     <string name="back">BACK</string>
     <string name="camera_resolution">Camera Resolution</string>
+    <string name="video_codec">Video Codec</string>
     <string name="sharescreen">ShareScreen</string>
     <string name="share_screen">ShareScreen</string>
     <string name="stop_screen">StopSharing</string>

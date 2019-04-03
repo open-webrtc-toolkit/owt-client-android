@@ -10,6 +10,7 @@ import static owt.base.MediaCodecs.AudioCodec.OPUS;
 import static owt.base.MediaCodecs.AudioCodec.PCMU;
 import static owt.base.MediaCodecs.VideoCodec.H264;
 import static owt.base.MediaCodecs.VideoCodec.VP8;
+import static owt.base.MediaCodecs.VideoCodec.VP9;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -48,6 +49,7 @@ import owt.base.ActionCallback;
 import owt.base.AudioCodecParameters;
 import owt.base.ContextInitialization;
 import owt.base.LocalStream;
+import owt.base.MediaCodecs;
 import owt.base.MediaConstraints;
 import owt.base.OwtError;
 import owt.base.VideoCodecParameters;
@@ -175,15 +177,29 @@ public class MainActivity extends AppCompatActivity
                 localStream = new LocalStream(capturer,
                         new MediaConstraints.AudioTrackConstraints());
                 localStream.attach(localRenderer);
-
+                PublishOptions options = null;
                 VideoEncodingParameters h264 = new VideoEncodingParameters(H264);
                 VideoEncodingParameters vp8 = new VideoEncodingParameters(VP8);
-
-                PublishOptions options = PublishOptions.builder()
-                        .addVideoParameter(h264)
-                        .addVideoParameter(vp8)
-                        .build();
-
+                VideoEncodingParameters vp9 = new VideoEncodingParameters(VP9);
+                if (settingsFragment != null && settingsFragment.VideoEncodingVP8) {
+                    options = PublishOptions.builder()
+                            .addVideoParameter(vp8)
+                            .build();
+                } else if (settingsFragment != null && settingsFragment.VideoEncodingH264) {
+                    options = PublishOptions.builder()
+                            .addVideoParameter(h264)
+                            .build();
+                }else if(settingsFragment != null && settingsFragment.VideoEncodingVP9){
+                    options = PublishOptions.builder()
+                            .addVideoParameter(vp9)
+                            .build();
+                }else{
+                    options = PublishOptions.builder()
+                            .addVideoParameter(vp8)
+                            .addVideoParameter(h264)
+                            .addVideoParameter(vp9)
+                            .build();
+                }
                 ActionCallback<Publication> callback = new ActionCallback<Publication>() {
                     @Override
                     public void onSuccess(final Publication result) {

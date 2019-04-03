@@ -15,7 +15,8 @@ import android.widget.RadioGroup;
 
 public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedChangeListener {
     boolean cameraFront = true, resolutionVGA = true;
-    private RadioGroup cameraRG, resolutionRG;
+    boolean VideoEncodingVP8 = false, VideoEncodingVP9 = false, VideoEncodingH264 = false;
+    private RadioGroup cameraRG, resolutionRG, videoCodecRG;
     private EditText roomIdEditText;
 
     public SettingsFragment() {
@@ -34,6 +35,9 @@ public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedCh
         resolutionRG.setOnCheckedChangeListener(this);
         RadioButton vgaReso = mView.findViewById(R.id.vga);
         vgaReso.setChecked(true);
+
+        videoCodecRG = mView.findViewById(R.id.videoCodec_rg);
+        videoCodecRG.setOnCheckedChangeListener(this);
 
         roomIdEditText = mView.findViewById(R.id.room_id);
 
@@ -62,6 +66,24 @@ public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedCh
                     break;
                 case R.id.p720:
                     resolutionVGA = false;
+                    break;
+            }
+        } else if (group == videoCodecRG) {
+            switch (checkedId) {
+                case R.id.vp8:
+                    VideoEncodingVP8 = true;
+                    VideoEncodingVP9 = false;
+                    VideoEncodingH264 = false;
+                    break;
+                case R.id.vp9:
+                    VideoEncodingVP8 = false;
+                    VideoEncodingVP9 = true;
+                    VideoEncodingH264 = false;
+                    break;
+                case R.id.h264:
+                    VideoEncodingVP8 = false;
+                    VideoEncodingVP9 = false;
+                    VideoEncodingH264 = true;
                     break;
             }
         }
