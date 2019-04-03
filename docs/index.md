@@ -131,4 +131,7 @@ Instead of using Android mediacodec APIs to utilize hardware codes on the device
   + `owt.base.ContextInitialization.setCustomizedVideioEncoderFactory`
   + `owt.base.ContextInitialization.setCustomizedVideoDecoderFactory`
 
+# 11 Privacy and security {#section11}
+ SDK will send operation system's name and version, libwebrtc version and abilities, SDK name and version to conference server and P2P endpoints it tries to make connection. SDK does not store this information on disk.
+
 > **Note:** \* Other names and brands may be claimed as the property of others.
