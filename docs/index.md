@@ -1,7 +1,7 @@
-The Open WebRTC Toolkit Client Android SDK Documentation
+Open WebRTC Toolkit Client Android SDK Documentation
 ===============================
 # 1 Introduction {#section1}
-The Open WebRTC Toolkit Client SDK for Android, OWT Android briefly, provides helpful tools (including a sample Android application) for developing Android native WebRTC applications using Java APIs. The SDK is distributed in the `CS_WebRTC_Client_SDK_Android.<ver>.zip` release package.
+Open WebRTC Toolkit Client SDK for Android, OWT Android briefly, provides helpful tools (including a sample Android application) for developing Android native WebRTC applications using Java APIs. The SDK is distributed in the `CS_WebRTC_Client_SDK_Android.<ver>.zip` release package.
 
 Please refer to the Release Notes for the latest information in the SDK release package, including new features, fixed bugs and known issues.
 
