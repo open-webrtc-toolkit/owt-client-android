@@ -43,6 +43,7 @@ def exec_cmd(cmd, cmd_path, log_path):
             sys.stdout.write(line)
             f.write(line)
         proc.communicate()
+    return proc.returncode
 
 
 '''TODO: merge analyse_unit_test_result and analyse_instrumentation_test_result with
@@ -185,18 +186,14 @@ def recover_config():
 
 def build_libs(dependencies_dir, log_dir):
     print '> building sdk libraries...'
-    result = False
     build_file = os.path.join(log_dir, 'build-'+ LOGCAT_SUFFIX)
     cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc'), os.path.join(DEPS_PATH, 'libwebrtc.bk')]
     subprocess.call(cmd)
     shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', 'tools/pack.py', '--skip-zip']
-    exec_cmd(cmd, HOME_PATH, build_file)
-    with open(build_file, 'r') as f:
-        for line in f:
-            if "BUILD SUCCESSFUL " in line:
-                result = True
-                break
+    result = exec_cmd(cmd, HOME_PATH, build_file)
+    if not result:
+        os.remove(build_file)
     return result
 
 
@@ -281,7 +278,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # generate sdk libraries.
-    if args.build and not build_libs(args.dependencies_dir, args.log_dir):
+    if args.build and build_libs(args.dependencies_dir, args.log_dir):
         recover_deps()
         sys.exit(1)
 
