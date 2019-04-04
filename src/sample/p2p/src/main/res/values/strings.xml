@@ -22,5 +22,5 @@
     <string name="camera_back">BACK</string>
     <string name="camera_resolution">Camera Resolution</string>
     <string name="send">send</string>
-    <string name="owt_p2p">ICS P2P</string>
+    <string name="owt_p2p">OWT P2P</string>
 </resources>
