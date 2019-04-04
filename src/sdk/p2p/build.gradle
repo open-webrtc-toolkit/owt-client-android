@@ -24,6 +24,7 @@ android {
 }
 
 dependencies {
+    compileOnly files('../../../dependencies/libwebrtc/libwebrtc.jar')
     compileOnly project(':src:sdk:base')
 
     androidTestImplementation 'com.android.support:support-annotations:28.0.0'
