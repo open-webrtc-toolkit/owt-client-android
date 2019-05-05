@@ -566,6 +566,8 @@ public abstract class PeerConnectionChannel
          */
         void onError(String key, String errorMsg, boolean recoverable);
 
+        void onEnded(String key);
+
         void onAddStream(String key, RemoteStream remoteStream);
 
         void onDataChannelMessage(String key, String message);
