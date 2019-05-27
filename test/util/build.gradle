@@ -27,7 +27,8 @@ repositories {
 }
 dependencies {
     implementation 'org.dom4j:dom4j:2.0.2'
-    api project(':src:sdk:base')
-    api project(':src:sdk:conference')
-    api project(':src:sdk:p2p')
+    api(name: 'owt_base', ext: 'aar')
+    api(name: 'owt_p2p', ext: 'aar')
+    api(name: 'owt_conference', ext: 'aar')
+    api(name: 'libwebrtc', ext: 'jar')
 }
