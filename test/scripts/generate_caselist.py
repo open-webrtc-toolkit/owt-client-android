@@ -15,7 +15,7 @@ CASE_PATTERN = ".*?public void (test.*?)\(\)"
 
 
 def gen_case(module_name, case_path):
-    print '\n> generating case list for module', module_name
+    print('\n> generating case list for module', module_name)
     case_data = {'module': module_name, 'cases': []}
     case_regex = re.compile(CASE_PATTERN)
 
@@ -25,15 +25,15 @@ def gen_case(module_name, case_path):
                 result = case_regex.match(line)
                 if result:
                     case_data['cases'].append(file.split('.')[0] + "#" + result.group(1))
-    print '> done,', len(case_data['cases']), 'cases in total.'
+    print('> done,', len(case_data['cases']), 'cases in total.')
     return case_data
 
 
 def output_caselist(cast_list, output_file):
-    print '\n> writing case list to a file'
+    print('\n> writing case list to a file')
     with open(output_file, 'w') as file:
         json.dump(case_list, file)
-    print '> done. Please find me here:', output_file, '\n'
+    print('> done. Please find me here:', output_file, '\n')
 
 
 if __name__ == "__main__":
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         case_list.append(gen_case('conference', CONF_CASES))
 
     if len(case_list) == 0:
-        print 'No cases found, you need to at least designate one module to generate cases.\n'
+        print('No cases found, you need to at least designate one module to generate cases.\n')
         sys.exit(0)
     # output case list to a file
     output_caselist(case_list, args.output)
