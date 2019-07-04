@@ -37,18 +37,18 @@ def recover_variable():
 
 
 def zip_package(package_name):
-    print '\n> zipping up dist'
+    print('\n> zipping up dist')
     package_file = os.path.join(DIST_PATH, package_name)
     with zipfile.ZipFile(package_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         for root, _, filenames in os.walk(DIST_PATH):
             for name in filenames:
                 if name != package_name:
                     zf.write(os.path.relpath(os.path.join(root, name)))
-    print '> done.'
+    print('> done.')
 
 
 def copy_build_file():
-    print '\n> copying distribution files'
+    print('\n> copying distribution files')
     # README.md
     shutil.copy2(os.path.join(SAMPLE_PATH, 'README.md'),
                  os.path.join(DIST_SAMPLE_PATH, 'README.md'))
@@ -66,11 +66,11 @@ def copy_build_file():
                         'include \':src:sample:conference\'\n',
                         'include \':src:sample:utils\'\n'])
 
-    print '> done.'
+    print('> done.')
 
 
 def pack_sample_source(sample):
-    print '\n> packing sample source code'
+    print('\n> packing sample source code')
 
     # copy source code
     if not os.path.exists(os.path.join(DIST_SAMPLE_CODE_PATH, sample)):
@@ -81,15 +81,15 @@ def pack_sample_source(sample):
     shutil.copy2(os.path.join(SAMPLE_PATH, sample, 'build.gradle'),
                  os.path.join(DIST_SAMPLE_CODE_PATH, sample, 'build.gradle'))
 
-    print '> done.'
+    print('> done.')
 
 
 def pack_sample(sample):
-    print '\n> packing owt_' + sample.lower() + '.apk'
+    print('\n> packing owt_' + sample.lower() + '.apk')
     os.chdir(os.path.join(SAMPLE_PATH, sample))
     cmd = [GRADLEW_PATH, '-q', 'assembleDebug']
     if subprocess.call(cmd):
-        print '\nFailed to build', sample, 'sample.'
+        print('\nFailed to build', sample, 'sample.')
         sys.exit(1)
 
     if not os.path.exists(DIST_APK_PATH):
@@ -100,15 +100,15 @@ def pack_sample(sample):
         os.path.join(SAMPLE_PATH, sample, 'build/outputs/apk/debug/' + sample + '-debug.apk'),
         os.path.join(DIST_APK_PATH, 'owt_' + sample + '.apk'))
 
-    print '> done.'
+    print('> done.')
 
 
 def pack_sdk(sdk):
-    print '\n> packing owt_' + sdk.lower() + '.aar'
+    print('\n> packing owt_' + sdk.lower() + '.aar')
     os.chdir(os.path.join(SDK_PATH, sdk))
     cmd = [GRADLEW_PATH, '-q', 'assembleRelease']
     if subprocess.call(cmd):
-        print '\nFailed to build', sdk, 'sdk.'
+        print('\nFailed to build', sdk, 'sdk.')
         sys.exit(1)
 
     if not os.path.exists(DIST_LIB_PATH):
@@ -117,7 +117,7 @@ def pack_sdk(sdk):
     # copy jar files to dist/libs
     shutil.copy2(os.path.join(SDK_PATH, sdk, 'build/outputs/aar', sdk + '-release.aar'),
                  os.path.join(DIST_LIB_PATH, 'owt_' + sdk.lower() + '.aar'))
-    print '> done.'
+    print('> done.')
 
 
 def release_variable():
@@ -135,7 +135,7 @@ def release_variable():
 
 
 def copy_deps():
-    print '\n> coping dependency files to dist'
+    print('\n> coping dependency files to dist')
     if not os.path.exists(DIST_LIB_PATH):
         os.makedirs(DIST_LIB_PATH)
     # ThirdPartyLicenses.txt
@@ -144,7 +144,7 @@ def copy_deps():
     # libjingle
     shutil.copytree(os.path.join(DEPS_PATH, 'libwebrtc'),
                     os.path.join(DIST_LIB_PATH, 'webrtc'))
-    print '> done.'
+    print('> done.')
 
 
 def run_lint():
@@ -160,9 +160,9 @@ def run_lint():
         for node in issue_nodes:
             severity = node.getAttribute('severity') if node else ''
             if severity == 'Warning' or severity == 'Error' or severity == 'Fatal':
-                print '\nThere are some errors in ' + SDK_PATH + '/' + name + ','
-                print 'Please go to ' + SDK_PATH + '/' + name \
-                      + '/build/reports/lint-results.html to get more information.'
+                print('\nThere are some errors in ' + SDK_PATH + '/' + name + ',')
+                print('Please go to ' + SDK_PATH + '/' + name \
+                      + '/build/reports/lint-results.html to get more information.')
                 has_error = True
                 break
 
@@ -171,14 +171,14 @@ def run_lint():
 
 
 def clean():
-    print '\n> cleaning environment.'
+    print('\n> cleaning environment.')
     os.chdir(HOME_PATH)
     cmd = [GRADLEW_PATH, '-q', 'clean']
     subprocess.call(cmd)
 
     if os.path.exists(DIST_PATH):
         shutil.rmtree(DIST_PATH)
-    print '> done.'
+    print('> done.')
 
 
 if __name__ == '__main__':
