@@ -21,13 +21,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import io.socket.client.Ack;
 import owt.base.ActionCallback;
@@ -93,10 +89,6 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     private RoomStates roomStates;
     private final Object statesLock = new Object();
 
-    //to avoid run info() when conferenceInfo is null
-    private CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
-
-
     /**
      * Constructor for ConferenceClient.
      *
@@ -144,14 +136,6 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     public ConferenceInfo info() {
         // ConferenceInfo is immutable for API users, so it is safe here just to return
         // |conferenceInfo|.
-        try {
-            cyclicBarrier.await(1, TimeUnit.SECONDS);
-        } catch (BrokenBarrierException | InterruptedException e) {
-            Log.e("OWT", Thread.currentThread().getName() + " cyclicBarrier wait() error " + e.getMessage());
-        } catch (TimeoutException e) {
-            Log.e("OWT", Thread.currentThread().getName() + " cyclicBarrier.await(1, TimeUnit.SECONDS) over time");
-        }
-
         synchronized (infoLock) {
             return conferenceInfo;
         }
@@ -609,15 +593,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                     joinCallback.onSuccess(conferenceInfo);
                     synchronized (infoLock) {
                         ConferenceClient.this.conferenceInfo = conferenceInfo;
-                        cyclicBarrier.await(1, TimeUnit.SECONDS);
                     }
                 }
             } catch (JSONException e) {
                 triggerCallback(joinCallback, new OwtError(e.getMessage()));
-            } catch (InterruptedException | BrokenBarrierException e) {
-                Log.e("OWT", Thread.currentThread().getName() + " cyclicBarrier await() error" + e.getMessage());
-            } catch (TimeoutException e) {
-                Log.e("OWT", Thread.currentThread().getName() + " cyclicBarrier await() overtime error" + e.getMessage());
             }
             joinCallback = null;
         });
