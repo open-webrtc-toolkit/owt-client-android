@@ -40,6 +40,8 @@ def exec_cmd(cmd, cmd_path, log_path):
     with open(log_path, 'a+') as f:
         proc = subprocess.Popen(cmd, cwd=cmd_path, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in proc.stdout:
+            if not isinstance(line, str):
+                line = line.decode("utf-8")
             sys.stdout.write(line)
             f.write(line)
         proc.communicate()
@@ -63,7 +65,7 @@ def analyse_unit_test_result(result):
     try:
         xml_doc = minidom.parse(result)
     except:
-        print "Error occured while reading test result."
+        print("Error occured while reading test result.")
         return 0, 0
     test_suite = xml_doc.documentElement
     total_num = int(test_suite.attributes["tests"].value)
@@ -89,7 +91,7 @@ def exec_android_test(mode, cmd, device, target_package, result_file, logcat_fil
 
 
 def run_cases(mode, module, target_package, log_dir, device, test_path, cases=None):
-    print '\n> running ' + mode.value + ' cases on device', device
+    print('\n> running ' + mode.value + ' cases on device', device)
     result_file = os.path.join(log_dir, module + '-' + mode.value + '-result-' + LOGCAT_SUFFIX)
     logcat_file = os.path.join(log_dir, module + '-' + mode.value + '-logcat-' + LOGCAT_SUFFIX)
 
@@ -113,9 +115,9 @@ def run_cases(mode, module, target_package, log_dir, device, test_path, cases=No
                     src_xml_report_path = m.group(1)
                     shutil.copyfile(src_xml_report_path, dst_xml_report_path)
                     result_file = dst_xml_report_path
-    print '> done.'
-    print '  Result file: <LOG_DIR>/' + module + '-' + mode.value + '-result-' + LOGCAT_SUFFIX
-    print '  Log file: <LOG_DIR>/' + module + '-' + mode.value + '-logcat-' + LOGCAT_SUFFIX
+    print('> done.')
+    print('  Result file: <LOG_DIR>/' + module + '-' + mode.value + '-result-' + LOGCAT_SUFFIX)
+    print('  Log file: <LOG_DIR>/' + module + '-' + mode.value + '-logcat-' + LOGCAT_SUFFIX)
     return result_file
 
 
@@ -133,7 +135,7 @@ def install_test(test_path, device, log_dir, mode, module):
     exec_cmd(cmd, test_path, bulid_file)
     cmd = [HOME_PATH + '/gradlew', '-q', 'installDebugAndroidTest']
     exec_cmd(cmd, test_path, bulid_file)
-    print '> done.'
+    print('> done.')
 
 
 def run_instrumentation_test(case_list, log_dir, device):
@@ -152,8 +154,8 @@ def run_instrumentation_test(case_list, log_dir, device):
         succeed = analyse_instrumentation_test_result(result_file)
         total = len(obj['cases'])
         result = result and (succeed == total)
-        print '\n>', obj['module'] + ' result: All:', total, \
-            'Succeed:', succeed, 'Failed:', total - succeed
+        print('\n>', obj['module'] + ' result: All:', total, \
+            'Succeed:', succeed, 'Failed:', total - succeed)
     return result
 
 
@@ -164,8 +166,8 @@ def run_unit_test(log_dir, device):
         result_file = run_cases(TestMode.UNIT, module, unit_test['target'], log_dir, device, unit_test['path'])
         total, succeed = analyse_unit_test_result(result_file)
         result = result and total != 0 and (succeed == total)
-        print '\n>', module + ' result: All:', total, \
-            'Succeed:', succeed, 'Failed:', total - succeed
+        print('\n>', module + ' result: All:', total, \
+            'Succeed:', succeed, 'Failed:', total - succeed)
     return result
 
 
@@ -185,7 +187,7 @@ def recover_config():
 
 
 def build_libs(dependencies_dir, log_dir):
-    print '> building sdk libraries...'
+    print('> building sdk libraries...')
     build_file = os.path.join(log_dir, 'build-'+ LOGCAT_SUFFIX)
     cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc'), os.path.join(DEPS_PATH, 'libwebrtc.bk')]
     subprocess.call(cmd)
@@ -198,28 +200,28 @@ def build_libs(dependencies_dir, log_dir):
 
 
 def prepare_instrumentation_test():
-    print '> copying libs to dependency dirs...'
+    print('> copying libs to dependency dirs...')
     testLibs = os.path.join(HOME_PATH, 'test/libs')
     if os.path.exists(testLibs):
         shutil.rmtree(testLibs)
     shutil.copytree(os.path.join(HOME_PATH, 'dist/libs'), testLibs)
     shutil.move(os.path.join(testLibs, 'webrtc/libwebrtc.jar'), testLibs)
-    print '> done.'
+    print('> done.')
 
 
 def prepare_unit_test(unit_path):
-    print '> copying libwebrtc dependencies to androidTest'
+    print('> copying libwebrtc dependencies to androidTest')
     jni_path = os.path.join(unit_path, 'src/androidTest/jniLibs')
     if os.path.exists(jni_path):
         shutil.rmtree(jni_path)
     shutil.copytree(os.path.join(DEPS_PATH, 'libwebrtc'), jni_path)
-    print '> done.'
+    print('> done.')
 
 
 def validate_caselist(case_list):
     # check the existence of case list file.
     if not os.path.exists(case_list):
-        print 'No case list file found:', case_list
+        print('No case list file found:', case_list)
         return False
 
     # check the format of case list file.
@@ -227,7 +229,7 @@ def validate_caselist(case_list):
         with open(case_list, 'r') as case_file:
             json.load(case_file)
     except ValueError as e:
-        print 'Failed to load json:', e
+        print('Failed to load json:', e)
         return False
     return True
 
