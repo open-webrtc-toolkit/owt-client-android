@@ -173,7 +173,8 @@ public class MainActivity extends AppCompatActivity
             rightBtn.setTextColor(Color.DKGRAY);
             executor.execute(() -> {
                 boolean vga = settingsFragment == null || settingsFragment.resolutionVGA;
-                capturer = OwtVideoCapturer.create(vga ? 640 : 1280, vga ? 480 : 720, 30, true);
+                boolean isCameraFront = settingsFragment == null || settingsFragment.cameraFront;
+                capturer = OwtVideoCapturer.create(vga ? 640 : 1280, vga ? 480 : 720, 30, true, isCameraFront);
                 localStream = new LocalStream(capturer,
                         new MediaConstraints.AudioTrackConstraints());
                 localStream.attach(localRenderer);
@@ -370,6 +371,14 @@ public class MainActivity extends AppCompatActivity
             stream2Sub.attach(remoteRenderer);
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        System.exit(0);
+    }
+
 
     private void initConferenceClient() {
         rootEglBase = EglBase.create();
