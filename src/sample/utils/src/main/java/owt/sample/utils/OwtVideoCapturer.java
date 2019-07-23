@@ -19,8 +19,8 @@ public final class OwtVideoCapturer extends Camera1Capturer implements VideoCapt
     }
 
     public static OwtVideoCapturer create(int width, int height, int fps,
-            boolean captureToTexture) {
-        String deviceName = getDeviceName(captureToTexture);
+                                          boolean captureToTexture, boolean isCameraFront) {
+        String deviceName = getDeviceName(captureToTexture, isCameraFront);
         OwtVideoCapturer capturer = new OwtVideoCapturer(deviceName, captureToTexture);
         capturer.width = width;
         capturer.height = height;
@@ -56,12 +56,16 @@ public final class OwtVideoCapturer extends Camera1Capturer implements VideoCapt
         super.dispose();
     }
 
-    private static String getDeviceName(boolean captureToTexture) {
+    private static String getDeviceName(boolean captureToTexture, boolean isCameraFront) {
         CameraEnumerator enumerator = new Camera1Enumerator(captureToTexture);
 
         String deviceName = null;
         for (String device : enumerator.getDeviceNames()) {
-            if (enumerator.isFrontFacing(device)) {
+            if (enumerator.isFrontFacing(device) && isCameraFront) {
+                deviceName = device;
+                break;
+            }
+            if (enumerator.isBackFacing(device) && !isCameraFront) {
                 deviceName = device;
                 break;
             }

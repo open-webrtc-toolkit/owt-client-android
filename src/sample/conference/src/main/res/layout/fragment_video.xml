@@ -39,15 +39,17 @@
         </LinearLayout>
 
 
-        <org.webrtc.SurfaceViewRenderer
-            android:id="@+id/small_renderer"
-            android:layout_width="160dp"
-            android:layout_height="120dp"/>
+
 
         <org.webrtc.SurfaceViewRenderer
             android:id="@+id/full_renderer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
+
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/small_renderer"
+            android:layout_width="160dp"
+            android:layout_height="120dp"/>
 
 
     </FrameLayout>
