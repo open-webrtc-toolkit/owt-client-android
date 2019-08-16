@@ -59,6 +59,7 @@ final class SignalingChannel {
     // Base64 encoded token.
     private final String token;
     private final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService refreshExecutor = Executors.newSingleThreadExecutor();
     private final int MAX_RECONNECT_ATTEMPTS = 5;
     private String reconnectionTicket;
     private int reconnectAttempts = 0;
@@ -256,6 +257,7 @@ final class SignalingChannel {
                             DCHECK(e);
                         }
                         observer.onRoomConnected((JSONObject) args[1]);
+                        onRefreshReconnectionTicket();
                     } else {
                         observer.onRoomConnectFailed(extractMsg(1, args));
                     }
@@ -270,6 +272,7 @@ final class SignalingChannel {
                 reconnectionTicket = (String) args[1];
                 reconnectAttempts = 0;
                 flushCachedMsg();
+                onRefreshReconnectionTicket();
             } else {
                 triggerDisconnected();
             }
@@ -303,6 +306,47 @@ final class SignalingChannel {
             return "";
         }
         return args[position].toString();
+    }
+
+    private void onRefreshReconnectionTicket() {
+        Log.d(LOG_TAG, "refresh connection ticket");
+        socketClient.emit("refreshReconnectionTicket", null,
+                (Object... args) -> callbackExecutor.execute(() -> {
+                    if (extractMsg(0, args).equals("ok")) {
+                        String message = args[1].toString();
+                        onReconnectionTicket(message);
+                    }
+                }));
+    }
+
+    private void onReconnectionTicket(String ticket){
+        try {
+            reconnectionTicket = ticket;
+            JSONObject jsonTicketTicket = new JSONObject(
+                    new String(Base64.decode(ticket, Base64.DEFAULT)));
+
+            String expiredStr = jsonTicketTicket.getString("notAfter");
+            long delay = Long.parseLong(expiredStr) - System.currentTimeMillis();
+
+            if (delay < 0){
+                delay = 5*60*1000;
+            }
+
+            long finalDelay = delay;
+            refreshExecutor.execute(()->{
+                try {
+                    Thread.sleep(finalDelay);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                onRefreshReconnectionTicket();
+            });
+
+
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+        }
     }
 }
 
