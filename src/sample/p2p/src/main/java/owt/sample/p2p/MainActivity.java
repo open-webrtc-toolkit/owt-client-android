@@ -73,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
     private Timer statsTimer;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    private boolean enableLocalStream = false;
+
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
@@ -280,7 +282,9 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
 
         executor.execute(() -> {
             if (capturer == null) {
-                capturer = OwtVideoCapturer.create(1280, 720, 30, true);
+                boolean vga = settingsFragment == null || settingsFragment.resolutionVGA;
+                boolean isCameraFront = settingsFragment == null || settingsFragment.cameraFront;
+                capturer = OwtVideoCapturer.create(vga ? 640 : 1280, vga ? 480 : 720, 30, true, isCameraFront);
                 localStream = new LocalStream(capturer,
                         new MediaConstraints.AudioTrackConstraints());
             }
@@ -293,6 +297,12 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
 
     @Override
     public void onPublishRequest() {
+        if (!enableLocalStream) {
+            localStream.enableAudio();
+            localStream.enableVideo();
+            enableLocalStream = true;
+        }
+
         executor.execute(
                 () -> p2PClient.publish(peerId, localStream, new ActionCallback<Publication>() {
                     @Override
@@ -317,6 +327,11 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                     @Override
                     public void onFailure(OwtError error) {
                         callFragment.onPublished(false);
+
+                        if (error.errorMessage.equals("Duplicated stream.")) {
+                            //this mean you have published, so change the button to unpublish
+                            callFragment.onPublished(true);
+                        }
                     }
                 }));
     }
@@ -339,14 +354,20 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
 
     @Override
     public void onUnpublishRequest(boolean back2main) {
-        if (publication != null) {
-            publication.stop();
-            publication = null;
+        if (enableLocalStream) {
+            localStream.disableAudio();
+            localStream.disableVideo();
+            enableLocalStream = false;
         }
 
         if (back2main) {
             inCalling = false;
             switchFragment(loginFragment);
+            if (publication != null) {
+                publication.stop();
+                publication = null;
+            }
+
             if (capturer != null) {
                 capturer.stopCapture();
                 capturer.dispose();

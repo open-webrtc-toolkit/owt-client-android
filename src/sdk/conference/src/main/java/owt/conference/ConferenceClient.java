@@ -590,10 +590,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             try {
                 if (joinCallback != null) {
                     conferenceInfo = new ConferenceInfo(info);
-                    joinCallback.onSuccess(conferenceInfo);
                     synchronized (infoLock) {
                         ConferenceClient.this.conferenceInfo = conferenceInfo;
                     }
+                    joinCallback.onSuccess(conferenceInfo);
                 }
             } catch (JSONException e) {
                 triggerCallback(joinCallback, new OwtError(e.getMessage()));
