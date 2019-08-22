@@ -386,6 +386,7 @@ public class MainActivity extends AppCompatActivity
         if (!contextHasInitialized) {
             ContextInitialization.create()
                     .setApplicationContext(this)
+                    .addIgnoreNetworkType(ContextInitialization.NetworkType.LOOPBACK)
                     .setVideoHardwareAccelerationOptions(
                             rootEglBase.getEglBaseContext(),
                             rootEglBase.getEglBaseContext())
