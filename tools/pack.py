@@ -6,6 +6,7 @@ import sys
 import zipfile
 from xml.dom import minidom
 import platform
+import re
 
 # path variables
 HOME_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -81,6 +82,20 @@ def pack_sample_source(sample):
     shutil.copy2(os.path.join(SAMPLE_PATH, sample, 'build.gradle'),
                  os.path.join(DIST_SAMPLE_CODE_PATH, sample, 'build.gradle'))
 
+    source_data = ""
+    with open(os.path.join(DIST_SAMPLE_CODE_PATH, sample, 'build.gradle'), 'r+') as f:
+        for line in f:
+            source_data = source_data + line
+
+    if sample == 'conference':
+        source_data = re.sub('\s+implementation project\(\':src:sdk:conference\'\)', '', source_data)
+    elif sample == 'p2p':
+        source_data = re.sub('\s+implementation project\(\':src:sdk:p2p\'\)', '', source_data)
+    elif sample == 'utils':
+        source_data = re.sub('dependencies \{.*?\}', 'dependencies {\n}', source_data, flags=re.DOTALL)
+
+    with open(os.path.join(DIST_SAMPLE_CODE_PATH, sample, 'build.gradle'), 'w') as wf:
+        wf.write(source_data)
     print('> done.')
 
 
