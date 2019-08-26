@@ -15,8 +15,8 @@ pipeline {
             steps {
                 script{
                     withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
-                        sh "python ${env.startServerScript} --package-url ${env.mcuPackageUrl} --package-name \
-                        mcu-all-bin-v{data}.tgz  --base-dir ${env.mcuServerBasePath} --git-branch ${GIT_BRANCH} \
+                        sh "python ${env.startServerScriptPath} --package-url ${env.mcuPackageBaseDir} --package-name \
+                        ${env.mcuPackageName}  --base-dir ${env.mcuServerBasePath} --git-branch ${GIT_BRANCH} \
                         --owner open-webrtc-toolkit --repo owt-client-android --commit-id ${GIT_COMMIT} \
                         --github-script ${env.serverGithubScriptPath} --mode mcu --workspace ${WORKSPACE}"
                     }
@@ -32,7 +32,7 @@ pipeline {
             steps{
                 script{
                     withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
-                        sh "python ${env.startServerScript} --p2p-server-path ${env.p2pServerPath} \
+                        sh "python ${env.startServerScriptPath} --p2p-server-path ${env.p2pServerPath} \
                         --owner open-webrtc-toolkit --repo owt-client-android --commit-id ${GIT_COMMIT} \
                         --git-branch ${GIT_BRANCH} --github-script ${env.serverGithubScriptPath} --mode p2p --workspace ${WORKSPACE}"
                     }
@@ -43,15 +43,14 @@ pipeline {
             agent{
                 node {
                     label "${env.androidRunCaseServer}"
-                    customWorkspace "${env.androidSourcePath}"
                 }
             }
             steps {
                 sh "docker run -v /dev/bus/usb:/dev/bus/usb -v ${env.androidCILogPath}:/home/logs --network host --privileged --rm  ${env.androidSdkImage} \
-                python ${androidSdkTestScript} --git-branch ${GIT_BRANCH} --git-change-id ${env.CHANGE_ID} --owner open-webrtc-toolkit --repo owt-client-android \
-                --remote-dependence-host ${env.remoteDependenceHost} --remote-dependence-host-username ${env.remoteDependenceUserName} \
+                python ${androidSdkTestScript} --git-branch ${GIT_BRANCH} --git-change-id ${env.CHANGE_ID} --owner open-webrtc-toolkit --project-repo owt-client-android \
+                --checks-repo owt-client-android --remote-dependence-host ${env.remoteDependenceHost} --remote-dependence-host-username ${env.remoteDependenceUserName} \
                 --remote-dependence-host-password ${env.remoteDependencePassword} --remote-dependence-path ${env.remoteDependecePath}  \
-                --instrumentation ${env.androidSdkCaselistPath} --unit --p2p-server http://${env.p2pServer}:8095 --conference-server-http http://${env.mcuServer}:3001"
+                --instrumentation ${env.androidSdkCaselistPath} --unit --p2p-server ${env.p2pServerUrl} --conference-server-http ${env.mcuServerUrl}"
             }
         }
     }
