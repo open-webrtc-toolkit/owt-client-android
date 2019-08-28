@@ -128,7 +128,10 @@ final class ConferencePeerConnectionChannel extends PeerConnectionChannel {
     public void onIceConnectionChange(final PeerConnection.IceConnectionState iceConnectionState) {
         callbackExecutor.execute(() -> {
             if (iceConnectionState == PeerConnection.IceConnectionState.CLOSED) {
-                observer.onError(key, "", false);
+                observer.onEnded(key);
+            }
+            if (iceConnectionState == PeerConnection.IceConnectionState.FAILED) {
+                observer.onError(key, "ICE connection failed.", false);
             }
         });
     }

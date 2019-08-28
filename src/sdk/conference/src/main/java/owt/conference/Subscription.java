@@ -206,6 +206,16 @@ public final class Subscription {
         }
     }
 
+    void onError(final OwtError error){
+        if (!ended) {
+            if (observers != null) {
+                for (SubscriptionObserver observer : observers) {
+                    observer.onError(error);
+                }
+            }
+        }
+    }
+
     ///@cond
     void onStatusUpdated(TrackKind trackKind, boolean active) {
         if (observers != null) {
@@ -227,6 +237,11 @@ public final class Subscription {
          * Called upon Subscription ended.
          */
         void onEnded();
+
+        /**
+         * Called upon an error occurred on the subscription.
+         */
+        void onError(final OwtError error);
 
         /**
          * Called upon media track associated with the subscription muted.

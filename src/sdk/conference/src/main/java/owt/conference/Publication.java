@@ -165,6 +165,16 @@ public final class Publication extends owt.base.Publication {
         }
     }
 
+    void onError(final OwtError error){
+        if (!ended) {
+            if (observers != null) {
+                for (PublicationObserver observer : observers) {
+                    observer.onError(error);
+                }
+            }
+        }
+    }
+
     ///@cond
     void onStatusUpdated(TrackKind trackKind, boolean active) {
         if (observers != null) {
@@ -186,6 +196,11 @@ public final class Publication extends owt.base.Publication {
          * Called upon Publication ended.
          */
         void onEnded();
+
+        /**
+         * Called upon an error occurred on the publication.
+         */
+        void onError(final OwtError error);
 
         /**
          * Called upon media track associated with the publication muted.

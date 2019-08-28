@@ -867,21 +867,36 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
     }
 
     @Override
-    public void onError(final String id, final String errorMsg, boolean ignored) {
+    public void onEnded(final String id) {
         if (pcChannels.containsKey(id)) {
             pcChannels.get(id).dispose();
             pcChannels.remove(id);
         }
+    }
+
+    @Override
+    public void onError(final String id, final String errorMsg, boolean ignored) {
+        OwtError error = new OwtError(3000, errorMsg);
         callbackExecutor.execute(() -> {
             if (pubCallbacks.containsKey(id)) {
-                triggerCallback(pubCallbacks.get(id), new OwtError(0, errorMsg));
+                triggerCallback(pubCallbacks.get(id), error);
                 pubCallbacks.remove(id);
             }
             if (subCallbacks.containsKey(id)) {
-                triggerCallback(subCallbacks.get(id), new OwtError(0, errorMsg));
+                triggerCallback(subCallbacks.get(id), error);
                 subCallbacks.remove(id);
             }
         });
+        for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
+            if (pcChannel.key.equals(id)) {
+                if (pcChannel.publication != null) {
+                    pcChannel.publication.onError(error);
+                } else {
+                    pcChannel.subscription.onError(error);
+                }
+            }
+        }
+        onEnded(id);
     }
 
     @Override

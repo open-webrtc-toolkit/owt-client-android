@@ -14,6 +14,7 @@ import owt.base.MediaConstraints;
 import owt.conference.Publication;
 import owt.conference.Subscription;
 import owt.test.util.Resultable;
+import owt.base.OwtError;
 
 public class PubSubObserver extends Resultable implements Publication.PublicationObserver,
         Subscription.SubscriptionObserver {
@@ -66,6 +67,11 @@ public class PubSubObserver extends Resultable implements Publication.Publicatio
             onUnMuteAudioTriggered = true;
         }
         onResult();
+    }
+
+    @Override
+    public void onError(OwtError error) {
+        Log.d(TAG, "onError.");
     }
 
     public boolean getResultForMute(MediaConstraints.TrackKind trackKind, int timeout) {
