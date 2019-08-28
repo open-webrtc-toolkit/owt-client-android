@@ -641,6 +641,17 @@ public final class P2PClient implements PeerConnectionChannel.PeerConnectionChan
     }
 
     @Override
+    public void onEnded(final String peerId){
+        synchronized (pcChannelsLock) {
+            if (pcChannels.containsKey(peerId)) {
+                pcChannels.get(peerId).dispose();
+                pcChannels.remove(peerId);
+            }
+        }
+        sendSignalingMessage(peerId, CHAT_CLOSED, null, null);
+    }
+
+    @Override
     public void onAddStream(final String peerId, final owt.base.RemoteStream remoteStream) {
         DCHECK(callbackExecutor);
         DCHECK(pcChannels.containsKey(peerId));
