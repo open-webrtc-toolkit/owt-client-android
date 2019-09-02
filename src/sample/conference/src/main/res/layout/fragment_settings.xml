@@ -3,7 +3,6 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              tools:context="owt.sample.conference.SettingsFragment">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -144,20 +143,20 @@
                 android:layout_marginTop="20dp"
                 android:layout_weight="1"
                 android:gravity="right"
-                android:text="@string/video_codec"
+                android:text="@string/pub_video_codec"
                 android:textColor="@color/colorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"/>
 
             <RadioGroup
-                android:id="@+id/videoCodec_rg"
+                android:id="@+id/pub_videoCodec_rg"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"
                 android:orientation="horizontal">
 
                 <RadioButton
-                    android:id="@+id/vp8"
+                    android:id="@+id/pub_vp8"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
@@ -165,7 +164,7 @@
                     android:text="vp8"/>
 
                 <RadioButton
-                    android:id="@+id/h264"
+                    android:id="@+id/pub_h264"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
@@ -173,12 +172,20 @@
                     android:text="h264"/>
 
                 <RadioButton
-                    android:id="@+id/vp9"
+                    android:id="@+id/pub_vp9"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:layout_weight="1"
                     android:text="vp9"/>
+
+                <RadioButton
+                    android:id="@+id/pub_h265"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_weight="1"
+                    android:text="h265"/>
 
             </RadioGroup>
 

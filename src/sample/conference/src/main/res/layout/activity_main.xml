@@ -5,54 +5,75 @@
              android:background="@android:color/background_light"
              tools:context="owt.sample.conference.MainActivity">
 
-    <LinearLayout
-        android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-    </LinearLayout>
+        <LinearLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+        </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/bottom_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:background="@color/colorPrimary"
-        android:orientation="horizontal">
+        <LinearLayout
+            android:id="@+id/bottom_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/multi_func_btn_left"
-            style="?metaButtonBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="@string/connect"
-            android:textColor="@android:color/background_light"
-            android:textSize="15sp"/>
+            <Button
+                android:id="@+id/multi_func_btn_left"
+                style="?metaButtonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/connect"
+                android:textColor="@android:color/background_light"
+                android:textSize="15sp"/>
 
-        <Button
-            android:id="@+id/multi_func_btn_middle"
-            style="?metaButtonBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="@string/sharescreen"
-            android:textColor="@android:color/background_light"
-            android:textSize="15sp"/>
+            <Button
+                android:id="@+id/multi_func_btn_middle"
+                style="?metaButtonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/sharescreen"
+                android:textColor="@android:color/background_light"
+                android:textSize="15sp"/>
 
-        <Button
-            android:id="@+id/multi_func_btn_right"
-            style="?metaButtonBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="@string/settings"
-            android:textColor="@android:color/background_light"
-            android:textSize="15sp"/>
+            <Button
+                android:id="@+id/multi_func_btn_right"
+                style="?metaButtonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/settings"
+                android:textColor="@android:color/background_light"
+                android:textSize="15sp"/>
 
-    </LinearLayout>
+            <Button
+                android:id="@+id/multi_func_btn_subscribe"
+                style="?metaButtonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="subscribe"
+                android:textColor="@android:color/background_light"
+                android:textSize="15sp"/>
 
+            <Button
+                android:id="@+id/multi_func_btn_unsubscribe"
+                style="?metaButtonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="unSubscribe"
+                android:textColor="@android:color/background_light"
+                android:textSize="15sp"/>
+
+        </LinearLayout>
 </FrameLayout>

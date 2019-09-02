@@ -15,7 +15,7 @@ import android.widget.RadioGroup;
 
 public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedChangeListener {
     boolean cameraFront = true, resolutionVGA = true;
-    boolean VideoEncodingVP8 = false, VideoEncodingVP9 = false, VideoEncodingH264 = false;
+    boolean VideoEncodingVP8 = false, VideoEncodingVP9 = false, VideoEncodingH264 = false, VideoEncodingH265 = false;
     private RadioGroup cameraRG, resolutionRG, videoCodecRG;
     private EditText roomIdEditText;
 
@@ -36,11 +36,9 @@ public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedCh
         RadioButton vgaReso = mView.findViewById(R.id.vga);
         vgaReso.setChecked(true);
 
-        videoCodecRG = mView.findViewById(R.id.videoCodec_rg);
+        videoCodecRG = mView.findViewById(R.id.pub_videoCodec_rg);
         videoCodecRG.setOnCheckedChangeListener(this);
-
         roomIdEditText = mView.findViewById(R.id.room_id);
-
         return mView;
     }
 
@@ -70,20 +68,29 @@ public class SettingsFragment extends Fragment implements RadioGroup.OnCheckedCh
             }
         } else if (group == videoCodecRG) {
             switch (checkedId) {
-                case R.id.vp8:
+                case R.id.pub_vp8:
                     VideoEncodingVP8 = true;
                     VideoEncodingVP9 = false;
                     VideoEncodingH264 = false;
+                    VideoEncodingH265= false;
                     break;
-                case R.id.vp9:
+                case R.id.pub_vp9:
                     VideoEncodingVP8 = false;
                     VideoEncodingVP9 = true;
                     VideoEncodingH264 = false;
+                    VideoEncodingH265= false;
                     break;
-                case R.id.h264:
+                case R.id.pub_h264:
                     VideoEncodingVP8 = false;
                     VideoEncodingVP9 = false;
                     VideoEncodingH264 = true;
+                    VideoEncodingH265= false;
+                    break;
+                case R.id.pub_h265:
+                    VideoEncodingVP8 = false;
+                    VideoEncodingVP9 = false;
+                    VideoEncodingH264 = false;
+                    VideoEncodingH265= true;
                     break;
             }
         }
