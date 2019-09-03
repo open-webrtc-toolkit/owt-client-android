@@ -32,6 +32,9 @@ public final class PublicationSettings {
     PublicationSettings(JSONObject mediaInfo) throws JSONException {
         DCHECK(mediaInfo);
 
+        audioPublicationSettings = null;
+        videoPublicationSettings = null;
+
         JSONObject audio = getObj(mediaInfo, "audio");
         if (audio != null) {
             audioPublicationSettings = new ArrayList<>();
