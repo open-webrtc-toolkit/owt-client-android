@@ -14,7 +14,11 @@ import owt.base.MediaCodecs.AudioCodec;
 import owt.base.MediaCodecs.VideoCodec;
 import owt.base.VideoCodecParameters;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The settings for a publication.
