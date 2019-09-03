@@ -6,6 +6,8 @@ package owt.sample.conference;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
+import static org.webrtc.PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+
 import static owt.base.MediaCodecs.AudioCodec.OPUS;
 import static owt.base.MediaCodecs.AudioCodec.PCMU;
 import static owt.base.MediaCodecs.VideoCodec.H264;
@@ -39,11 +41,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.EglBase;
+import org.webrtc.PeerConnection;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.SurfaceViewRenderer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -444,11 +448,17 @@ public class MainActivity extends AppCompatActivity
             contextHasInitialized = true;
         }
 
+        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("turn:example.com?transport=tcp").setUsername("userName").setPassword("passward").createIceServer();
+        List<PeerConnection.IceServer> iceServers = new ArrayList<>();
+        iceServers.add(iceServer);
+        PeerConnection.RTCConfiguration rtcConfiguration = new PeerConnection.RTCConfiguration(iceServers);
         HttpUtils.setUpINSECURESSLContext();
+        rtcConfiguration.continualGatheringPolicy = GATHER_CONTINUALLY;
         ConferenceClientConfiguration configuration
                 = ConferenceClientConfiguration.builder()
                 .setHostnameVerifier(HttpUtils.hostnameVerifier)
                 .setSSLContext(HttpUtils.sslContext)
+                .setRTCConfiguration(rtcConfiguration)
                 .build();
         conferenceClient = new ConferenceClient(configuration);
         conferenceClient.addObserver(this);
