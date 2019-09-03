@@ -105,6 +105,7 @@ public final class SubscribeOptions {
         private int resolutionWidth = 0, resolutionHeight = 0;
         private int frameRate = 0, keyFrameInterval = 0;
         private double bitrateMultiplier = 0;
+        private String rid;
 
         private VideoSubscriptionConstraints(List<VideoCodecParameters> codecs) {
             this.codecs = codecs;
@@ -152,6 +153,7 @@ public final class SubscribeOptions {
             private int resolutionWidth = 0, resolutionHeight = 0;
             private int frameRate = 0, keyFrameInterval = 0;
             private double bitrateMultiplier = 0;
+            private String rid = null;
 
             Builder() {
             }
@@ -207,6 +209,19 @@ public final class SubscribeOptions {
             }
 
             /**
+             * Set up the RID(RTP-Stream-ID) for subscribing a RemoteStream. Optional for
+             * VideoSubscriptionConstraints. If RID is specified, other parameters will be
+             * ignored.
+             *
+             * @param rid RID to be set
+             * @return Builder
+             */
+            public Builder setRid(String rid) {
+                this.rid = rid;
+                return this;
+            }
+
+            /**
              * Add a VideoCodecParameters to be supported for subscribing a RemoteStream.
              * AudioSubscriptionConstraints without any VideoCodecParameters specified, it will
              * support all video codecs supported by the hardware devices.
@@ -232,6 +247,7 @@ public final class SubscribeOptions {
                 constraints.frameRate = frameRate;
                 constraints.keyFrameInterval = keyFrameInterval;
                 constraints.bitrateMultiplier = bitrateMultiplier;
+                constraints.rid = rid;
                 return constraints;
             }
 

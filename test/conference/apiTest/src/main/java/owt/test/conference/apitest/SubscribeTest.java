@@ -145,7 +145,7 @@ public class SubscribeTest extends TestBase {
         publish(client1, localStream1, null, observer1, true);
         RemoteStream mixSteam = getRemoteMixStream(client1);
         List<Double> bitrateMultipliers =
-                mixSteam.subscriptionCapability.videoSubscriptionCapabilities.bitrateMultipliers;
+                mixSteam.extraSubscriptionCapability.videoSubscriptionCapabilities.bitrateMultipliers;
         for (Double bitrateMultiplier : bitrateMultipliers) {
             HashMap<String, String> videoParams = new HashMap<>();
             videoParams.put("bitrateMultiplier", String.valueOf(bitrateMultiplier));
@@ -250,7 +250,7 @@ public class SubscribeTest extends TestBase {
         publish(client1, localStream1, null, observer1, true);
         RemoteStream mixSteam = getRemoteMixStream(client1);
         List<HashMap<String, Integer>> resolutions =
-                mixSteam.subscriptionCapability.videoSubscriptionCapabilities.resolutions;
+                mixSteam.extraSubscriptionCapability.videoSubscriptionCapabilities.resolutions;
         for (HashMap<String, Integer> resolution : resolutions) {
             HashMap<String, String> videoParams = new HashMap<>();
             videoParams.put("width", String.valueOf(resolution.get("width")));
@@ -381,7 +381,7 @@ public class SubscribeTest extends TestBase {
         int streamsN = client1.info().getRemoteStreams().size() - MIXED_STREAM_SIZE;
         RemoteStream forwardStream = getRemoteForwardStream(client1, streamsN - 1);
         List<Integer> keyFrameIntervals =
-                forwardStream.subscriptionCapability.videoSubscriptionCapabilities
+                forwardStream.extraSubscriptionCapability.videoSubscriptionCapabilities
                         .keyFrameIntervals;
         for (int keyFrameInterval : keyFrameIntervals) {
             HashMap<String, String> videoParams = new HashMap<>();
@@ -403,7 +403,7 @@ public class SubscribeTest extends TestBase {
         int streamsN = client1.info().getRemoteStreams().size() - MIXED_STREAM_SIZE;
         RemoteStream forwardStream = getRemoteForwardStream(client1, streamsN - 1);
         List<Integer> frameRates =
-                forwardStream.subscriptionCapability.videoSubscriptionCapabilities.frameRates;
+                forwardStream.extraSubscriptionCapability.videoSubscriptionCapabilities.frameRates;
         for (int frameRate : frameRates) {
             HashMap<String, String> videoParams = new HashMap<>();
             videoParams.put("frameRate", String.valueOf(frameRate));
@@ -492,7 +492,7 @@ public class SubscribeTest extends TestBase {
         Subscription subscription = subscribe(client1, mixSteam, null, true, true);
         HashMap<String, String> videoParams = new HashMap<>();
         HashMap<String, Integer> resolution =
-                mixSteam.subscriptionCapability.videoSubscriptionCapabilities.resolutions.get(0);
+                mixSteam.extraSubscriptionCapability.videoSubscriptionCapabilities.resolutions.get(0);
         videoParams.put("width", String.valueOf(resolution.get("width")));
         videoParams.put("height", String.valueOf(resolution.get("height")));
         applyOption(subscription, videoParams, true);

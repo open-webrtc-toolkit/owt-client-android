@@ -21,17 +21,31 @@ import org.json.JSONObject;
  */
 public final class PublicationSettings {
 
-    public final AudioPublicationSettings audioPublicationSettings;
-    public final VideoPublicationSettings videoPublicationSettings;
+    public final List<AudioPublicationSettings> audioPublicationSettings;
+    public final List<VideoPublicationSettings> videoPublicationSettings;
 
     PublicationSettings(JSONObject mediaInfo) {
         DCHECK(mediaInfo);
 
         JSONObject audio = getObj(mediaInfo, "audio");
-        audioPublicationSettings = audio == null ? null : new AudioPublicationSettings(audio);
+        if (audio != null) {
+            audioPublicationSettings = new ArrayList<>();
+            JSONArray audioOrigins = audio.getJSONArray("original");
+            for (int i = 0; i < audioOrigins.length(); i++) {
+                JSONObject audioObj = audioOrigins.getJSONObject(i);
+                audioPublicationSettings.add(new AudioPublicationSettings(audioObj));
+            }
+        }
 
         JSONObject video = getObj(mediaInfo, "video");
-        videoPublicationSettings = video == null ? null : new VideoPublicationSettings(video);
+        if (video != null) {
+            videoPublicationSettings = new ArrayList<>();
+            JSONArray videoOrigins = video.getJSONArray("original");
+            for (int i = 0; i < videoOrigins.length(); i++) {
+                JSONObject videoObj = videoOrigins.getJSONObject(i);
+                videoPublicationSettings.add(new VideoPublicationSettings(videoObj));
+            }
+        }
     }
 
     /**

@@ -336,6 +336,9 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 video.put("from", remoteStream.id());
                 if (options != null) {
                     video.put("parameters", options.videoOption.generateOptionsMsg());
+                    if (options.videoOption.rid != null) {
+                        video.put("simulcastRid", options.videoOption.rid);
+                    }
                 }
                 media.put("video", video);
             } else {

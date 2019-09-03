@@ -22,9 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Capabilities for subscribing a RemoteStream, which indicates the video or/and audio options
- * that ConferenceClient may use to subscribe a RemoteStream. Subscribing a RemoteStream with the
- * options that beyonds its SubscriptionCapabilities may cause failure.
+ * Capabilities for subscribing a RemoteStream besides PublicationSettings, which indicates the video or/and audio
+ * options that ConferenceClient may use to subscribe a RemoteStream. Subscribing a RemoteStream with the
+ * options that beyonds its SubscriptionCapabilities and PublicationSettings may cause failure.
  */
 public class SubscriptionCapabilities {
 
@@ -54,12 +54,6 @@ public class SubscriptionCapabilities {
 
         AudioSubscriptionCapabilities(JSONObject audioObj) throws JSONException {
             audioCodecs = new ArrayList<>();
-
-            JSONObject format = JsonUtils.getObj(audioObj, "format");
-            audioCodecs.add(new AudioCodecParameters(AudioCodec.get(
-                    JsonUtils.getString(format, "codec", "")),
-                    JsonUtils.getInt(format, "channelNum", 0),
-                    JsonUtils.getInt(format, "sampleRate", 0)));
 
             JSONObject audioOpt = JsonUtils.getObj(audioObj, "optional");
             if (audioOpt != null && audioOpt.has("format")) {
@@ -114,27 +108,12 @@ public class SubscriptionCapabilities {
 
             // formatObj
             // {'codec': codec}
-            JSONObject formatObj = JsonUtils.getObj(videoObj, "format");
-            String codec = JsonUtils.getString(formatObj, "codec", "");
-            videoCodecs.add(new VideoCodecParameters(VideoCodec.get(codec)));
 
             // parametersObj
             // {'resolution': {'width': width, 'height': height},
             //  'framerate': framerate,
             //  'bitrate': bitrate,
             //  'keyFrameInterval': kfi}
-            JSONObject parametersObj = JsonUtils.getObj(videoObj, "parameters");
-            if (parametersObj != null) {
-                if (parametersObj.has("resolution")) {
-                    JSONObject reslutionObj = JsonUtils.getObj(parametersObj, "resolution");
-                    HashMap<String, Integer> resolutionItem = new HashMap<>();
-                    resolutionItem.put("width", JsonUtils.getInt(reslutionObj, "width", 0));
-                    resolutionItem.put("height", JsonUtils.getInt(reslutionObj, "height", 0));
-                    resolutions.add(resolutionItem);
-                }
-                frameRates.add(JsonUtils.getInt(parametersObj, "framerate", 0));
-                keyFrameIntervals.add(JsonUtils.getInt(parametersObj, "keyFrameInterval", 0));
-            }
 
             // optionalObj:
             // {'format': [codecObj],
