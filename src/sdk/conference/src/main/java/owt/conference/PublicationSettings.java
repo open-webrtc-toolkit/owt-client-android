@@ -15,6 +15,7 @@ import owt.base.MediaCodecs.VideoCodec;
 import owt.base.VideoCodecParameters;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public final class PublicationSettings {
     public final List<AudioPublicationSettings> audioPublicationSettings;
     public final List<VideoPublicationSettings> videoPublicationSettings;
 
-    PublicationSettings(JSONObject mediaInfo) {
+    PublicationSettings(JSONObject mediaInfo) throws JSONException {
         DCHECK(mediaInfo);
 
         JSONObject audio = getObj(mediaInfo, "audio");
