@@ -105,7 +105,7 @@ public final class SubscribeOptions {
         private int resolutionWidth = 0, resolutionHeight = 0;
         private int frameRate = 0, keyFrameInterval = 0;
         private double bitrateMultiplier = 0;
-        private String rid;
+        String rid;
 
         private VideoSubscriptionConstraints(List<VideoCodecParameters> codecs) {
             this.codecs = codecs;
