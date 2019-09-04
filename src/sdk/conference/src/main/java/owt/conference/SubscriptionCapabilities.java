@@ -22,9 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Capabilities for subscribing a RemoteStream besides PublicationSettings, which indicates the video or/and audio
- * options that ConferenceClient may use to subscribe a RemoteStream. Subscribing a RemoteStream with the
- * options that beyonds its SubscriptionCapabilities and PublicationSettings may cause failure.
+ * Capabilities for subscribing a RemoteStream, which indicates the video or/and audio options
+ * that ConferenceClient may use to subscribe a RemoteStream. Subscribing a RemoteStream with the
+ * options that beyonds its SubscriptionCapabilities may cause failure.
  */
 public class SubscriptionCapabilities {
 

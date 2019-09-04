@@ -32,9 +32,6 @@ public final class PublicationSettings {
     PublicationSettings(JSONObject mediaInfo) throws JSONException {
         DCHECK(mediaInfo);
 
-        audioPublicationSettings = null;
-        videoPublicationSettings = null;
-
         JSONObject audio = getObj(mediaInfo, "audio");
         if (audio != null) {
             audioPublicationSettings = new ArrayList<>();
@@ -43,6 +40,8 @@ public final class PublicationSettings {
                 JSONObject audioObj = audioOrigins.getJSONObject(i);
                 audioPublicationSettings.add(new AudioPublicationSettings(audioObj));
             }
+        } else {
+            audioPublicationSettings = null;
         }
 
         JSONObject video = getObj(mediaInfo, "video");
@@ -53,6 +52,8 @@ public final class PublicationSettings {
                 JSONObject videoObj = videoOrigins.getJSONObject(i);
                 videoPublicationSettings.add(new VideoPublicationSettings(videoObj));
             }
+        } else {
+            videoPublicationSettings = null;
         }
     }
 
@@ -78,6 +79,7 @@ public final class PublicationSettings {
         public final VideoCodecParameters codec;
         public final int resolutionWidth, resolutionHeight, frameRate;
         public final int bitrate, keyFrameInterval;
+        public final String rid;
 
         VideoPublicationSettings(JSONObject videoObj) {
             JSONObject format = getObj(videoObj, "format", true);
@@ -98,6 +100,7 @@ public final class PublicationSettings {
                 bitrate = 0;
                 keyFrameInterval = 0;
             }
+            rid = getString(videoObj, "simulcastRid");
         }
     }
 

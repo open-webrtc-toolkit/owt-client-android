@@ -21,7 +21,14 @@ import java.util.Iterator;
  * RemoteStream represent the stream published by other endpoints in the conference.
  */
 public class RemoteStream extends owt.base.RemoteStream {
+    /**
+     * Extra SubscriptionCapabilities for subscribing a remote stream
+     * besides PublicationSettings
+     */
     public SubscriptionCapabilities extraSubscriptionCapability;
+    /**
+     * PublicationSettings of RemoteStream
+     */
     public PublicationSettings publicationSettings;
 
     RemoteStream(JSONObject streamInfo) throws JSONException {
