@@ -31,7 +31,7 @@
             android:launchMode="standard"
             android:configChanges="orientation|keyboardHidden|screenSize"
             tools:ignore="ExtraText">
-            >
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
