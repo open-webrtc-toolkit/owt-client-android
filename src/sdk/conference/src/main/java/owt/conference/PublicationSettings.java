@@ -35,11 +35,7 @@ public final class PublicationSettings {
         JSONObject audio = getObj(mediaInfo, "audio");
         if (audio != null) {
             audioPublicationSettings = new ArrayList<>();
-            JSONArray audioOrigins = audio.getJSONArray("original");
-            for (int i = 0; i < audioOrigins.length(); i++) {
-                JSONObject audioObj = audioOrigins.getJSONObject(i);
-                audioPublicationSettings.add(new AudioPublicationSettings(audioObj));
-            }
+            audioPublicationSettings.add(new AudioPublicationSettings(audio));
         } else {
             audioPublicationSettings = null;
         }
@@ -100,7 +96,11 @@ public final class PublicationSettings {
                 bitrate = 0;
                 keyFrameInterval = 0;
             }
-            rid = getString(videoObj, "simulcastRid");
+            if (videoObj.has("simulcastRid")) {
+                rid = getString(videoObj, "simulcastRid");
+            } else {
+                rid = null;
+            }
         }
     }
 
