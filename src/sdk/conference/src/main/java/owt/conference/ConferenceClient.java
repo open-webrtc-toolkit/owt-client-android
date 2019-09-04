@@ -396,9 +396,6 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             unpubMsg.put("id", subscriptionId);
 
             sendSignalingMessage("unsubscribe", unpubMsg, args -> {
-                // Clean resources associated with this subscription regardless of the result from
-                // MCU. But we monitor the result in debug mode.
-                DCHECK(extractMsg(0, args).equals("ok"));
                 if (pcChannels.containsKey(subscriptionId)) {
                     ConferencePeerConnectionChannel pcChannel = getPeerConnection(subscriptionId);
                     pcChannel.dispose();
@@ -570,7 +567,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 ActionCallback<Publication> callback = pubCallbacks.get(id);
                 triggerCallback(callback, new OwtError(errorMsg));
                 pubCallbacks.remove(id);
-            } else {
+            } else if (subCallbacks.containsKey(id)) {
                 ActionCallback<Subscription> callback = subCallbacks.get(id);
                 triggerCallback(callback, new OwtError(errorMsg));
                 subCallbacks.remove(id);
