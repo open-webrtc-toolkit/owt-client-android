@@ -96,7 +96,7 @@ public class PublishTest extends TestBase {
             Publication publication = publish(client1, localStream1, publishOptions, observer1,
                     true);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.audioPublicationSettings[0].codec.name.name()
+                    i).publicationSettings.audioPublicationSettings.get(0).codec.name.name()
                     .equalsIgnoreCase(
                             checkCodecs[i]));
             RTCStatsReport sendStats = getStats(publication, true);
@@ -121,7 +121,7 @@ public class PublishTest extends TestBase {
             Publication publication = publish(client1, localStream1, publishOptions, observer1,
                     true);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.videoPublicationSettings[0].codec.name.name()
+                    i).publicationSettings.videoPublicationSettings.get(0).codec.name.name()
                     .equalsIgnoreCase(
                             checkCodecs[i]));
             RTCStatsReport sendStats = getStats(publication, true);
@@ -179,9 +179,9 @@ public class PublishTest extends TestBase {
             Publication publication = publish(client1, localStream1, publishOptions, observer1,
                     true);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.videoPublicationSettings[0].resolutionWidth == width);
+                    i).publicationSettings.videoPublicationSettings.get(0).resolutionWidth == width);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.videoPublicationSettings[0].resolutionHeight == height);
+                    i).publicationSettings.videoPublicationSettings.get(0).resolutionHeight == height);
             stop(publication, observer1, true);
             capturer1.dispose();
             localStream1.dispose();
