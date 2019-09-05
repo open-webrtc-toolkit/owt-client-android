@@ -246,7 +246,7 @@ public abstract class PeerConnectionChannel
                 return;
             }
             DataChannel.Init init = new DataChannel.Init();
-            localDataChannel = peerConnection.createDataChannel("ICS", init);
+            localDataChannel = peerConnection.createDataChannel("message", init);
             localDataChannel.registerObserver(PeerConnectionChannel.this);
         });
     }
