@@ -24,36 +24,6 @@ public class CallFragment extends Fragment implements View.OnClickListener {
     private CallFragmentListener mListener;
     private float dX, dY;
     private boolean isPublishing = false;
-    private View.OnTouchListener touchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            if (v.getId() == R.id.small_renderer) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        dX = v.getX() - event.getRawX();
-                        dY = v.getY() - event.getRawY();
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        v.animate()
-                                .x(event.getRawX() + dX)
-                                .y(event.getRawY() + dY)
-                                .setDuration(0)
-                                .start();
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        v.animate()
-                                .x(event.getRawX() + dX >= event.getRawY() + dY ? event.getRawX()
-                                        + dX : 0)
-                                .y(event.getRawX() + dX >= event.getRawY() + dY ? 0
-                                        : event.getRawY() + dY)
-                                .setDuration(10)
-                                .start();
-                        break;
-                }
-            }
-            return true;
-        }
-    };
 
     public CallFragment() {
     }
@@ -75,13 +45,8 @@ public class CallFragment extends Fragment implements View.OnClickListener {
         fullRenderer = mView.findViewById(R.id.full_renderer);
         fullRenderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
         fullRenderer.setEnableHardwareScaler(true);
-        smallRenderer = mView.findViewById(R.id.small_renderer);
-        smallRenderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
-        smallRenderer.setOnTouchListener(touchListener);
-        smallRenderer.setEnableHardwareScaler(true);
-        smallRenderer.setZOrderMediaOverlay(true);
 
-        mListener.onReady(smallRenderer, fullRenderer);
+        mListener.onReady(fullRenderer);
         return mView;
     }
 
@@ -122,15 +87,11 @@ public class CallFragment extends Fragment implements View.OnClickListener {
     }
 
     void onPublished(final boolean succeed) {
-        getActivity().runOnUiThread(() -> {
-            isPublishing = succeed;
-            publishBtn.setText(succeed ? R.string.unpublish : R.string.publish);
-            publishBtn.setEnabled(true);
-        });
+
     }
 
     public interface CallFragmentListener {
-        void onReady(SurfaceViewRenderer localRenderer, SurfaceViewRenderer remoteRenderer);
+        void onReady(SurfaceViewRenderer remoteRenderer);
 
         void onPublishRequest();
 

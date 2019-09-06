@@ -273,67 +273,13 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
     }
 
     @Override
-    public void onReady(final SurfaceViewRenderer localRenderer,
-            final SurfaceViewRenderer remoteRenderer) {
-        this.localRenderer = localRenderer;
+    public void onReady(final SurfaceViewRenderer remoteRenderer) {
         this.remoteRenderer = remoteRenderer;
-        localRenderer.init(rootEglBase.getEglBaseContext(), null);
         remoteRenderer.init(rootEglBase.getEglBaseContext(), null);
-
-        executor.execute(() -> {
-            if (capturer == null) {
-                boolean vga = settingsFragment == null || settingsFragment.resolutionVGA;
-                boolean isCameraFront = settingsFragment == null || settingsFragment.cameraFront;
-                capturer = OwtVideoCapturer.create(vga ? 640 : 1280, vga ? 480 : 720, 30, true, isCameraFront);
-                localStream = new LocalStream(capturer,
-                        new MediaConstraints.AudioTrackConstraints());
-            }
-            localStream.attach(localRenderer);
-            if (remoteStream != null && !remoteStreamEnded) {
-                remoteStream.attach(remoteRenderer);
-            }
-        });
     }
 
     @Override
     public void onPublishRequest() {
-        if (!enableLocalStream) {
-            localStream.enableAudio();
-            localStream.enableVideo();
-            enableLocalStream = true;
-        }
-
-        executor.execute(
-                () -> p2PClient.publish(peerId, localStream, new ActionCallback<Publication>() {
-                    @Override
-                    public void onSuccess(Publication result) {
-                        inCalling = true;
-                        publication = result;
-                        callFragment.onPublished(true);
-
-                        if (statsTimer != null) {
-                            statsTimer.cancel();
-                            statsTimer = null;
-                        }
-                        statsTimer = new Timer();
-                        statsTimer.schedule(new TimerTask() {
-                            @Override
-                            public void run() {
-                                getStats();
-                            }
-                        }, 0, STATS_INTERVAL_MS);
-                    }
-
-                    @Override
-                    public void onFailure(OwtError error) {
-                        callFragment.onPublished(false);
-
-                        if (error.errorMessage.equals("Duplicated stream.")) {
-                            //this mean you have published, so change the button to unpublish
-                            callFragment.onPublished(true);
-                        }
-                    }
-                }));
     }
 
     private void getStats() {
