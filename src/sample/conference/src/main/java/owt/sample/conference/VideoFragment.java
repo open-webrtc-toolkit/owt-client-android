@@ -157,8 +157,8 @@ public class VideoFragment extends Fragment {
             if (stats.getType().equals("track")) {
                 Map<String, Object> members = stats.getMembers();
                 if (members.get("kind").equals("video")) {
-                    width = (long) members.get("frameWidth");
-                    height = (long) members.get("frameHeight");
+                    width = members.get("frameWidth") == null ? 0 : (long) members.get("frameWidth");
+                    height = members.get("frameHeight") == null ? 0: (long) members.get("frameHeight");
                 }
             }
         }
