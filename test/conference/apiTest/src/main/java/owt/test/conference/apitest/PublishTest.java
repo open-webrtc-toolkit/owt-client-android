@@ -96,7 +96,7 @@ public class PublishTest extends TestBase {
             Publication publication = publish(client1, localStream1, publishOptions, observer1,
                     true);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.audioPublicationSettings.codec.name.name()
+                    i).publicationSettings.audioPublicationSettings.get(0).codec.name.name()
                     .equalsIgnoreCase(
                             checkCodecs[i]));
             RTCStatsReport sendStats = getStats(publication, true);
@@ -121,7 +121,7 @@ public class PublishTest extends TestBase {
             Publication publication = publish(client1, localStream1, publishOptions, observer1,
                     true);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.videoPublicationSettings.codec.name.name()
+                    i).publicationSettings.videoPublicationSettings.get(0).codec.name.name()
                     .equalsIgnoreCase(
                             checkCodecs[i]));
             RTCStatsReport sendStats = getStats(publication, true);
@@ -179,9 +179,9 @@ public class PublishTest extends TestBase {
             Publication publication = publish(client1, localStream1, publishOptions, observer1,
                     true);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.videoPublicationSettings.resolutionWidth == width);
+                    i).publicationSettings.videoPublicationSettings.get(0).resolutionWidth == width);
             assertTrue(observer1.remoteStreams.get(
-                    i).publicationSettings.videoPublicationSettings.resolutionHeight == height);
+                    i).publicationSettings.videoPublicationSettings.get(0).resolutionHeight == height);
             stop(publication, observer1, true);
             capturer1.dispose();
             localStream1.dispose();
@@ -224,9 +224,9 @@ public class PublishTest extends TestBase {
         localStream1 = createLocalStream(true, null);
         publish(client1, localStream1, null, observer1, true);
         assertNull(observer1.remoteStreams.get(
-                0).subscriptionCapability.videoSubscriptionCapabilities);
+                0).publicationSettings.videoPublicationSettings);
         assertNotNull(observer1.remoteStreams.get(
-                0).subscriptionCapability.audioSubscriptionCapabilities);
+                0).publicationSettings.audioPublicationSettings);
     }
 
     public void testPublish_withVideoOnly_shouldSucceed() {
@@ -237,9 +237,9 @@ public class PublishTest extends TestBase {
         localStream1 = createLocalStream(false, capturer1);
         publish(client1, localStream1, null, observer1, true);
         assertNotNull(observer1.remoteStreams.get(
-                0).subscriptionCapability.videoSubscriptionCapabilities);
+                0).publicationSettings.videoPublicationSettings);
         assertNull(observer1.remoteStreams.get(
-                0).subscriptionCapability.audioSubscriptionCapabilities);
+                0).publicationSettings.audioPublicationSettings);
     }
 
     public void testPublish_withNullStream_shouldThrowException() {

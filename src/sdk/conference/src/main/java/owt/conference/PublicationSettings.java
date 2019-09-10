@@ -14,24 +14,43 @@ import owt.base.MediaCodecs.AudioCodec;
 import owt.base.MediaCodecs.VideoCodec;
 import owt.base.VideoCodecParameters;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The settings for a publication.
  */
 public final class PublicationSettings {
 
-    public final AudioPublicationSettings audioPublicationSettings;
-    public final VideoPublicationSettings videoPublicationSettings;
+    public final List<AudioPublicationSettings> audioPublicationSettings;
+    public final List<VideoPublicationSettings> videoPublicationSettings;
 
-    PublicationSettings(JSONObject mediaInfo) {
+    PublicationSettings(JSONObject mediaInfo) throws JSONException {
         DCHECK(mediaInfo);
 
         JSONObject audio = getObj(mediaInfo, "audio");
-        audioPublicationSettings = audio == null ? null : new AudioPublicationSettings(audio);
+        if (audio != null) {
+            audioPublicationSettings = new ArrayList<>();
+            audioPublicationSettings.add(new AudioPublicationSettings(audio));
+        } else {
+            audioPublicationSettings = null;
+        }
 
         JSONObject video = getObj(mediaInfo, "video");
-        videoPublicationSettings = video == null ? null : new VideoPublicationSettings(video);
+        if (video != null) {
+            videoPublicationSettings = new ArrayList<>();
+            JSONArray videoOrigins = video.getJSONArray("original");
+            for (int i = 0; i < videoOrigins.length(); i++) {
+                JSONObject videoObj = videoOrigins.getJSONObject(i);
+                videoPublicationSettings.add(new VideoPublicationSettings(videoObj));
+            }
+        } else {
+            videoPublicationSettings = null;
+        }
     }
 
     /**
@@ -56,6 +75,7 @@ public final class PublicationSettings {
         public final VideoCodecParameters codec;
         public final int resolutionWidth, resolutionHeight, frameRate;
         public final int bitrate, keyFrameInterval;
+        public final String rid;
 
         VideoPublicationSettings(JSONObject videoObj) {
             JSONObject format = getObj(videoObj, "format", true);
@@ -75,6 +95,11 @@ public final class PublicationSettings {
                 frameRate = 0;
                 bitrate = 0;
                 keyFrameInterval = 0;
+            }
+            if (videoObj.has("simulcastRid")) {
+                rid = getString(videoObj, "simulcastRid");
+            } else {
+                rid = null;
             }
         }
     }

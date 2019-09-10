@@ -21,7 +21,14 @@ import java.util.Iterator;
  * RemoteStream represent the stream published by other endpoints in the conference.
  */
 public class RemoteStream extends owt.base.RemoteStream {
-    public SubscriptionCapabilities subscriptionCapability;
+    /**
+     * Extra SubscriptionCapabilities for subscribing a remote stream
+     * besides PublicationSettings
+     */
+    public SubscriptionCapabilities extraSubscriptionCapability;
+    /**
+     * PublicationSettings of RemoteStream
+     */
     public PublicationSettings publicationSettings;
 
     RemoteStream(JSONObject streamInfo) throws JSONException {
@@ -33,7 +40,7 @@ public class RemoteStream extends owt.base.RemoteStream {
     void updateStreamInfo(JSONObject streamInfo, boolean triggerEvent) throws JSONException {
         JSONObject mediaInfo = JsonUtils.getObj(streamInfo, "media", true);
         publicationSettings = new PublicationSettings(mediaInfo);
-        subscriptionCapability = new SubscriptionCapabilities(mediaInfo);
+        extraSubscriptionCapability = new SubscriptionCapabilities(mediaInfo);
 
         JSONObject video = JsonUtils.getObj(mediaInfo, "video");
         VideoSourceInfo videoSourceInfo = null;
