@@ -161,7 +161,8 @@ public class MainActivity extends AppCompatActivity
             singleChoiceDialog.setSingleChoiceItems(items, 0,
                     (dialog, which) -> subscribeRemoteStreamChoice = which);
             singleChoiceDialog.setPositiveButton("ok",
-                    (dialog, which) -> chooseCodec(remoteStreamMap.get(items[subscribeRemoteStreamChoice])));
+                    (dialog, which) -> chooseCodec(
+                            remoteStreamMap.get(items[subscribeRemoteStreamChoice])));
             singleChoiceDialog.show();
         }
     };
@@ -448,10 +449,13 @@ public class MainActivity extends AppCompatActivity
             contextHasInitialized = true;
         }
 
-        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("turn:example.com?transport=tcp").setUsername("userName").setPassword("passward").createIceServer();
+        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder(
+                "turn:example.com?transport=tcp").setUsername("userName").setPassword(
+                "passward").createIceServer();
         List<PeerConnection.IceServer> iceServers = new ArrayList<>();
         iceServers.add(iceServer);
-        PeerConnection.RTCConfiguration rtcConfiguration = new PeerConnection.RTCConfiguration(iceServers);
+        PeerConnection.RTCConfiguration rtcConfiguration = new PeerConnection.RTCConfiguration(
+                iceServers);
         HttpUtils.setUpINSECURESSLContext();
         rtcConfiguration.continualGatheringPolicy = GATHER_CONTINUALLY;
         ConferenceClientConfiguration configuration
@@ -466,7 +470,7 @@ public class MainActivity extends AppCompatActivity
 
     private void requestPermission() {
         String[] permissions = new String[]{Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO};
+                Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE};
 
         for (String permission : permissions) {
             if (ContextCompat.checkSelfPermission(MainActivity.this,
@@ -485,9 +489,10 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
             int[] grantResults) {
         if (requestCode == OWT_REQUEST_CODE
-                && grantResults.length == 2
+                && grantResults.length == 3
                 && grantResults[0] == PERMISSION_GRANTED
-                && grantResults[1] == PERMISSION_GRANTED) {
+                && grantResults[1] == PERMISSION_GRANTED
+                && grantResults[2] == PERMISSION_GRANTED) {
             onConnectSucceed();
         }
     }
@@ -655,7 +660,8 @@ public class MainActivity extends AppCompatActivity
         singleChoiceDialog.setSingleChoiceItems(items, 0,
                 (dialog, which) -> subscribeVideoCodecChoice = which);
         singleChoiceDialog.setPositiveButton("ok",
-                (dialog, which) -> subscribeForward(remoteStream, items[subscribeVideoCodecChoice]));
+                (dialog, which) -> subscribeForward(remoteStream,
+                        items[subscribeVideoCodecChoice]));
         singleChoiceDialog.show();
     }
 
