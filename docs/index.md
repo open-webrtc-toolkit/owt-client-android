@@ -78,7 +78,24 @@ OWT Android supports VP8, VP9, H.264 and HEVC video codecs depending on the devi
   + `owt.conference.SubscribeOptions.setVideoOption`
   + `owt.p2p.P2PClientConfiguration.addVideoParameters`
 
-> **Note:** Hardware encoder/decoder requires Android API level 19 or above.
+> **Note:** Hardware encoder/decoder requires Android API level 19 or fabove.
+
+OWT AndroidSDK supports adding white-listed video codecs in extra config file in /sdcard/mediaCodec.xml; A sample config file is shown below:
+  <pre>
+    <MediaCodecs>
+      <Encoders>
+        <MediaCodec name="OMX.IMG.TOPAZ.VIDEO.Encoder" type="video/avc"/>
+        <MediaCodec name="OMX.MTK.VIDEO.ENCODER.VPX" type="video/x-vnd.on2.vp8"/>
+        <MediaCodec name="OMX.qcom.video.encoder.hevc" type="video/hevc"/>
+      </Encoders>
+      <Decoders>
+        <MediaCodec name="OMX.qcom.video.decoder.vp9" type="video/x-vnd.on2.vp9"/>
+        <MediaCodec name="OMX.IMG.MSVDX.Decoder.AVC" type="video/avc"/>
+        <MediaCodec name="OMX.MTK.VIDEO.DECODER.VPX" type="video/x-vnd.on2.vp8"/>
+        <MediaCodec name="OMX.MTK.VIDEO.DECODER.HEVC" type="video/hevc"/> 
+      </Decoders>
+    </MediaCodecs>
+  </pre> 
 
 ## 4.2 Audio codecs {#section4_2}
 
