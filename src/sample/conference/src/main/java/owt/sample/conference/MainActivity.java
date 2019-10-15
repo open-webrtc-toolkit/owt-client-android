@@ -47,6 +47,7 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -66,12 +67,14 @@ import owt.conference.ConferenceClientConfiguration;
 import owt.conference.ConferenceInfo;
 import owt.conference.Participant;
 import owt.conference.Publication;
+import owt.conference.PublicationSettings;
 import owt.conference.PublishOptions;
 import owt.conference.RemoteStream;
 import owt.conference.SubscribeOptions;
 import owt.conference.SubscribeOptions.AudioSubscriptionConstraints;
 import owt.conference.SubscribeOptions.VideoSubscriptionConstraints;
 import owt.conference.Subscription;
+import owt.conference.SubscriptionCapabilities;
 import owt.sample.utils.OwtScreenCapturer;
 import owt.sample.utils.OwtVideoCapturer;
 
@@ -109,8 +112,11 @@ public class MainActivity extends AppCompatActivity
     private RemoteStream remoteForwardStream = null;
     private int subscribeRemoteStreamChoice = 0;
     private int subscribeVideoCodecChoice = 0;
+    private int subscribeSimulcastRidChoice = 0;
     private ArrayList<String> remoteStreamIdList = new ArrayList<>();
     private HashMap<String, RemoteStream> remoteStreamMap = new HashMap<>();
+    private HashMap<String, List<String>> videoCodecMap = new HashMap<>();
+    private HashMap<String, List<String>> simulcastStreamMap = new HashMap<>();
 
     private View.OnClickListener screenControl = new View.OnClickListener() {
         @Override
@@ -154,6 +160,9 @@ public class MainActivity extends AppCompatActivity
     private View.OnClickListener subscribe = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            subscribeRemoteStreamChoice = 0;
+            subscribeVideoCodecChoice = 0;
+            subscribeSimulcastRidChoice = 0;
             final String[] items = (String[]) remoteStreamIdList.toArray(new String[0]);
             AlertDialog.Builder singleChoiceDialog =
                     new AlertDialog.Builder(MainActivity.this);
@@ -161,11 +170,11 @@ public class MainActivity extends AppCompatActivity
             singleChoiceDialog.setSingleChoiceItems(items, 0,
                     (dialog, which) -> subscribeRemoteStreamChoice = which);
             singleChoiceDialog.setPositiveButton("ok",
-                    (dialog, which) -> chooseCodec(remoteStreamMap.get(items[subscribeRemoteStreamChoice])));
+                    (dialog, which) -> chooseCodec(
+                            remoteStreamMap.get(items[subscribeRemoteStreamChoice])));
             singleChoiceDialog.show();
         }
     };
-
 
     private View.OnClickListener leaveRoom = new View.OnClickListener() {
         @Override
@@ -191,7 +200,6 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
-
     private View.OnClickListener unpublish = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -213,7 +221,6 @@ public class MainActivity extends AppCompatActivity
             });
         }
     };
-
 
     private View.OnClickListener publish = new View.OnClickListener() {
         @Override
@@ -280,7 +287,6 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
-
     private View.OnClickListener joinRoom = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -313,6 +319,7 @@ public class MainActivity extends AppCompatActivity
                         for (RemoteStream remoteStream : conferenceInfo.getRemoteStreams()) {
                             remoteStreamIdList.add(remoteStream.id());
                             remoteStreamMap.put(remoteStream.id(), remoteStream);
+                            getParameterByRemoteStream(remoteStream);
                             remoteStream.addObserver(new owt.base.RemoteStream.StreamObserver() {
                                 @Override
                                 public void onEnded() {
@@ -343,7 +350,6 @@ public class MainActivity extends AppCompatActivity
             });
         }
     };
-
 
     private View.OnClickListener shareScreen = new View.OnClickListener() {
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -433,7 +439,6 @@ public class MainActivity extends AppCompatActivity
         System.exit(0);
     }
 
-
     private void initConferenceClient() {
         rootEglBase = EglBase.create();
 
@@ -448,10 +453,13 @@ public class MainActivity extends AppCompatActivity
             contextHasInitialized = true;
         }
 
-        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("turn:example.com?transport=tcp").setUsername("userName").setPassword("passward").createIceServer();
+        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder(
+                "turn:example.com?transport=tcp").setUsername("userName").setPassword(
+                "passward").createIceServer();
         List<PeerConnection.IceServer> iceServers = new ArrayList<>();
         iceServers.add(iceServer);
-        PeerConnection.RTCConfiguration rtcConfiguration = new PeerConnection.RTCConfiguration(iceServers);
+        PeerConnection.RTCConfiguration rtcConfiguration = new PeerConnection.RTCConfiguration(
+                iceServers);
         HttpUtils.setUpINSECURESSLContext();
         rtcConfiguration.continualGatheringPolicy = GATHER_CONTINUALLY;
         ConferenceClientConfiguration configuration
@@ -466,7 +474,8 @@ public class MainActivity extends AppCompatActivity
 
     private void requestPermission() {
         String[] permissions = new String[]{Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO};
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE};
 
         for (String permission : permissions) {
             if (ContextCompat.checkSelfPermission(MainActivity.this,
@@ -485,9 +494,10 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
             int[] grantResults) {
         if (requestCode == OWT_REQUEST_CODE
-                && grantResults.length == 2
+                && grantResults.length == 3
                 && grantResults[0] == PERMISSION_GRANTED
-                && grantResults[1] == PERMISSION_GRANTED) {
+                && grantResults[1] == PERMISSION_GRANTED
+                && grantResults[2] == PERMISSION_GRANTED) {
             onConnectSucceed();
         }
     }
@@ -648,33 +658,62 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void chooseCodec(RemoteStream remoteStream) {
-        final String[] items = new String[]{"VP8", "H264", "VP9", "H265"};
+        List<String> videoCodecList = videoCodecMap.get(remoteStream.id());
+        removeDuplicate(videoCodecList);
+        final String[] items = videoCodecList.toArray(new String[0]);
         AlertDialog.Builder singleChoiceDialog =
                 new AlertDialog.Builder(MainActivity.this);
         singleChoiceDialog.setTitle("VideoCodec List");
         singleChoiceDialog.setSingleChoiceItems(items, 0,
                 (dialog, which) -> subscribeVideoCodecChoice = which);
         singleChoiceDialog.setPositiveButton("ok",
-                (dialog, which) -> subscribeForward(remoteStream, items[subscribeVideoCodecChoice]));
+                (dialog, which) -> {
+                    String chooseVideoCodec = items[subscribeVideoCodecChoice];
+                    if (simulcastStreamMap.containsKey(remoteStream.id())) {
+                        chooseRid(remoteStream, chooseVideoCodec);
+                    } else {
+                        subscribeForward(remoteStream, chooseVideoCodec, null);
+                    }
+
+                });
         singleChoiceDialog.show();
     }
 
-    public void subscribeForward(RemoteStream remoteStream, String VideoCodec) {
+    public void chooseRid(RemoteStream remoteStream, String videoCodec) {
+        List<String> ridList = simulcastStreamMap.get(remoteStream.id());
+        removeDuplicate(ridList);
+        final String[] items = (String[]) ridList.toArray(new String[0]);
+        AlertDialog.Builder singleChoiceDialog =
+                new AlertDialog.Builder(MainActivity.this);
+        singleChoiceDialog.setTitle("Rid List");
+        singleChoiceDialog.setSingleChoiceItems(items, 0,
+                (dialog, which) -> subscribeSimulcastRidChoice = which);
+        singleChoiceDialog.setPositiveButton("ok",
+                (dialog, which) -> subscribeForward(remoteStream,videoCodec, items[subscribeSimulcastRidChoice]));
+        singleChoiceDialog.show();
+    }
+
+    public void subscribeForward(RemoteStream remoteStream, String videoCodec, String rid) {
+        VideoSubscriptionConstraints.Builder videoOptionBuilder =
+                VideoSubscriptionConstraints.builder();
+
         VideoCodecParameters vcp = new VideoCodecParameters(H264);
 
-        if (VideoCodec.equals("VP8")) {
+        if (videoCodec.equals("VP8")) {
             vcp = new VideoCodecParameters(VP8);
-        } else if (VideoCodec.equals("H264")) {
+        } else if (videoCodec.equals("H264")) {
             vcp = new VideoCodecParameters(H264);
-        } else if (VideoCodec.equals("VP9")) {
+        } else if (videoCodec.equals("VP9")) {
             vcp = new VideoCodecParameters(VP9);
-        } else if (VideoCodec.equals("H265")) {
+        } else if (videoCodec.equals("H265")) {
             vcp = new VideoCodecParameters(H265);
         }
-        VideoSubscriptionConstraints videoOption =
-                VideoSubscriptionConstraints.builder()
-                        .addCodec(vcp)
-                        .build();
+        if (rid != null) {
+            videoOptionBuilder.setRid(rid);
+        }
+        VideoSubscriptionConstraints videoOption = videoOptionBuilder
+                .addCodec(vcp)
+                .build();
 
         AudioSubscriptionConstraints audioOption =
                 AudioSubscriptionConstraints.builder()
@@ -719,6 +758,7 @@ public class MainActivity extends AppCompatActivity
     public void onStreamAdded(RemoteStream remoteStream) {
         remoteStreamIdList.add(remoteStream.id());
         remoteStreamMap.put(remoteStream.id(), remoteStream);
+        getParameterByRemoteStream(remoteStream);
         remoteStream.addObserver(new owt.base.RemoteStream.StreamObserver() {
             @Override
             public void onEnded() {
@@ -728,7 +768,7 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onUpdated() {
-
+                getParameterByRemoteStream(remoteStream);
             }
         });
     }
@@ -782,5 +822,41 @@ public class MainActivity extends AppCompatActivity
 
         remoteStreamIdList.clear();
         remoteStreamMap.clear();
+    }
+
+    public void getParameterByRemoteStream(RemoteStream remoteStream) {
+        List<String> videoCodecList = new ArrayList<>();
+        List<String> ridList = new ArrayList<>();
+        SubscriptionCapabilities.VideoSubscriptionCapabilities videoSubscriptionCapabilities
+                = remoteStream.extraSubscriptionCapability.videoSubscriptionCapabilities;
+        for (VideoCodecParameters videoCodec : videoSubscriptionCapabilities.videoCodecs) {
+            videoCodecList.add(videoCodec.name.name());
+            videoCodecMap.put(remoteStream.id(), videoCodecList);
+        }
+
+        for (PublicationSettings.VideoPublicationSettings videoPublicationSetting :
+                remoteStream.publicationSettings.videoPublicationSettings) {
+            if (videoCodecMap.containsKey(remoteStream.id())){
+                videoCodecMap.get(remoteStream.id()).add(videoPublicationSetting.codec.name.name());
+            }else{
+                videoCodecList.add(videoPublicationSetting.codec.name.name());
+                videoCodecMap.put(remoteStream.id(), videoCodecList);
+            }
+
+            if (videoPublicationSetting.rid != null) {
+                ridList.add(videoPublicationSetting.rid);
+            }
+        }
+
+        if (ridList.size() != 0) {
+            simulcastStreamMap.put(remoteStream.id(), ridList);
+        }
+    }
+
+    public void removeDuplicate(List<String> list) {
+        LinkedHashSet<String> set = new LinkedHashSet<String>(list.size());
+        set.addAll(list);
+        list.clear();
+        list.addAll(set);
     }
 }
