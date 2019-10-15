@@ -7,6 +7,7 @@ package owt.sample.conference;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -30,6 +31,8 @@ public class VideoFragment extends Fragment {
     private float dX, dY;
     private BigInteger lastBytesSent = BigInteger.valueOf(0);
     private BigInteger lastBytesReceived = BigInteger.valueOf(0);
+    private Long lastFrameDecoded = Long.valueOf(0);
+    private Long lastFrameEncoded = Long.valueOf(0);
     private View.OnTouchListener touchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
@@ -112,14 +115,16 @@ public class VideoFragment extends Fragment {
         final TextView statsView = outbound ? statsOutView : statsInView;
         if (outbound) {
             lastBytesSent = BigInteger.valueOf(0);
+            lastFrameEncoded = Long.valueOf(0);
         } else {
             lastBytesReceived = BigInteger.valueOf(0);
+            lastFrameDecoded = Long.valueOf(0);
         }
         final String statsReport = (outbound ? "\n--- OUTBOUND ---" : "\n--- INBOUND ---")
                 + "\nCodec: "
                 + "\nResolution: "
                 + "\nBitrate: "
-                + "\nPackets: ";
+                + "\nFrameRate: ";
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -135,7 +140,7 @@ public class VideoFragment extends Fragment {
         String codec = "";
         long bytesSR = 0;
         long width = 0, height = 0;
-        long packetsSR = 0;
+        long frameRate = 0;
         for (RTCStats stats : report.getStatsMap().values()) {
             if (stats.getType().equals(outbound ? "outbound-rtp" : "inbound-rtp")) {
                 Map<String, Object> members = stats.getMembers();
@@ -151,14 +156,24 @@ public class VideoFragment extends Fragment {
                         lastBytesReceived = bytes;
                     }
 
-                    packetsSR = (long) members.get(outbound ? "packetsSent" : "packetsReceived");
+                    long currentFrame = (long) members.get(outbound ? "framesEncoded" : "framesDecoded");
+                    long lastFrame = outbound ? lastFrameEncoded : lastFrameDecoded ;
+                    frameRate = (currentFrame - lastFrame) * 1000
+                            / MainActivity.STATS_INTERVAL_MS;
+                    if (outbound) {
+                        lastFrameEncoded = currentFrame;
+                    } else {
+                        lastFrameDecoded = currentFrame;
+                    }
                 }
             }
             if (stats.getType().equals("track")) {
                 Map<String, Object> members = stats.getMembers();
                 if (members.get("kind").equals("video")) {
-                    width = members.get("frameWidth") == null ? 0 : (long) members.get("frameWidth");
-                    height = members.get("frameHeight") == null ? 0: (long) members.get("frameHeight");
+                    width = members.get("frameWidth") == null ? 0 : (long) members.get(
+                            "frameWidth");
+                    height = members.get("frameHeight") == null ? 0 : (long) members.get(
+                            "frameHeight");
                 }
             }
         }
@@ -170,7 +185,7 @@ public class VideoFragment extends Fragment {
                 + "\nCodec: " + codec
                 + "\nResolution: " + width + "x" + height
                 + "\nBitrate: " + bytesSR * 8 / MainActivity.STATS_INTERVAL_MS + "kbps"
-                + "\nPackets: " + packetsSR;
+                + "\nFrameRate: " + frameRate;
         getActivity().runOnUiThread(() -> {
             statsView.setVisibility(View.VISIBLE);
             statsView.setText(statsReport);
