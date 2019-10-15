@@ -474,7 +474,8 @@ public class MainActivity extends AppCompatActivity
 
     private void requestPermission() {
         String[] permissions = new String[]{Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO};
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE};
 
         for (String permission : permissions) {
             if (ContextCompat.checkSelfPermission(MainActivity.this,
@@ -493,9 +494,10 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
             int[] grantResults) {
         if (requestCode == OWT_REQUEST_CODE
-                && grantResults.length == 2
+                && grantResults.length == 3
                 && grantResults[0] == PERMISSION_GRANTED
-                && grantResults[1] == PERMISSION_GRANTED) {
+                && grantResults[1] == PERMISSION_GRANTED
+                && grantResults[2] == PERMISSION_GRANTED) {
             onConnectSucceed();
         }
     }
