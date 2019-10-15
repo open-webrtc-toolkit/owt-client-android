@@ -157,13 +157,12 @@ public class VideoFragment extends Fragment {
                     }
 
                     long currentFrame = (long) members.get(outbound ? "framesEncoded" : "framesDecoded");
+                    long lastFrame = outbound ? lastFrameEncoded : lastFrameDecoded ;
+                    frameRate = (currentFrame - lastFrame) * 1000
+                            / MainActivity.STATS_INTERVAL_MS;
                     if (outbound) {
-                        frameRate = (currentFrame - lastFrameEncoded) * 1000
-                                / MainActivity.STATS_INTERVAL_MS;
                         lastFrameEncoded = currentFrame;
                     } else {
-                        frameRate = (currentFrame - lastFrameDecoded) * 1000
-                                / MainActivity.STATS_INTERVAL_MS;
                         lastFrameDecoded = currentFrame;
                     }
                 }
