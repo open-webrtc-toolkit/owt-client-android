@@ -39,12 +39,14 @@ def recover_variable():
 
 def zip_package(package_name):
     print('\n> zipping up dist')
-    package_file = os.path.join(DIST_PATH, package_name)
-    with zipfile.ZipFile(package_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for root, _, filenames in os.walk(DIST_PATH):
+    current_path = os.getcwd()
+    os.chdir(DIST_PATH)
+    with zipfile.ZipFile(package_name, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, _, filenames in os.walk(os.getcwd()):
             for name in filenames:
                 if name != package_name:
                     zf.write(os.path.relpath(os.path.join(root, name)))
+    os.chdir(current_path)
     print('> done.')
 
 
