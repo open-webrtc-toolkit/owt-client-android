@@ -721,7 +721,7 @@ public class MainActivity extends AppCompatActivity
                         .addCodec(new AudioCodecParameters(PCMU))
                         .build();
 
-        SubscribeOptions options = SubscribeOptions.builder(false, true)
+        SubscribeOptions options = SubscribeOptions.builder(true, true)
                 .setAudioOption(audioOption)
                 .setVideoOption(videoOption)
                 .build();
