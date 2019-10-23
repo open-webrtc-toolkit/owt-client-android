@@ -574,8 +574,7 @@ public class MainActivity extends AppCompatActivity
     public PublishOptions setPublishOptions() {
         PublishOptions options = null;
         VideoEncodingParameters h264 = new VideoEncodingParameters(H264);
-        VideoEncodingParameters vp8 = new VideoEncodingParameters(new VideoCodecParameters(
-                VP8), 1000);
+        VideoEncodingParameters vp8 = new VideoEncodingParameters(VP8);
         VideoEncodingParameters vp9 = new VideoEncodingParameters(VP9);
         VideoEncodingParameters h265 = new VideoEncodingParameters(H265);
         if (settingsFragment != null && settingsFragment.VideoEncodingVP8) {
