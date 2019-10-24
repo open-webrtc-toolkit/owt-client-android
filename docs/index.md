@@ -9,7 +9,11 @@ Please refer to the Release Notes for the latest information in the SDK release 
 OWT Android requires using Android SDK API level 16 or above. In order to use hardware media codec, API level 19 is recommended.
 
 The following devices have been validated with our SDK:
-
+   + Huawei* Mate20 (Android 9.0)
+   + Huawei* Mate9 (Android 7.0)
+   + Huawei* NXT-AL10 (Android 6.0)
+   + Huawei* P20 (Android 8.1)
+   + Huawei* P8 (Android 5.0)
    + Nexus 5X (Android 7.1.1)
    + Nexus 6P (Android 8.0.0)
    + OPPO* R17 (Android 8.1.0)
@@ -17,6 +21,7 @@ The following devices have been validated with our SDK:
    + Sumsung* S6 (Android 6.0.1)
    + vivo* X23 (Android 8.1.0)
 
+> **Note:** Some HUAWEI devices should adding white-listed video codecs in extra config file in /sdcard/mediaCodec.xml example in section 4.1.
 
 # 3 Development {#section3}
 
