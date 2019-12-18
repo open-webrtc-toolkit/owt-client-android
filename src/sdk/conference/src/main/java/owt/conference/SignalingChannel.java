@@ -109,11 +109,19 @@ final class SignalingChannel {
     private final Listener disconnectCallback = args -> callbackExecutor.execute(
             this::triggerDisconnected);
 
+    // Count internal message sequence
+    private void incrementMessageSequence() {
+        if (messageSequence == Integer.MAX_VALUE) {
+            messageSequence = 0;
+        } else {
+            messageSequence++;
+        }
+    }
     // MCU events.
     private final Listener progressCallback = (Object... args) -> callbackExecutor.execute(() -> {
         JSONObject msg = (JSONObject) args[0];
         observer.onProgressMessage(msg);
-        messageSequence++;
+        incrementMessageSequence();
     });
     private final Listener participantCallback = (Object... args) -> callbackExecutor.execute(
             () -> {
@@ -132,7 +140,7 @@ final class SignalingChannel {
                 } catch (JSONException e) {
                     DCHECK(e);
                 }
-                messageSequence++;
+                incrementMessageSequence();
             });
     private final Listener streamCallback = (Object... args) -> callbackExecutor.execute(() -> {
         try {
@@ -158,7 +166,7 @@ final class SignalingChannel {
         } catch (JSONException e) {
             DCHECK(e);
         }
-        messageSequence++;
+        incrementMessageSequence();
     });
     private final Listener textCallback = (Object... args) -> callbackExecutor.execute(() -> {
         JSONObject data = (JSONObject) args[0];
@@ -168,7 +176,7 @@ final class SignalingChannel {
         } catch (JSONException e) {
             DCHECK(false);
         }
-        messageSequence++;
+        incrementMessageSequence();
     });
     private final Listener dropCallback = args -> triggerDisconnected();
 
@@ -279,9 +287,10 @@ final class SignalingChannel {
                     try {
                         reconnectionTicket = ((JSONObject) args[1]).getString("ticket");
                         JSONArray pendingMessages = ((JSONObject) args[1]).getJSONArray("messages");
+                        boolean isMissingStart = false;
                         for (int i = 0; i < pendingMessages.length(); i++) {
                             JSONObject message = pendingMessages.getJSONObject(i);
-                            if (message.getInt("seq") > messageSequence) {
+                            if (isMissingStart) {
                                 Object messageData = message.get("data");
                                 switch (message.getString("event")) {
                                     case "participant":
@@ -299,6 +308,9 @@ final class SignalingChannel {
                                     default:
                                         DCHECK(false);
                                 }
+                            }
+                            if (message.get("seq") == messageSequence) {
+                                isMissingStart = true;
                             }
                         }
                     } catch (JSONException e) {
