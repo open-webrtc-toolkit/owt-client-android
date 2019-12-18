@@ -16,6 +16,7 @@ import owt.base.Const;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -63,6 +64,7 @@ final class SignalingChannel {
     private final int MAX_RECONNECT_ATTEMPTS = 5;
     private String reconnectionTicket;
     private int reconnectAttempts = 0;
+    private int messageSequence = 0;
     // No lock is guarding loggedIn so void access and modify it on threads other than
     // |callbackExecutor|.
     private boolean loggedIn = false;
@@ -111,6 +113,7 @@ final class SignalingChannel {
     private final Listener progressCallback = (Object... args) -> callbackExecutor.execute(() -> {
         JSONObject msg = (JSONObject) args[0];
         observer.onProgressMessage(msg);
+        messageSequence++;
     });
     private final Listener participantCallback = (Object... args) -> callbackExecutor.execute(
             () -> {
@@ -129,6 +132,7 @@ final class SignalingChannel {
                 } catch (JSONException e) {
                     DCHECK(e);
                 }
+                messageSequence++;
             });
     private final Listener streamCallback = (Object... args) -> callbackExecutor.execute(() -> {
         try {
@@ -154,6 +158,7 @@ final class SignalingChannel {
         } catch (JSONException e) {
             DCHECK(e);
         }
+        messageSequence++;
     });
     private final Listener textCallback = (Object... args) -> callbackExecutor.execute(() -> {
         JSONObject data = (JSONObject) args[0];
@@ -163,6 +168,7 @@ final class SignalingChannel {
         } catch (JSONException e) {
             DCHECK(false);
         }
+        messageSequence++;
     });
     private final Listener dropCallback = args -> triggerDisconnected();
 
@@ -269,7 +275,38 @@ final class SignalingChannel {
         DCHECK(reconnectionTicket);
         socketClient.emit("relogin", reconnectionTicket, (Ack) (Object... args) -> {
             if (extractMsg(0, args).equals("ok")) {
-                reconnectionTicket = (String) args[1];
+                if (args[1] instanceof JSONObject) {
+                    try {
+                        reconnectionTicket = ((JSONObject) args[1]).getString("ticket");
+                        JSONArray pendingMessages = ((JSONObject) args[1]).getJSONArray("messages");
+                        for (int i = 0; i < pendingMessages.length(); i++) {
+                            JSONObject message = pendingMessages.getJSONObject(i);
+                            if (message.getInt("seq") > messageSequence) {
+                                Object messageData = message.get("data");
+                                switch (message.getString("event")) {
+                                    case "participant":
+                                        participantCallback.call(messageData);
+                                        break;
+                                    case "text":
+                                        textCallback.call(messageData);
+                                        break;
+                                    case "stream":
+                                        streamCallback.call(messageData);
+                                        break;
+                                    case "progress":
+                                        progressCallback.call(messageData);
+                                        break;
+                                    default:
+                                        DCHECK(false);
+                                }
+                            }
+                        }
+                    } catch (JSONException e) {
+                        DCHECK(e);
+                    }
+                } else {
+                    reconnectionTicket = (String) args[1];
+                }
                 reconnectAttempts = 0;
                 flushCachedMsg();
                 onRefreshReconnectionTicket();
