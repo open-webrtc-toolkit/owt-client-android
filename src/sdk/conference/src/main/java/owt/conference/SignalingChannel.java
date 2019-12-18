@@ -308,8 +308,7 @@ final class SignalingChannel {
                                     default:
                                         DCHECK(false);
                                 }
-                            }
-                            if (message.get("seq") == messageSequence) {
+                            } else if (message.get("seq") == messageSequence) {
                                 isMissingStart = true;
                             }
                         }
