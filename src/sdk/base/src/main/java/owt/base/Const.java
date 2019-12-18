@@ -18,6 +18,6 @@ public class Const {
                             "'unifiedPlan': true," +
                             "'streamRemovable': true}" +
             "}";
-    public static final String PROTOCOL_VERSION = "1.0";
+    public static final String PROTOCOL_VERSION = "1.0.1";
 }
 ///@endcond
