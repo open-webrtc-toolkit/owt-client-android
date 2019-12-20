@@ -15,6 +15,7 @@ import owt.base.ContextInitialization;
 
 public class TestActivity extends Activity {
     private final static String TAG = "owt_conference_test";
+    private static boolean contextHasInitialized = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,11 +26,14 @@ public class TestActivity extends Activity {
     }
 
     private void initConferenceClient() {
-        EglBase rootEglBase = EglBase.create();
-        ContextInitialization.create().setApplicationContext(this)
-                .setVideoHardwareAccelerationOptions(rootEglBase.getEglBaseContext(),
-                        rootEglBase.getEglBaseContext())
-                .initialize();
+        if (!contextHasInitialized) {
+            EglBase rootEglBase = EglBase.create();
+            ContextInitialization.create().setApplicationContext(this)
+                    .setVideoHardwareAccelerationOptions(rootEglBase.getEglBaseContext(),
+                            rootEglBase.getEglBaseContext())
+                    .initialize();
+            contextHasInitialized = true;
+        }
     }
 
 }
