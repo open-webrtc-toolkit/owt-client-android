@@ -34,10 +34,6 @@ def cleanEnv():
         shutil.rmtree(os.path.join(THIS, 'html'))
 
 def copyFiles(path):
-    if not isinstance(path, str):
-        print 'Invalid stack_location'
-        return
-
     if not os.path.exists(os.path.join(path, STACK_ANDROID_PATH)):
         print 'Wrong location for webrtc stack.'
         return

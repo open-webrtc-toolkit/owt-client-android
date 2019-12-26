@@ -47,6 +47,7 @@ def exec_cmd(cmd, cmd_path, log_path):
         proc.communicate()
     return proc.returncode
 
+
 '''TODO: merge analyse_unit_test_result and analyse_instrumentation_test_result with
 checking INSTRUMENTATION_STATUS_CODE of each test case.
 '''
@@ -75,14 +76,8 @@ def analyse_unit_test_result(result):
 
 
 def exec_android_test(mode, cmd, device, target_package, result_file, logcat_file, cmd_path):
-    if isinstance(device, str):
+    if device is not None:
         os.environ['ANDROID_SERIAL'] = device
-    else:
-        device = None
-
-    if not isinstance(cmd, str):
-        return
-
     if mode == TestMode.UNIT:
         subprocess.call([HOME_PATH + '/gradlew', '-q', 'clean'], cwd=cmd_path)
     adb = ['adb'] if device == None else ['adb', '-s', device]
