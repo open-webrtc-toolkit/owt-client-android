@@ -47,7 +47,6 @@ def exec_cmd(cmd, cmd_path, log_path):
         proc.communicate()
     return proc.returncode
 
-
 '''TODO: merge analyse_unit_test_result and analyse_instrumentation_test_result with
 checking INSTRUMENTATION_STATUS_CODE of each test case.
 '''
@@ -76,8 +75,14 @@ def analyse_unit_test_result(result):
 
 
 def exec_android_test(mode, cmd, device, target_package, result_file, logcat_file, cmd_path):
-    if device is not None:
+    if isinstance(device, str):
         os.environ['ANDROID_SERIAL'] = device
+    else:
+        device = None
+
+    if not isinstance(cmd, str):
+        return
+
     if mode == TestMode.UNIT:
         subprocess.call([HOME_PATH + '/gradlew', '-q', 'clean'], cwd=cmd_path)
     adb = ['adb'] if device == None else ['adb', '-s', device]
@@ -194,7 +199,7 @@ def build_libs(dependencies_dir, log_dir):
     shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', 'tools/pack.py', '--skip-zip']
     result = exec_cmd(cmd, HOME_PATH, build_file)
-    if not result:
+    if not result and os.path.exists(build_file):
         os.remove(build_file)
     return result
 
