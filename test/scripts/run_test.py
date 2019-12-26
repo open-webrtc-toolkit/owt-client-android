@@ -194,7 +194,7 @@ def build_libs(dependencies_dir, log_dir):
     shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', 'tools/pack.py', '--skip-zip']
     result = exec_cmd(cmd, HOME_PATH, build_file)
-    if not result:
+    if not result and os.path.exists(build_file):
         os.remove(build_file)
     return result
 
