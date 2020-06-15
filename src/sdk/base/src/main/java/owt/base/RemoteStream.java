@@ -52,6 +52,7 @@ public abstract class RemoteStream extends Stream {
      * @param observer StreamObserver to be added.
      */
     public void addObserver(StreamObserver observer) {
+	String a = "1234";
         if (observers == null) {
             observers = Collections.synchronizedList(new ArrayList<StreamObserver>());
         }
