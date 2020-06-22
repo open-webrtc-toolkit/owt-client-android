@@ -16,7 +16,7 @@ import org.webrtc.PeerConnectionFactory;
 import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
 import org.webrtc.audio.AudioDeviceModule;
-import org.webrtc.audio.LegacyAudioDeviceModule;
+import org.webrtc.audio.JavaAudioDeviceModule;
 
 final class PCFactoryProxy {
     static int networkIgnoreMask = 0;
@@ -40,7 +40,7 @@ final class PCFactoryProxy {
             options.networkIgnoreMask = networkIgnoreMask;
             peerConnectionFactory = PeerConnectionFactory.builder()
                     .setOptions(options)
-                    .setAudioDeviceModule(adm == null ? new LegacyAudioDeviceModule() : adm)
+                    .setAudioDeviceModule(adm == null ? JavaAudioDeviceModule.builder(context).createAudioDeviceModule() : adm)
                     .setVideoEncoderFactory(
                             encoderFactory == null
                                     ? new DefaultVideoEncoderFactory(localContext, true, true)
