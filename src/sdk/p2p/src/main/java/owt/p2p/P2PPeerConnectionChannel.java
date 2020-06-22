@@ -78,7 +78,9 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             }
             videoCodecs.add(parameters.codec.name);
         }
-        videoMaxBitrate = VideoEncodingParameters.maxBitrate;
+        if (VideoEncodingParameters.maxBitrate > 0) {
+            videoMaxBitrate = VideoEncodingParameters.maxBitrate;
+        }
 
         for (AudioEncodingParameters parameters : configuration.audioEncodings) {
             if (audioCodecs == null) {
@@ -86,7 +88,9 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
             }
             audioCodecs.add(parameters.codec.name);
         }
-        audioMaxBitrate = AudioEncodingParameters.maxBitrate;
+        if (AudioEncodingParameters.maxBitrate > 0) {
+            audioMaxBitrate = AudioEncodingParameters.maxBitrate;
+        }
     }
 
     void publish(LocalStream localStream, ActionCallback<Publication> callback) {
