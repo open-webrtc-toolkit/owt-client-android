@@ -726,7 +726,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                                 boolean active = updateInfo.getString("value").equals("active");
                                 if (pcChannel.publication != null) {
                                     pcChannel.publication.onStatusUpdated(trackKind, active);
-                                } else {
+                                } else if (pcChannel.subscription != null){
                                     pcChannel.subscription.onStatusUpdated(trackKind, active);
                                 }
                             }
@@ -891,7 +891,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             if (pcChannel.key.equals(id)) {
                 if (pcChannel.publication != null) {
                     pcChannel.publication.onError(error);
-                } else {
+                } else if (pcChannel.subscription != null){
                     pcChannel.subscription.onError(error);
                 }
             }
