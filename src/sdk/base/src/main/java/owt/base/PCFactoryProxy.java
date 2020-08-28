@@ -21,7 +21,7 @@ import org.webrtc.audio.JavaAudioDeviceModule;
 final class PCFactoryProxy {
     static int networkIgnoreMask = 0;
     // Enable H.264 high profile by default.
-    static String fieldTrials = "/WebRTC-H264HighProfile/Enabled/";
+    static String fieldTrials = "WebRTC-H264HighProfile/Enabled/";
 
     static VideoEncoderFactory encoderFactory = null;
     static VideoDecoderFactory decoderFactory = null;
