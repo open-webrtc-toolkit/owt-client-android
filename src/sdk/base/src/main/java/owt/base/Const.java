@@ -11,7 +11,7 @@ public class Const {
     public static final String LOG_TAG = "OWT";
     public static final String CLIENT_VERSION = "4.3";
     public static final String userAgent = "{" +
-            "'runtime':{'name':'webrtc','version':'70'}," +
+            "'runtime':{'name':'webrtc','version':'83'}," +
             "'sdk':{'type':'Android','version':" + CLIENT_VERSION + "}," +
             "'os':{'name':'Android', 'version':" + Build.VERSION.RELEASE + "}," +
             "'capabilities':{'continualIceGathering': true," +
