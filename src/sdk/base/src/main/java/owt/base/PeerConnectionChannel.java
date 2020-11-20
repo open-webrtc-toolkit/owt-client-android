@@ -190,15 +190,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            SessionDescription remoteSdp = remoteDescription;
-            if (audioCodecs != null) {
-                remoteSdp = preferCodecs(remoteSdp, false);
-            }
-
-            if (videoCodecs != null) {
-                remoteSdp = preferCodecs(remoteSdp, true);
-            }
-            peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteSdp);
+            peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteDescription);
         });
     }
 
