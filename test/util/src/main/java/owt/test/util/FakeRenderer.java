@@ -50,6 +50,7 @@ public class FakeRenderer implements VideoSink {
 
     @Override
     public void onFrame(VideoFrame videoFrame) {
+        videoFrame.retain();
         synchronized (lock) {
             ++framesRendered;
             width = videoFrame.getRotatedWidth();
