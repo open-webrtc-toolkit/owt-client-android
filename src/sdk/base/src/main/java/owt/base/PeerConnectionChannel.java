@@ -190,15 +190,7 @@ public abstract class PeerConnectionChannel
             if (disposed()) {
                 return;
             }
-            SessionDescription remoteSdp = remoteDescription;
-            if (audioCodecs != null) {
-                remoteSdp = preferCodecs(remoteSdp, false);
-            }
-
-            if (videoCodecs != null) {
-                remoteSdp = preferCodecs(remoteSdp, true);
-            }
-            peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteSdp);
+            peerConnection.setRemoteDescription(PeerConnectionChannel.this, remoteDescription);
         });
     }
 
@@ -394,7 +386,7 @@ public abstract class PeerConnectionChannel
     }
 
     private void setMaxBitrate(RtpSender sender, Integer bitrate) {
-        if (sender == null) {
+        if (sender == null || bitrate == null || bitrate.intValue() <= 0) {
             return;
         }
         RtpParameters rtpParameters = sender.getParameters();
@@ -403,10 +395,10 @@ public abstract class PeerConnectionChannel
             return;
         }
         for (RtpParameters.Encoding encoding : rtpParameters.encodings) {
-            encoding.maxBitrateBps = bitrate == null ? null : bitrate * 1000;
+            encoding.maxBitrateBps = bitrate * 1000;
         }
         if (!sender.setParameters(rtpParameters)) {
-            Log.e(LOG_TAG, "Failed to configure max video bitrate");
+            Log.e(LOG_TAG, "Failed to configure max audio/video bitrate");
         }
     }
 
