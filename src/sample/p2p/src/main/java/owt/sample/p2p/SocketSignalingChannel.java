@@ -38,7 +38,7 @@ import io.socket.emitter.Emitter.Listener;
 public class SocketSignalingChannel implements SignalingChannelInterface {
     private static final String TAG = "OWT-SocketClient";
     private final String CLIENT_CHAT_TYPE = "owt-message";
-    private final String SERVER_AUTHENTICATED = "server-authenticated";
+    private final String CLIENT_AUTHENTICATE_TYPE = "authentication";
     private final String FORCE_DISCONNECT = "server-disconnect";
     private final String CLIENT_TYPE = "&clientType=";
     private final String CLIENT_TYPE_VALUE = "Android";
@@ -51,7 +51,47 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
     private List<SignalingChannelObserver> signalingChannelObservers;
     private ActionCallback<String> connectCallback;
 
+    private String userInfo = null;
+
     // Socket.IO events.
+    private Listener onConnectedCallback = args -> {
+        JSONObject loginObject = null;
+        try {
+            loginObject = new JSONObject(userInfo);
+            String token = URLEncoder.encode(loginObject.getString("token"), "UTF-8");
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("token", token);
+            socketIOClient.emit(CLIENT_AUTHENTICATE_TYPE, jsonObject, (Ack) authenticateArgs -> {
+                if (authenticateArgs == null || authenticateArgs.length != 1) {
+                    if (connectCallback != null) {
+                        connectCallback.onFailure(new OwtError("authenticate fail."));
+                    }
+                } else {
+                    if (connectCallback != null) {
+                        try {
+                            String authenticateToken = authenticateArgs[0].toString();
+                            JSONObject authenticateJson = new JSONObject(authenticateToken);
+                            String uid = authenticateJson.getString("uid");
+                            if(uid != null) {
+                                connectCallback.onSuccess(authenticateToken);
+                            }else{
+                                connectCallback.onFailure(new OwtError("authenticate fail."));
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+    };
+
     private Listener onConnectErrorCallback = args -> {
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
             if (connectCallback != null) {
@@ -91,13 +131,6 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
     };
 
     // P2P server events.
-    private Listener onServerAuthenticatedCallback = args -> {
-        if (connectCallback != null) {
-            connectCallback.onSuccess(args[0].toString());
-            connectCallback = null;
-        }
-    };
-
     private Listener onForceDisconnectCallback = args -> {
         if (socketIOClient != null) {
             socketIOClient.on(Socket.EVENT_DISCONNECT, onDisconnectCallback);
@@ -134,15 +167,12 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
     @Override
     public void connect(String userInfo, ActionCallback<String> callback) {
         JSONObject loginObject;
-        String token;
         String url;
+        this.userInfo = userInfo;
         try {
             connectCallback = callback;
             loginObject = new JSONObject(userInfo);
-            token = URLEncoder.encode(loginObject.getString("token"), "UTF-8");
             url = loginObject.getString("host");
-            url += "?token=" + token + CLIENT_TYPE + CLIENT_TYPE_VALUE + CLIENT_VERSION
-                    + CLIENT_VERSION_VALUE;
             if (!isValid(url)) {
                 callback.onFailure(new OwtError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, "Invalid URL"));
                 return;
@@ -161,8 +191,8 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
                     .on(Socket.EVENT_ERROR, onErrorCallback)
                     .on(Socket.EVENT_RECONNECTING, onReconnectingCallback)
                     .on(CLIENT_CHAT_TYPE, onMessageCallback)
-                    .on(SERVER_AUTHENTICATED, onServerAuthenticatedCallback)
-                    .on(FORCE_DISCONNECT, onForceDisconnectCallback);
+                    .on(FORCE_DISCONNECT, onForceDisconnectCallback)
+                    .on(Socket.EVENT_CONNECT, onConnectedCallback);
 
             socketIOClient.connect();
 
@@ -171,10 +201,6 @@ public class SocketSignalingChannel implements SignalingChannelInterface {
                 callback.onFailure(new OwtError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
             }
         } catch (URISyntaxException e) {
-            if (callback != null) {
-                callback.onFailure(new OwtError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
-            }
-        } catch (UnsupportedEncodingException e) {
             if (callback != null) {
                 callback.onFailure(new OwtError(P2P_CLIENT_ILLEGAL_ARGUMENT.value, e.getMessage()));
             }
