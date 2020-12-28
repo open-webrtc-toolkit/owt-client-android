@@ -189,8 +189,7 @@ def recover_config():
 def build_libs(dependencies_dir, log_dir):
     print('> building sdk libraries...')
     build_file = os.path.join(log_dir, 'build-'+ LOGCAT_SUFFIX)
-    cmd = ['mv', os.path.join(DEPS_PATH, 'libwebrtc'), os.path.join(DEPS_PATH, 'libwebrtc.bk')]
-    subprocess.call(cmd)
+    os.rename(os.path.join(DEPS_PATH, 'libwebrtc'), os.path.join(DEPS_PATH, 'libwebrtc.bk'))
     shutil.copytree(dependencies_dir, os.path.join(DEPS_PATH, 'libwebrtc'))
     cmd = ['python', 'tools/pack.py', '--skip-zip']
     result = exec_cmd(cmd, HOME_PATH, build_file)
@@ -240,8 +239,7 @@ def recover_deps():
     if os.path.exists(libwebrtc) and os.path.exists(libwebrtc_bk):
         shutil.rmtree(libwebrtc)
     if os.path.exists(libwebrtc_bk):
-        cmd = ['mv', libwebrtc_bk, libwebrtc]
-        subprocess.call(cmd)
+        os.rename(libwebrtc_bk, libwebrtc)
 
 
 def recover_unit_test_environment():
