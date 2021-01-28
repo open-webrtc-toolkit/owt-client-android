@@ -82,13 +82,13 @@ def exec_android_test(mode, cmd, device, target_package, result_file, logcat_fil
         subprocess.call([HOME_PATH + '/gradlew', '-q', 'clean'], cwd=cmd_path)
     adb = ['adb'] if device == None else ['adb', '-s', device]
     clean_logcat = ['logcat', '-c']
-    subprocess.call(adb + clean_logcat)
+    subprocess.Popen(adb + clean_logcat).communicate()
     with open(result_file, 'a+') as rf:
-        subprocess.call(cmd, cwd=cmd_path, stdout=rf ,stderr=rf)
+        subprocess.Popen(cmd, cwd=cmd_path, stdout=rf ,stderr=rf).communicate()
     logcat_cmd = ['logcat', '-d', target_package]
     with open(logcat_file, 'a+') as lf:
-        subprocess.call(adb + logcat_cmd, stdout=lf)
-
+        subprocess.Popen(adb + logcat_cmd, stdout=lf).communicate()
+    
 
 def run_cases(mode, module, target_package, log_dir, device, test_path, cases=None):
     print('\n> running ' + mode.value + ' cases on device', device)
