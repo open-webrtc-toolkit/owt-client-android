@@ -14,12 +14,14 @@
             android:layout_height="160dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"/>
+	    android:layout_alignParentTop="true"
+	    android:filterTouchesWhenObscured="true"/>
 
         <org.webrtc.SurfaceViewRenderer
             android:id="@+id/full_renderer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+	    android:layout_height="match_parent"
+	    android:filterTouchesWhenObscured="true"/>
 
         <Button
             android:id="@+id/publish_btn"
