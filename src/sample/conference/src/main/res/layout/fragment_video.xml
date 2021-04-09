@@ -44,12 +44,14 @@
         <org.webrtc.SurfaceViewRenderer
             android:id="@+id/full_renderer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+	    android:layout_height="match_parent"
+	    android:filterTouchesWhenObscured="true"/>
 
         <org.webrtc.SurfaceViewRenderer
             android:id="@+id/small_renderer"
             android:layout_width="160dp"
-            android:layout_height="120dp"/>
+	    android:layout_height="120dp"
+	    android:filterTouchesWhenObscured="true"/>
 
 
     </FrameLayout>
