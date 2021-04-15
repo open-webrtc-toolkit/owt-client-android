@@ -153,6 +153,14 @@ public abstract class Stream {
     }
 
     /**
+     * Check if the Stream is disposed
+     * @return true if Stream is disposed; otherwise, false.
+     */
+    public boolean disposed() {
+        return mediaStream == null;
+    }
+
+    /**
      * Information of the source of a Stream.
      */
     public static class StreamSourceInfo {

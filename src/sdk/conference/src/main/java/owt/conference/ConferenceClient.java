@@ -247,6 +247,10 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             sendSignalingMessage("publish", publishMsg, args -> {
                 if (extractMsg(0, args).equals("ok")) {
                     try {
+                        if(localStream.disposed()) {
+                            triggerCallback(callback, new OwtError("Local stream disposed on publish."));
+                            return;
+                        }
                         JSONObject result = (JSONObject) args[1];
                         // Do not receive video and audio for publication cpcc.
                         ConferencePeerConnectionChannel pcChannel =
@@ -326,6 +330,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             return;
         }
 
+        final String remoteStreamId = remoteStream.id();
         final boolean subVideo = options == null || options.videoOption != null;
         final boolean subAudio = options == null || options.audioOption != null;
 
@@ -333,7 +338,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             JSONObject media = new JSONObject();
             if (subVideo) {
                 JSONObject video = new JSONObject();
-                video.put("from", remoteStream.id());
+                video.put("from", remoteStreamId);
                 if (options != null) {
                     video.put("parameters", options.videoOption.generateOptionsMsg());
                     if (options.videoOption.rid != null) {
@@ -346,7 +351,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             }
             if (subAudio) {
                 JSONObject audio = new JSONObject();
-                audio.put("from", remoteStream.id());
+                audio.put("from", remoteStreamId);
                 media.put("audio", audio);
             } else {
                 media.put("audio", false);
@@ -358,7 +363,15 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
             sendSignalingMessage("subscribe", subscribeMsg, args -> {
                 if (extractMsg(0, args).equals("ok")) {
                     for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
-                        if (pcChannel.stream.id().equals(remoteStream.id())) {
+                        if(pcChannel.stream == null) {
+                            Log.w(LOG_TAG, "Peer connection channel stream is null.");
+                            continue;
+                        }
+                        if(pcChannel.stream.disposed()) {
+                            Log.w(LOG_TAG, "Peer connection channel stream is disposed.");
+                            continue;
+                        }
+                        if (pcChannel.stream.id().equals(remoteStreamId)) {
                             triggerCallback(callback,
                                     new OwtError("Remote stream has been subscribed."));
                             return;
@@ -707,10 +720,12 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                 switch (field) {
                     case "video.layout":
                         synchronized (infoLock) {
-                            for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                                if (remoteStream.id().equals(id)) {
-                                    ((RemoteMixedStream) remoteStream).updateRegions(
-                                            updateInfo.getJSONArray("value"));
+                            if(conferenceInfo != null) {
+                                for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                                    if (remoteStream.id().equals(id)) {
+                                        ((RemoteMixedStream) remoteStream).updateRegions(
+                                                updateInfo.getJSONArray("value"));
+                                    }
                                 }
                             }
                         }
@@ -734,19 +749,25 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                         break;
                     case "activeInput":
                         synchronized (infoLock) {
-                            for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                                if (remoteStream.id().equals(id)) {
-                                    ((RemoteMixedStream) remoteStream).updateActiveInput(
-                                            updateInfo.getString("value"));
+                            if(conferenceInfo != null) {
+                                for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                                    if (remoteStream.id().equals(id)) {
+                                        ((RemoteMixedStream) remoteStream).updateActiveInput(
+                                                updateInfo.getString("value"));
+                                    }
                                 }
                             }
                         }
                         break;
                     case ".":
-                        for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
-                            if (remoteStream.id().equals(id)) {
-                                JSONObject streamInfo = updateInfo.getJSONObject("value");
-                                remoteStream.updateStreamInfo(streamInfo, true);
+                        synchronized (infoLock) {
+                            if (conferenceInfo != null) {
+                                for (RemoteStream remoteStream : conferenceInfo.remoteStreams) {
+                                    if (remoteStream.id().equals(id)) {
+                                        JSONObject streamInfo = updateInfo.getJSONObject("value");
+                                        remoteStream.updateStreamInfo(streamInfo, true);
+                                    }
+                                }
                             }
                         }
                         break;
