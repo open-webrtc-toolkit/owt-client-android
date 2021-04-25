@@ -189,9 +189,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         try {
             boolean hasCap = userInfo.has("capabilities");
             JSONObject cap = hasCap ? userInfo.getJSONObject("capabilities") : null;
-            streamRemovable = cap == null ?
-                    !userInfo.getJSONObject("runtime").getString("name").equals("Firefox")
-                    : cap.getBoolean("streamRemovable");
+            streamRemovable = cap == null || cap.getBoolean("streamRemovable");
             unifiedPlan = cap != null && cap.getBoolean("unifiedPlan");
             continualIceGathering = cap != null && cap.getBoolean("continualIceGathering");
         } catch (JSONException e) {
