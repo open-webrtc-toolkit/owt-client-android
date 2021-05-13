@@ -57,10 +57,7 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     private boolean renegotiationNeeded = false;
     private boolean negotiating = false;
 
-    private boolean streamRemovable = true;
-    private boolean unifiedPlan = false;
     private boolean continualIceGathering = true;
-    private boolean everPublished = false;
 
     P2PPeerConnectionChannel(String peerId, P2PClientConfiguration configuration,
             PeerConnectionChannelObserver observer) {
@@ -90,13 +87,6 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
     }
 
     void publish(LocalStream localStream, ActionCallback<Publication> callback) {
-        if (!streamRemovable && everPublished) {
-            if (callback != null) {
-                callback.onFailure(new OwtError(P2P_CLIENT_INVALID_STATE.value,
-                        "Cannot publish multiple streams due to the ability of peer client."));
-            }
-            return;
-        }
         MediaStream currentMediaStream = GetMediaStream(localStream);
         RCHECK(currentMediaStream);
         currentMediaStreamId = localStream.id();
@@ -118,7 +108,6 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
 
         publishedStreams.add(localStream);
         addStream(currentMediaStream);
-        everPublished = true;
         // create the data channel here due to BUG1418.
         if (localDataChannel == null) {
             createDataChannel();
@@ -189,8 +178,6 @@ final class P2PPeerConnectionChannel extends PeerConnectionChannel {
         try {
             boolean hasCap = userInfo.has("capabilities");
             JSONObject cap = hasCap ? userInfo.getJSONObject("capabilities") : null;
-            streamRemovable = cap == null || cap.getBoolean("streamRemovable");
-            unifiedPlan = cap != null && cap.getBoolean("unifiedPlan");
             continualIceGathering = cap != null && cap.getBoolean("continualIceGathering");
         } catch (JSONException e) {
             DCHECK(e);
