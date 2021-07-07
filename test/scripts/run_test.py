@@ -103,7 +103,7 @@ def run_cases(mode, module, target_package, log_dir, device, test_path, cases=No
                       target_package + '.test/android.test.InstrumentationTestRunner']
             exec_android_test(mode, adb + am_cmd, device, target_package, result_file, logcat_file, test_path)
     elif mode == TestMode.UNIT:
-        cmd = [HOME_PATH + '/gradlew', 'connectedAndroidTest']
+        cmd = [HOME_PATH + '/gradlew', '-i','connectedAndroidTest']
         exec_android_test(mode, cmd, device, target_package, result_file, logcat_file, test_path)
         xml_file_name = module + '-' + mode.value + '-result-' + TIMESTAMP + '.xml'
         dst_xml_report_path = os.path.join(log_dir, xml_file_name)
