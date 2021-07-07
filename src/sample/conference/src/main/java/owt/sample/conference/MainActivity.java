@@ -434,9 +434,9 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        conferenceClient.removeObserver(this);
 
-        System.exit(0);
+        super.onDestroy();
     }
 
     private void initConferenceClient() {
