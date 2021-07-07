@@ -53,6 +53,10 @@ public class Config {
 
     public static final String RAW_STREAM_FILE;
 
+    public static final String IATF_SERVER;
+
+    public static final String IATF_WAIT_TIME;
+
     static {
         InputStream config = Thread.currentThread().getContextClassLoader().getResourceAsStream(
                 "config.xml");
@@ -82,6 +86,14 @@ public class Config {
 
             Element rawStreamFileElement = rootElement.element("rawStreamFile");
             RAW_STREAM_FILE = rawStreamFileElement == null ? "" : rawStreamFileElement.getText();
+
+            Element iatfServerElement = rootElement.element("iatfServer");
+            IATF_SERVER = iatfServerElement == null ? "" : iatfServerElement.getText();
+
+
+            Element iatfWaitLockTimeElement = rootElement.element("iatfWaitLockTime");
+            IATF_WAIT_TIME = iatfWaitLockTimeElement == null ? "" : iatfWaitLockTimeElement.getText();
+
         } catch (DocumentException e) {
             throw new RuntimeException(e.getMessage());
         }
