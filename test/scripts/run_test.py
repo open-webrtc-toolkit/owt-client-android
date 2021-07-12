@@ -100,7 +100,7 @@ def run_cases(mode, module, target_package, log_dir, device, test_path, cases=No
         for case in cases:
             am_cmd = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'debug', 'false', '-e',
                       'class', target_package + '.' + case,
-                      target_package + '.test/android.test.InstrumentationTestRunner']
+                      target_package + '.test/android.support.test.runner.AndroidJUnitRunner']
             exec_android_test(mode, adb + am_cmd, device, target_package, result_file, logcat_file, test_path)
     elif mode == TestMode.UNIT:
         cmd = [HOME_PATH + '/gradlew', '-i','connectedAndroidTest']

@@ -47,7 +47,7 @@
 
     <!--suppress AndroidDomInspection -->
     <instrumentation
-        android:name="android.test.InstrumentationTestRunner"
+        android:name="android.support.test.runner.AndroidJUnitRunner"
         android:targetPackage="owt.test.p2p.apitest" />
 
 </manifest>
