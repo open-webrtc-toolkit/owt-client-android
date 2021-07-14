@@ -24,6 +24,8 @@ import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
+import org.webrtc.RtpTransceiver;
+import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.SessionDescription;
 import org.webrtc.VideoTrack;
 
@@ -467,6 +469,18 @@ public abstract class PeerConnectionChannel
     abstract public void onSignalingChange(PeerConnection.SignalingState signalingState);
 
     @Override
+    public void onStandardizedIceConnectionChange(PeerConnection.IceConnectionState newState) {
+    }
+        
+    @Override
+    public void onConnectionChange(PeerConnection.PeerConnectionState newState) {
+    }
+    
+    @Override
+    public void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {
+    }
+        
+    @Override
     abstract public void onIceConnectionChange(
             PeerConnection.IceConnectionState iceConnectionState);
 
@@ -479,7 +493,7 @@ public abstract class PeerConnectionChannel
     }
 
     @Override
-    abstract public void onIceCandidate(IceCandidate iceCandidate);
+    abstract public void onIceCandidate(IceCandidate iceCandidate); 
 
     @Override
     abstract public void onIceCandidatesRemoved(IceCandidate[] iceCandidates);
@@ -507,7 +521,11 @@ public abstract class PeerConnectionChannel
     @Override
     public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
     }
-
+        
+    @Override
+    public void onTrack(RtpTransceiver transceiver) {
+    }
+        
     //DataChannel.Observer interface
     @Override
     public void onBufferedAmountChange(long l) {
