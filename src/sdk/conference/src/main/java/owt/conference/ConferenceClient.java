@@ -735,7 +735,7 @@ public final class ConferenceClient implements SignalingChannel.SignalingChannel
                         for (ConferencePeerConnectionChannel pcChannel : pcChannels.values()) {
                             // For subscription id will be the RemoteStream id, for publication
                             // the id will be publication id which is pc.key.
-                            if(pcChannel.stream.disposed()) {
+                            if(pcChannel.stream == null || pcChannel.stream.disposed()) {
                                 continue;
                             }
                             if (pcChannel.stream.id().equals(id) || pcChannel.key.equals(id)) {
