@@ -173,18 +173,20 @@ public abstract class PeerConnectionChannel
     protected void drainRemoteCandidates() {
         DCHECK(pcExecutor);
         DCHECK(queuedRemoteCandidates);
-        synchronized (remoteIceLock) {
-            for (final IceCandidate candidate : queuedRemoteCandidates) {
-                pcExecutor.execute(() -> {
+        pcExecutor.execute(() -> {
+            synchronized (remoteIceLock) {
+                Iterator<IceCandidate> iterator = queuedRemoteCandidates.iterator();
+                while (iterator.hasNext()) {
                     if (disposed()) {
                         return;
                     }
+                    IceCandidate candidate = iterator.next();
                     Log.d(LOG_TAG, "add ice candidate");
                     peerConnection.addIceCandidate(candidate);
-                    queuedRemoteCandidates.remove(candidate);
-                });
+                    iterator.remove();
+                }
             }
-        }
+        });
     }
 
     private void setRemoteDescription(final SessionDescription remoteDescription) {
