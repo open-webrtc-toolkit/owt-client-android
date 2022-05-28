@@ -83,10 +83,6 @@ public abstract class PeerConnectionChannel
         queuedRemoteCandidates = new LinkedList<>();
         queuedMessage = new ArrayList<>();
         sdpConstraints = new MediaConstraints();
-        sdpConstraints.mandatory.add(
-                new KeyValuePair("OfferToReceiveAudio", String.valueOf(receiveAudio)));
-        sdpConstraints.mandatory.add(
-                new KeyValuePair("OfferToReceiveVideo", String.valueOf(receiveVideo)));
         peerConnection = PCFactoryProxy.instance().createPeerConnection(configuration, this);
         RCHECK(peerConnection);
         signalingState = peerConnection.signalingState();
