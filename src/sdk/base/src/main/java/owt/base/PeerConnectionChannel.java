@@ -225,6 +225,11 @@ public abstract class PeerConnectionChannel
             if (videoRtpSenders.get(mediaStreamId) != null) {
                 peerConnection.removeTrack(videoRtpSenders.get(mediaStreamId));
             }
+            for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
+                if (transceiver.getDirection() == RtpTransceiver.RtpTransceiverDirection.INACTIVE && !transceiver.isStopped()) {
+                    transceiver.stop();
+                }
+            }
         });
     }
 
