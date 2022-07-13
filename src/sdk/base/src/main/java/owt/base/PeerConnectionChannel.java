@@ -202,12 +202,12 @@ public abstract class PeerConnectionChannel
             ArrayList<String> streamIds = new ArrayList<>();
             streamIds.add(mediaStream.getId());
             for (AudioTrack audioTrack : mediaStream.audioTracks) {
-                RtpSender audioSender = peerConnection.addTrack(audioTrack, streamIds);
-                audioRtpSenders.put(mediaStream.getId(), audioSender);
+                RtpTransceiver transceiver = peerConnection.addTransceiver(audioTrack, new RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY, streamIds, new ArrayList<RtpParameters.Encoding>()));
+                audioRtpSenders.put(mediaStream.getId(), transceiver.getSender());
             }
             for (VideoTrack videoTrack : mediaStream.videoTracks) {
-                RtpSender videoSender = peerConnection.addTrack(videoTrack, streamIds);
-                videoRtpSenders.put(mediaStream.getId(), videoSender);
+                RtpTransceiver transceiver = peerConnection.addTransceiver(videoTrack, new RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY, streamIds, new ArrayList<RtpParameters.Encoding>()));
+                videoRtpSenders.put(mediaStream.getId(), transceiver.getSender());
             }
         });
     }
