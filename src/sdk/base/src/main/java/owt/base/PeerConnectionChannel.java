@@ -70,16 +70,12 @@ public abstract class PeerConnectionChannel
     private SessionDescription localSdp;
     private boolean disposed = false;
     protected boolean onError = false;
-    // <MediaStream id, RtpSender>
-    private ConcurrentHashMap<String, RtpSender> videoRtpSenders, audioRtpSenders;
 
     protected PeerConnectionChannel(String key, PeerConnection.RTCConfiguration configuration,
             boolean receiveVideo, boolean receiveAudio, PeerConnectionChannelObserver observer) {
         this.key = key;
         this.observer = observer;
 
-        videoRtpSenders = new ConcurrentHashMap<>();
-        audioRtpSenders = new ConcurrentHashMap<>();
         queuedRemoteCandidates = new LinkedList<>();
         queuedMessage = new ArrayList<>();
         sdpConstraints = new MediaConstraints();
@@ -203,11 +199,9 @@ public abstract class PeerConnectionChannel
             streamIds.add(mediaStream.getId());
             for (AudioTrack audioTrack : mediaStream.audioTracks) {
                 RtpTransceiver transceiver = peerConnection.addTransceiver(audioTrack, new RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY, streamIds, new ArrayList<RtpParameters.Encoding>()));
-                audioRtpSenders.put(mediaStream.getId(), transceiver.getSender());
             }
             for (VideoTrack videoTrack : mediaStream.videoTracks) {
                 RtpTransceiver transceiver = peerConnection.addTransceiver(videoTrack, new RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY, streamIds, new ArrayList<RtpParameters.Encoding>()));
-                videoRtpSenders.put(mediaStream.getId(), transceiver.getSender());
             }
         });
     }
@@ -219,11 +213,11 @@ public abstract class PeerConnectionChannel
                 return;
             }
             Log.d(LOG_TAG, "remove stream");
-            if (audioRtpSenders.get(mediaStreamId) != null) {
-                peerConnection.removeTrack(audioRtpSenders.get(mediaStreamId));
-            }
-            if (videoRtpSenders.get(mediaStreamId) != null) {
-                peerConnection.removeTrack(videoRtpSenders.get(mediaStreamId));
+            for(RtpSender sender: peerConnection.getSenders()) {
+                List<String> streams = sender.getStreams();
+                if (streams.size() == 1 && streams.get(0).equals(mediaStreamId)) {
+                    peerConnection.removeTrack(sender);
+                }
             }
             for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
                 if (transceiver.getDirection() == RtpTransceiver.RtpTransceiverDirection.INACTIVE && !transceiver.isStopped()) {
@@ -408,11 +402,16 @@ public abstract class PeerConnectionChannel
     protected void setMaxBitrate(String mediaStreamId) {
         DCHECK(peerConnection);
 
-        if (videoRtpSenders.get(mediaStreamId) != null) {
-            setMaxBitrate(videoRtpSenders.get(mediaStreamId), videoMaxBitrate);
-        }
-        if (audioRtpSenders.get(mediaStreamId) != null) {
-            setMaxBitrate(audioRtpSenders.get(mediaStreamId), audioMaxBitrate);
+        for(RtpSender sender: peerConnection.getSenders()) {
+            List<String> streams = sender.getStreams();
+            // A sender can be shared by multiple streams. Only apply max bitrate if it's not shared.
+            if (streams.size() == 1 && streams.get(0).equals(mediaStreamId)) {
+                if (sender.track() == null) {
+                    continue;
+                }
+                Integer bitrateLimit = sender.track().kind().equals("audio") ? audioMaxBitrate : videoMaxBitrate;
+                setMaxBitrate(sender, bitrateLimit);
+            }
         }
     }
 
