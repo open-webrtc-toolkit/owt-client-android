@@ -26,6 +26,10 @@ repositories {
     }
 }
 dependencies {
+    implementation('io.socket:socket.io-client:1.0.0') {
+        // excluding org.json which is provided by Android
+        exclude group: 'org.json', module: 'json'
+    }
     implementation 'org.dom4j:dom4j:2.0.2'
     api(name: 'owt_base', ext: 'aar')
     api(name: 'owt_p2p', ext: 'aar')

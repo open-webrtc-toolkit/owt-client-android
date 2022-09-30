@@ -6,4 +6,6 @@
     <mixedStreamSize>place_holder</mixedStreamSize>
     <p2pServer>place_holder</p2pServer>
     <rawStreamFile>place_holder</rawStreamFile>
+    <iatfServer>place_holder</iatfServer>>
+    <iatfWaitLockTime>place_holder</iatfWaitLockTime>>
 </mcu>
